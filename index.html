@@ -6,7 +6,7 @@
   <title>LiveTrack — 이벤트 선택 + 멀티 배번 뷰어</title>
   <style>
     :root{--bg:#0b0d12;--card:#131826;--muted:#9fb0c7;--fg:#e8eef9;--acc:#5cc8ff;--ok:#7CFC00;--err:#ff6b6b}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Helvetica,Arial,sans-serif}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Helvetica,Arial,sans-serif;scroll-behavior:auto}
     .wrap{max-width:1100px;margin:22px auto;padding:0 16px}
     h1{margin:0 0 6px;font-size:20px}
     .muted{color:var(--muted)}
@@ -18,16 +18,13 @@
     button.secondary{background:#0e111a;border:1px solid #2a3142}
     button.ghost{background:transparent;border:1px dashed #2a3142}
     button:disabled{opacity:.5;cursor:not-allowed}
-    .grid10{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-    @media (max-width:800px){.grid10{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media (max-width:520px){.grid10{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    .evbtn{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center;border-radius:12px;padding:10px 12px;background:#0e111a;border:1px solid #293143}
+    #eventsList{max-height:320px;overflow:auto;border:1px solid #2a3142;border-radius:10px;padding:8px;background:#0e111a}
+    .evbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border-radius:10px;padding:10px 12px;background:#0e111a;border:1px solid #293143;margin:6px 0}
     .evbtn .name{font-weight:700}
     .evbtn .date{font-size:12px;color:var(--muted)}
     .active{outline:2px solid var(--acc)}
     table{width:100%;border-collapse:separate;border-spacing:0 8px}
-    th,td{text-align:left;padding:10px 12px}
-    thead th{position:sticky;top:0;background:var(--bg);z-index:1}
+    th,td{text-align:left;padding:10px 12px;vertical-align:top}
     tbody tr{background:#0e111a}
     tbody tr td:first-child{border-radius:10px 0 0 10px}
     tbody tr td:last-child{border-radius:0 10px 10px 0}
@@ -38,23 +35,20 @@
     .pill.fin{background:rgba(159,176,199,.12);color:#d7e1f3}
     .pill.wait{background:rgba(159,176,199,.08);color:#b6c3d7}
     .err{color:var(--err)}
-    details{margin-top:6px}
-    summary{cursor:pointer;color:var(--muted)}
+    .splits{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>LiveTrack — 이벤트 선택 + 멀티 배번 뷰어</h1>
-    <div class="muted tiny">API는 Vercel 프록시(`/api/proxy?path=…`)를 사용합니다. 동일 도메인에서 열어야 CORS 문제가 없습니다.</div>
 
-    <!-- 이벤트 선택 -->
+    <!-- 이벤트 리스트 -->
     <div class="card">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div style="font-weight:700">이벤트(최신 10개)</div>
+        <div style="font-weight:700">모든 이벤트</div>
         <button id="reloadEv" class="secondary" style="flex:0 0 auto;width:auto">다시 불러오기</button>
-        <div class="muted tiny">날짜순 정렬, 버튼 클릭 시 선택</div>
       </div>
-      <div id="events" class="grid10" style="margin-top:10px"></div>
+      <div id="eventsList"></div>
     </div>
 
     <!-- 배번 입력 & 제어 -->
@@ -76,8 +70,7 @@
       <div class="row">
         <div class="col">
           <label class="tiny muted">배번 목록(쉼표/줄바꿈)</label>
-          <textarea id="bibs" rows="4" placeholder="예: 3725,3729,3730&#10;또는 줄바꿈으로 여러 개"></textarea>
-          <div class="tiny muted">⚠️ 전화번호 등 민감 정보는 표시/저장하지 않습니다. 배번은 로컬 저장소에 이벤트별로 저장됩니다.</div>
+          <textarea id="bibs" rows="4"></textarea>
         </div>
         <div class="col" style="flex:0 0 220px;align-self:end">
           <button id="saveBibs" class="ghost">배번 저장</button>
@@ -88,191 +81,39 @@
     <!-- 결과 테이블 -->
     <div class="card">
       <div id="status" class="tiny muted">이벤트를 선택하고 시작을 누르세요.</div>
-      <div class="grid">
-        <table>
-          <thead>
-            <tr>
-              <th>이름</th>
-              <th>배번</th>
-              <th>상태</th>
-              <th>누적(km)</th>
-              <th>마지막 통과</th>
-              <th>시각</th>
-              <th>넷기록</th>
-              <th>평균페이스</th>
-              <th>상세</th>
-              <th>오류</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <tr><th>이름</th><th>배번</th><th>상태</th><th>누적(km)</th><th>마지막 통과</th><th>시각</th><th>넷기록</th><th>페이스</th><th>스플릿</th><th>오류</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
     </div>
   </div>
 
 <script>
-// ===== 설정: 프록시 경로 헬퍼 =====
-function API(path){
-  // Vercel 서버리스 프록시(/api/proxy)로 우회
-  return `/api/proxy?path=${encodeURIComponent(path)}`;
-}
+function API(path){return `/api/proxy?path=${encodeURIComponent(path)}`;}
+const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
+function parseBibs(t){return t.split(/[\n,\s]+/).map(s=>s.trim()).filter(Boolean)}
+function fmtClockISO(i){return i?i.replace('T',' ').replace('Z',''):''}
+function toClock(d,t){if(!t)return null;let s=`${d}T${t}`;if(!t.includes('.'))s+='.00';return new Date(s)}
+const S={eventId:null,timer:null,rows:new Map()};
 
-// ===== 유틸 =====
-const $ = (s, r=document) => r.querySelector(s);
-const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-function parseBibs(text){ return text.split(/[\n,\s,]+/).map(s=>s.trim()).filter(Boolean); }
-function fmtClockISO(iso){ if(!iso) return ''; return iso.replace('T',' ').replace('Z',''); }
-function toClock(dateStr, clockStr){ if(!clockStr) return null; let s=`${dateStr}T${clockStr}`; if(!clockStr.includes('.')) s += '.00'; return new Date(s); }
-
-// ===== 전역 상태 =====
-const S = { eventId:null, eventName:null, timer:null };
-
-// ===== 이벤트 목록 로딩 =====
 async function loadEvents(){
-  $('#events').innerHTML = '<div class="muted">불러오는 중…</div>';
-  try{
-    const r = await fetch(API('event'), {headers:{'Accept':'application/json'}});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const j = await r.json();
-    const list = (j.results||j||[]).slice();
-    // 날짜 내림차순(최신/가까운 날짜 먼저)
-    list.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-    const top10 = list.slice(0,10);
-    const grid = document.createElement('div');
-    grid.className = 'grid10';
-    for(const ev of top10){
-      const btn = document.createElement('button');
-      btn.className = 'evbtn';
-      btn.innerHTML = `<div class="name">${ev.name||'(이름없음)'}</div><div class="date">${ev.date||''} ${ev.time||''}</div>`;
-      btn.onclick = ()=> pickEvent(ev);
-      grid.appendChild(btn);
-    }
-    const wrap = $('#events');
-    wrap.innerHTML = '';
-    wrap.appendChild(grid);
-  }catch(e){
-    $('#events').innerHTML = `<div class="err">이벤트 목록 로드 실패: ${String(e)}</div>`;
-  }
-}
+ const el=$('#eventsList');el.innerHTML='<div>불러오는 중...</div>';
+ try{const r=await fetch(API('event'));const j=await r.json();const list=(j.results||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));el.innerHTML='';list.forEach(ev=>{const b=document.createElement('button');b.className='evbtn';b.innerHTML=`<div class="name">${ev.name}</div><div class="date">${ev.date}</div>`;b.onclick=()=>pickEvent(ev,b);el.appendChild(b)});}catch(e){el.innerHTML='<div class="err">로드 실패</div>'}}
 
-function pickEvent(ev){
-  S.eventId = ev.id;
-  S.eventName = ev.name;
-  $('#picked').textContent = `${ev.name} (#${ev.id}) — ${ev.date||''} ${ev.time||''}`;
-  // 이벤트별 저장된 배번 복원
-  const saved = localStorage.getItem(`bibs:${S.eventId}`);
-  if(saved){ $('#bibs').value = JSON.parse(saved).join('\n'); }
-  // 선택 표시
-  $$('#events .evbtn').forEach(b=>b.classList.remove('active'));
-  event.target?.classList?.add?.('active');
-}
-
-$('#reloadEv').addEventListener('click', loadEvents);
-
-// ===== 데이터 폴링/표시 =====
-function saveBibs(){
-  if(!S.eventId){ alert('이벤트를 먼저 선택하세요.'); return; }
-  const arr = parseBibs($('#bibs').value);
-  localStorage.setItem(`bibs:${S.eventId}`, JSON.stringify(arr));
-}
-$('#saveBibs').addEventListener('click', saveBibs);
-
-async function fetchPlayer(eventId, bib){
-  const url = API(`event/${encodeURIComponent(eventId)}/player/${encodeURIComponent(bib)}`);
-  const r = await fetch(url, {headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const j = await r.json();
-  delete j.mobile; // 민감정보 제거
-  return j;
-}
-
-function estimateNow(j){
-  const courseDist = parseFloat(j.course?.distance || '0');
-  const recs = (j.records||[]).slice().sort((a,b)=>parseFloat(a.point.distance)-parseFloat(b.point.distance));
-  if(!recs.length) return {status:'대기', D_now:0, lastPoint:'', lastISO:''};
-  const date = j.event?.date || '';
-  const Ds = recs.map(r=>parseFloat(r.point.distance));
-  const Ts = recs.map(r=>toClock(date, r.time_point));
-  const k = recs.length-1, Dk = Ds[k], Tk = Ts[k];
-  let vk=null; // km/s
-  if(k>=1){ const d=Ds[k]-Ds[k-1]; const t=(Ts[k]-Ts[k-1])/1000; if(d>0&&t>0) vk=d/t; }
-  if(!vk && j.pace_nettime){ const [m,s]=j.pace_nettime.split(':').map(Number); const spk=m*60+s; if(spk>0) vk=1/spk; }
-  if(!vk) vk=1/360; // 6:00/km
-  const next = (j.course?.points||[]).filter(p=>parseFloat(p.distance)>Dk).sort((a,b)=>parseFloat(a.distance)-parseFloat(b.distance))[0];
-  const Dnext = next ? parseFloat(next.distance) : courseDist;
-  const dt = Math.max(0, (Date.now()-Tk.getTime())/1000);
-  const Dhat = Math.min(Dk + vk*dt, Dnext);
-  const status = (Dhat>=courseDist || j.result_nettime) ? '완주' : '주행';
-  return {status, D_now:Dhat, lastPoint:recs[k].point?.name||'', lastISO:Tk.toISOString?.()||''};
-}
-
-function makeRow(j){
-  const est = estimateNow(j);
-  const tr = document.createElement('tr');
-  const bib = j.num || j.tag || '';
-  const pill = est.status==='완주' ? '<span class="pill fin">완주</span>' : est.status==='주행' ? '<span class="pill run">주행</span>' : '<span class="pill wait">대기</span>';
-  const splitsHtml = (j.records||[]).map(r=>{
-    const dist = r.point?.distance; const name = r.point?.name; const tp = r.time_point;
-    return `<div class="tiny mono">${String(dist).padEnd(5,' ')} km — ${name||''} — ${tp||''}</div>`;
-  }).join('');
-  tr.innerHTML = `
-    <td>${j.name||''}</td>
-    <td class="mono">${bib}</td>
-    <td>${pill}</td>
-    <td class="mono">${est.D_now.toFixed(2)}</td>
-    <td>${est.lastPoint||''}</td>
-    <td class="mono">${fmtClockISO(est.lastISO)}</td>
-    <td class="mono">${j.result_nettime||''}</td>
-    <td class="mono">${j.pace_nettime||''}</td>
-    <td>
-      <details>
-        <summary>스플릿</summary>
-        ${splitsHtml||'<div class="tiny muted">기록 없음</div>'}
-      </details>
-    </td>
-    <td class="tiny err"></td>
-  `;
-  return tr;
-}
-
-async function tick(){
-  if(!S.eventId){ $('#status').textContent = '이벤트를 선택하세요.'; return; }
-  const bibs = parseBibs($('#bibs').value);
-  if(bibs.length===0){ $('#status').textContent = '배번을 입력하세요.'; $('#tbody').innerHTML=''; return; }
-  $('#status').textContent = `조회 중… (${new Date().toLocaleTimeString()})`;
-  const results = [];
-  for(let i=0;i<bibs.length;i++){
-    const bib = bibs[i];
-    try{
-      if(i>0) await new Promise(r=>setTimeout(r,150)); // 스태거
-      const j = await fetchPlayer(S.eventId, bib);
-      results.push({ok:true, j});
-    }catch(e){ results.push({ok:false, bib, err:String(e)}); }
-  }
-  // 정렬: 주행>완주>대기, km desc
-  results.sort((a,b)=>{
-    const ra = a.ok? (estimateNow(a.j).status==='주행'?0:(estimateNow(a.j).status==='완주'?1:2)) : 3;
-    const rb = b.ok? (estimateNow(b.j).status==='주행'?0:(estimateNow(b.j).status==='완주'?1:2)) : 3;
-    if(ra!==rb) return ra-rb;
-    const da = a.ok? estimateNow(a.j).D_now:0; const db = b.ok? estimateNow(b.j).D_now:0;
-    return db-da;
-  });
-  const tbody = $('#tbody'); tbody.innerHTML='';
-  for(const r of results){
-    if(!r.ok){ const tr=document.createElement('tr'); tr.innerHTML=`<td colspan="9" class="err">${r.bib}</td><td class="tiny err">${r.err}</td>`; tbody.appendChild(tr); continue; }
-    tbody.appendChild(makeRow(r.j));
-  }
-}
-
-function start(){ if(!S.eventId){ alert('이벤트를 먼저 선택하세요.'); return; }
-  $('#startBtn').disabled=true; $('#stopBtn').disabled=false; tick();
-  const sec=Math.max(5, Number($('#intervalSec').value)||10); S.timer=setInterval(tick, sec*1000);
-}
-function stop(){ $('#startBtn').disabled=false; $('#stopBtn').disabled=true; if(S.timer){ clearInterval(S.timer); S.timer=null; } }
-$('#startBtn').addEventListener('click', start);
-$('#stopBtn').addEventListener('click', stop);
-
-// 초기 로드
+function pickEvent(ev,b){S.eventId=ev.id;$('#picked').textContent=`${ev.name} (#${ev.id})`;$$('.evbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const saved=localStorage.getItem(`bibs:${S.eventId}`);if(saved)$('#bibs').value=JSON.parse(saved).join('\n');}
+$('#reloadEv').onclick=loadEvents;
+$('#saveBibs').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');localStorage.setItem(`bibs:${S.eventId}`,JSON.stringify(parseBibs($('#bibs').value)))};
+async function fetchPlayer(eid,bib){const r=await fetch(API(`event/${eid}/player/${bib}`));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);if(!recs.length)return{status:'대기',d:0,last:'',iso:''};const d=recs.at(-1).point.distance;const name=recs.at(-1).point.name;const time=recs.at(-1).time_point;const date=j.event?.date;return{status:j.result_nettime?'완주':'주행',d,name,iso:new Date(`${date}T${time}`).toISOString()}}
+function renderSplits(j){return `<div class='splits'>${(j.records||[]).map(r=>`<div>${r.point.name||''} ${r.point.distance}km ${r.time_point}</div>`).join('')}</div>`}
+function ensureRow(bib){if(S.rows.has(bib))return S.rows.get(bib);const tr=document.createElement('tr');tr.innerHTML='<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';$('#tbody').appendChild(tr);const c=tr.querySelectorAll('td');S.rows.set(bib,{tr,c});return S.rows.get(bib)}
+function updateRow(j){const bib=j.num||j.tag;const r=ensureRow(bib);const est=estimateNow(j);r.c[0].textContent=j.name;r.c[1].textContent=bib;r.c[2].textContent=est.status;r.c[3].textContent=est.d;r.c[4].textContent=est.last;r.c[5].textContent=fmtClockISO(est.iso);r.c[6].textContent=j.result_nettime;r.c[7].textContent=j.pace_nettime;r.c[8].innerHTML=renderSplits(j);r.c[9].textContent='';}
+function updateError(bib,e){const r=ensureRow(bib);r.c[9].textContent=e;}
+async function tick(){if(!S.eventId)return;const bibs=parseBibs($('#bibs').value);const seen=new Set(bibs);for(const b of bibs){try{const j=await fetchPlayer(S.eventId,b);updateRow(j);}catch(e){updateError(b,e)}}for(const [b,{tr}]of S.rows){if(!seen.has(b)){tr.remove();S.rows.delete(b)}}}
+$('#startBtn').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');$('#startBtn').disabled=true;$('#stopBtn').disabled=false;tick();S.timer=setInterval(tick,Math.max(5,Number($('#intervalSec').value))*1000)};
+$('#stopBtn').onclick=()=>{clearInterval(S.timer);S.timer=null;$('#startBtn').disabled=false;$('#stopBtn').disabled=true};
 loadEvents();
 </script>
 </body>
