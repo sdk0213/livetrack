@@ -120,7 +120,20 @@ $('#reloadEv').onclick=loadEvents;
 $('#saveBibs').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');localStorage.setItem(`bibs:${S.eventId}`,JSON.stringify(parseBibs($('#bibs').value)))};
 async function fetchPlayer(eid,bib){const r=await fetch(API(`event/${eid}/player/${bib}`));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
 function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);if(!recs.length)return{status:'대기',d:0,last:'',iso:''};const d=recs.at(-1).point.distance;const name=recs.at(-1).point.name;const time=recs.at(-1).time_point;const date=j.event?.date;return{status:j.result_nettime?'완주':'주행',d,name,iso:new Date(`${date}T${time}`).toISOString()}}
-function renderSplits(j){return `<div class='splits'>${(j.records||[]).map(r=>`<div>${r.point.name||''} ${r.point.distance}km ${r.time_point}</div>`).join('')}</div>`}
+function renderSplits(j) {
+  // 통과 기록
+  const recs = j.records && j.records.length ? j.records : [];
+  // 코스 포인트
+  const points = j.course?.points || [];
+
+  // 포인트 기준으로 표시
+  return `<div class='splits'>` + points.map(pt => {
+    // 해당 포인트의 기록이 있는지 확인
+    const rec = recs.find(r => r.point_cd === pt.point_cd);
+    const t = rec?.time_point ? rec.time_point : '기록없음';
+    return `<div>${pt.name || ''} ${pt.distance}km ${t}</div>`;
+  }).join('') + `</div>`;
+}
 function ensureRow(bib){if(S.rows.has(bib))return S.rows.get(bib);const tr=document.createElement('tr');tr.innerHTML='<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';$('#tbody').appendChild(tr);const c=tr.querySelectorAll('td');S.rows.set(bib,{tr,c});return S.rows.get(bib)}
 function updateRow(j){const bib=j.num||j.tag;const r=ensureRow(bib);const est=estimateNow(j);r.c[0].textContent=j.name;r.c[1].textContent=bib;r.c[2].textContent=est.status;r.c[3].textContent=est.d;r.c[4].textContent=est.last;r.c[5].textContent=fmtClockISO(est.iso);r.c[6].textContent=j.result_nettime;r.c[7].textContent=j.pace_nettime;r.c[8].innerHTML=renderSplits(j);r.c[9].textContent='';}
 function updateError(bib,e){const r=ensureRow(bib);r.c[9].textContent=e;}
