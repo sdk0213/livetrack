@@ -22,77 +22,110 @@ export default async function handler(req, res) {
     // 현재 시간
     const now = new Date();
     const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
+    const startTime = new Date(eventDate + 'T15:00:00'); // 모두 오후 3시 출발
     
     // 주자별 설정
-    let runnerName, teamName, startTime, paceSecondsPerKm, maxDistance;
+    const runners = {
+      '1080': {
+        name: '성대경',
+        team_name: '런티풀',
+        pace: 270 // 4:30/km (4:00~6:00 사이 랜덤)
+      },
+      '2296': {
+        name: '고민지',
+        team_name: '달리기클럽',
+        pace: 330 // 5:30/km
+      },
+      '2634': {
+        name: '김이수',
+        team_name: '러닝크루',
+        pace: 250 // 4:10/km
+      }
+    };
     
-    if (bib === '1081') {
-      // 고민지: 오후 2시 출발, 10km까지 완주
-      runnerName = '고민지';
-      teamName = '달리기클럽';
-      startTime = new Date(eventDate + 'T14:00:00');
-      paceSecondsPerKm = 300; // 5분/km
-      maxDistance = 10.00; // 10km까지만
-    } else {
-      // 성대경 (기본값, 1080): 오후 3시 출발, 실시간 진행
-      runnerName = '성대경';
-      teamName = '런티풀';
-      startTime = new Date(eventDate + 'T15:00:00');
-      paceSecondsPerKm = 300; // 5분/km
-      maxDistance = 42.20; // 풀코스
-    }
+    const runner = runners[bib] || runners['1080'];
     
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
     // 주행 거리 계산
-    const distanceKm = Math.min(maxDistance, elapsedSeconds / paceSecondsPerKm);
+    const distanceKm = Math.min(42.20, elapsedSeconds / runner.pace);
     
     // 체크포인트 (춘천 마라톤 기준)
     const checkpoints = [
-      { name: '출발', distance: 0.00 },
-      { name: '반환점', distance: 4.00 },
-      { name: '5K', distance: 5.00 },
-      { name: '10K', distance: 10.00 },
-      { name: '15K', distance: 15.00 },
-      { name: '20K', distance: 20.00 },
-      { name: 'Half', distance: 21.10 },
-      { name: '25K', distance: 25.00 },
-      { name: '30K', distance: 30.00 },
-      { name: '35K', distance: 35.00 },
-      { name: '40K', distance: 40.00 },
-      { name: '도착', distance: 42.20 }
+      { code: 'P0', name: '출발', distance: 0.00, lat: 37.874123, lng: 127.734567 },
+      { code: 'P1', name: '반환점', distance: 4.00, lat: 37.880456, lng: 127.738901 },
+      { code: 'P2', name: '5K', distance: 5.00, lat: 37.879020, lng: 127.723578 },
+      { code: 'P3', name: '10K', distance: 10.00, lat: 37.883234, lng: 127.729876 },
+      { code: 'P4', name: '15K', distance: 15.00, lat: 37.878456, lng: 127.715432 },
+      { code: 'P5', name: '20K', distance: 20.00, lat: 37.881234, lng: 127.721098 },
+      { code: 'P6', name: 'Half', distance: 21.10, lat: 37.876543, lng: 127.718765 },
+      { code: 'P7', name: '25K', distance: 25.00, lat: 37.884321, lng: 127.725432 },
+      { code: 'P8', name: '30K', distance: 30.00, lat: 37.877654, lng: 127.712345 },
+      { code: 'P9', name: '35K', distance: 35.00, lat: 37.882345, lng: 127.727654 },
+      { code: 'P10', name: '40K', distance: 40.00, lat: 37.875432, lng: 127.719876 },
+      { code: 'P11', name: '도착', distance: 42.20, lat: 37.874123, lng: 127.734567 }
     ];
     
     const records = [];
+    let cumulativeSeconds = 0;
     
-    for (const cp of checkpoints) {
+    for (let i = 0; i < checkpoints.length; i++) {
+      const cp = checkpoints[i];
       if (cp.distance > distanceKm) break;
       
-      const cpSeconds = cp.distance * paceSecondsPerKm;
-      const recordTime = new Date(startTime.getTime() + cpSeconds * 1000);
-      const timePoint = recordTime.toTimeString().split(' ')[0]; // HH:MM:SS
+      // 구간별 랜덤 페이스 적용 (±10초 변동)
+      const sectionDistance = i === 0 ? cp.distance : cp.distance - checkpoints[i-1].distance;
+      const variation = (Math.random() - 0.5) * 20; // -10 ~ +10초
+      const sectionPace = runner.pace + variation;
+      const sectionSeconds = sectionDistance * sectionPace;
+      
+      cumulativeSeconds += sectionSeconds;
+      
+      const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
+      const timePoint = recordTime.toTimeString().split(' ')[0] + '.' + String(Math.floor(Math.random() * 100)).padStart(2, '0');
       
       records.push({
+        event_id: 132,
+        course_cd: 'Full',
+        point_cd: cp.code,
+        lap: 1,
+        player_num: bib,
+        created_at: new Date(eventDate + 'T06:00:00.000Z').toISOString(),
+        updated_at: null,
+        time_section: i === 0 ? null : formatTime(sectionSeconds),
+        time_sum: formatTime(cumulativeSeconds),
+        time_point: timePoint,
         point: {
+          event_id: 132,
+          course_cd: 'Full',
+          point_cd: cp.code,
+          lap: 1,
+          created_at: new Date(eventDate + 'T01:19:24.294Z').toISOString(),
+          updated_at: null,
           name: cp.name,
-          distance: cp.distance
-        },
-        time_point: timePoint
+          distance: cp.distance.toFixed(2),
+          checkpoint: true,
+          before_record: true,
+          lat: cp.lat,
+          lng: cp.lng
+        }
       });
     }
     
     // 완주 여부 확인
-    const isFinished = distanceKm >= maxDistance;
-    const netTime = isFinished ? formatTime(maxDistance * paceSecondsPerKm) : null;
-    const pace = isFinished ? "5'00\"" : null;
+    const isFinished = distanceKm >= 42.20;
+    const netTime = isFinished ? formatTime(cumulativeSeconds) : null;
+    const paceMin = Math.floor(runner.pace / 60);
+    const paceSec = Math.floor(runner.pace % 60);
+    const pace = isFinished ? `${paceMin}'${String(paceSec).padStart(2, '0')}"` : null;
     
     // 테스트 데이터
     const testData = {
       num: bib,
       tag: bib,
-      name: runnerName,
-      team_name: teamName,
+      name: runner.name,
+      team_name: runner.team_name,
       event: {
         id: 132,
         name: '2025 춘천마라톤',
