@@ -20,7 +20,7 @@
     button:disabled{opacity:.5;cursor:not-allowed}
     #eventsList{max-height:320px;overflow:auto;border:1px solid #cbd5e1;border-radius:10px;padding:8px;background:#f8fafc}
     .evbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border-radius:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;margin:6px 0}
-    .evbtn .name{font-weight:700}
+    .evbtn .name{font-weight:700;color:var(--fg)}
     .evbtn .date{font-size:12px;color:var(--muted)}
     .active{outline:2px solid var(--acc)}
     table{width:100%;border-collapse:separate;border-spacing:0 8px}
@@ -100,6 +100,11 @@
       </div>
       <div class="row">
         <div class="col">
+          <button id="runtifulBtn" class="secondary" style="background:linear-gradient(180deg,#ff6b6b,#ee5a5a);color:#fff;border:none;font-weight:700">🏃 런티풀 주자 자동추가</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
           <label class="tiny muted">배번 목록(쉼표/줄바꿈)</label>
           <textarea id="bibs" rows="4"></textarea>
           <div id="playerCount" class="player-count"></div>
@@ -113,6 +118,7 @@
     <!-- 지도 -->
     <div class="card">
       <div style="font-weight:700;margin-bottom:10px">📍 주자 위치 (예상 위치 표시 Beta)</div>
+      <div style="color:var(--err);font-size:12px;margin-bottom:10px;font-weight:600">⚠️ 동작하지 않을 수 있습니다. 미동작 시 아래 테이블에서 마지막 위치를 직접 확인해주세요.</div>
       <div id="map"></div>
     </div>
 
@@ -263,6 +269,7 @@ async function loadEventData(){if(!S.eventId)return;try{const r=await fetch(API(
 async function tick(){if(!S.eventId)return;const bibs=parseBibs($('#bibs').value);const statusEl=$('#status');statusEl.innerHTML='새로고침 중... <span class="loading"></span>';$('#playerCount').textContent=`총 ${bibs.length}명 조회중`;const seen=new Set(bibs);for(const b of bibs){try{const j=await fetchPlayer(S.eventId,b);updateRow(j);}catch(e){updateError(b,e)}}for(const [b,{trMain,trSplits}]of S.rows){if(!seen.has(b)){trMain.remove();trSplits.remove();S.rows.delete(b);const item=S.markers.get(b);if(item){item.marker.setMap(null);item.label.setMap(null);S.markers.delete(b)}}}statusEl.textContent=`마지막 업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;}
 $('#startBtn').onclick=async()=>{if(!S.eventId)return alert('이벤트 선택');$('#startBtn').disabled=true;$('#stopBtn').disabled=false;await loadEventData();tick();S.timer=setInterval(tick,Math.max(5,Number($('#intervalSec').value))*1000)};
 $('#stopBtn').onclick=()=>{clearInterval(S.timer);S.timer=null;$('#startBtn').disabled=false;$('#stopBtn').disabled=true};
+$('#runtifulBtn').onclick=()=>{const runtifulBibs=[1080,2296,2634,2912,3097,3148,3212,5969,7153,9430,10352,10384,13292,13306,13373,14614,14618,14906,15493,16322];$('#bibs').value=runtifulBibs.join(', ')};
 loadEvents();
 setTimeout(initMap,500);
 </script>
