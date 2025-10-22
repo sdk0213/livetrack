@@ -130,10 +130,9 @@ export default async function handler(req, res) {
       }
       
       const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
-      const koreaTime = new Date(recordTime.getTime() + (9 * 60 * 60 * 1000)); // UTC+9 한국 시간으로 변환
-      const hours = String(koreaTime.getUTCHours()).padStart(2, '0');
-      const minutes = String(koreaTime.getUTCMinutes()).padStart(2, '0');
-      const seconds = String(koreaTime.getUTCSeconds()).padStart(2, '0');
+      const hours = String(recordTime.getHours()).padStart(2, '0');
+      const minutes = String(recordTime.getMinutes()).padStart(2, '0');
+      const seconds = String(recordTime.getSeconds()).padStart(2, '0');
       const milliseconds = String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
       const timePoint = `${hours}:${minutes}:${seconds}.${milliseconds}`;
       
