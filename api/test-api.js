@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     // 현재 시간
     const now = new Date();
     const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
-    const startTime = new Date(eventDate + 'T15:00:00'); // 모두 오후 3시 출발
+    const startTime = new Date(eventDate + 'T14:00:00'); // 오후 2시 출발
     
     // 주자별 설정
     const runners = {
@@ -70,20 +70,30 @@ export default async function handler(req, res) {
     const records = [];
     let cumulativeSeconds = 0;
     
+    // 배번 기반 시드로 일관된 랜덤 페이스 생성
+    function seededRandom(seed) {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+    
     for (let i = 0; i < checkpoints.length; i++) {
       const cp = checkpoints[i];
-      if (cp.distance > distanceKm) break;
       
-      // 구간별 랜덤 페이스 적용 (±10초 변동)
+      // 구간별 랜덤 페이스 적용 (±10초 변동) - 배번과 체크포인트 인덱스로 시드 생성
       const sectionDistance = i === 0 ? cp.distance : cp.distance - checkpoints[i-1].distance;
-      const variation = (Math.random() - 0.5) * 20; // -10 ~ +10초
+      const seed = parseInt(bib) * 100 + i;
+      const variation = (seededRandom(seed) - 0.5) * 20; // -10 ~ +10초
       const sectionPace = runner.pace + variation;
       const sectionSeconds = sectionDistance * sectionPace;
       
       cumulativeSeconds += sectionSeconds;
       
+      // 현재까지 누적 시간이 경과 시간보다 크면 아직 도달하지 않음
+      if (cumulativeSeconds > elapsedSeconds) break;
+      
       const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
-      const timePoint = recordTime.toTimeString().split(' ')[0] + '.' + String(Math.floor(Math.random() * 100)).padStart(2, '0');
+      const milliseconds = String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
+      const timePoint = recordTime.toTimeString().split(' ')[0] + '.' + milliseconds;
       
       records.push({
         event_id: 132,
