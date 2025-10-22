@@ -180,10 +180,12 @@ export default async function handler(req, res) {
       result_nettime: netTime,
       pace_nettime: pace,
       _debug: {
+        deployedAt: '2025-10-22T15:50:00',
         elapsedSeconds: elapsedSeconds,
         elapsedMinutes: Math.floor(elapsedSeconds / 60),
         pace: runner.pace,
-        recordsCount: records.length
+        recordsCount: records.length,
+        loopExecuted: true
       }
     };
 
