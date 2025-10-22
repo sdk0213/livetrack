@@ -49,7 +49,9 @@ export default async function handler(req, res) {
       '15493': { name: '강한철', team_name: 'F', pace: 370 }, // 4:20
       '7153': { name: '최인아', team_name: 'C', pace: 426 }, // 5:00
       '13306': { name: '송주엽', team_name: 'E', pace: 469 }, // 5:30
-      '13366': { name: '허수민', team_name: 'E', pace: 362 }  // 4:15
+      '13366': { name: '허수민', team_name: 'E', pace: 362 },  // 4:15
+      '8904': { name: '민경훈', team_name: 'D', pace: 400 },  // 4:15
+      '13324': { name: '이소정', team_name: 'E', pace: 402 }  // 4:15
     };
     
     const runner = runners[bib] || runners['1080'];
