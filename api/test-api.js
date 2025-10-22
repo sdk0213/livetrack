@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     // 현재 시간 (한국 시간으로 변환)
     const now = new Date();
     const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
-    const startTime = new Date(eventDate + 'T16:00:00+09:00'); // 한국 시간 명시
+    const startTime = new Date(new Date(eventDate + 'T16:00:00Z').getTime() + (9 * 60 * 60 * 1000)); // 한국 시간 (UTC+9)
     
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
@@ -87,7 +87,13 @@ export default async function handler(req, res) {
       updated_at: null,
       time_section: null,
       time_sum: "0:00:00",
-      time_point: `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}:${String(startTime.getSeconds()).padStart(2, '0')}.00`,
+      time_point: startTime.toLocaleTimeString('ko-KR', { 
+        hour12: false,
+        timeZone: 'Asia/Seoul',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).replace(/:/g, ':') + '.00',
       point: {
         event_id: 132,
         course_cd: 'Full',
