@@ -19,10 +19,13 @@ export default async function handler(req, res) {
     const bibMatch = path.match(/player\/(\d+)/);
     const bib = bibMatch ? bibMatch[1] : '1080';
 
-    // 현재 시간
+    // 현재 시간 (한국 시간으로 변환)
     const now = new Date();
     const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
-    const startTime = new Date(eventDate + 'T14:00:00'); // 오후 2시 출발
+    const startTime = new Date(eventDate + 'T14:00:00+09:00'); // 한국 시간 명시
+    
+    // 현재 시간과 출발 시간의 차이 계산 (실시간)
+    const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
     // 주자별 설정
     const runners = {
@@ -44,9 +47,6 @@ export default async function handler(req, res) {
     };
     
     const runner = runners[bib] || runners['1080'];
-    
-    // 현재 시간과 출발 시간의 차이 계산 (실시간)
-    const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
     // 주행 거리 계산
     const distanceKm = Math.min(42.20, elapsedSeconds / runner.pace);
@@ -180,7 +180,9 @@ export default async function handler(req, res) {
       result_nettime: netTime,
       pace_nettime: pace,
       _debug: {
-        deployedAt: '2025-10-22T15:50:00',
+        deployedAt: '2025-10-22T15:55:00-KST',
+        nowUTC: now.toISOString(),
+        startTimeUTC: startTime.toISOString(),
         elapsedSeconds: elapsedSeconds,
         elapsedMinutes: Math.floor(elapsedSeconds / 60),
         pace: runner.pace,
