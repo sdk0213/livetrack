@@ -130,11 +130,13 @@ export default async function handler(req, res) {
       }
       
       const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
-      const hours = String(recordTime.getHours()).padStart(2, '0');
-      const minutes = String(recordTime.getMinutes()).padStart(2, '0');
-      const seconds = String(recordTime.getSeconds()).padStart(2, '0');
-      const milliseconds = String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
-      const timePoint = `${hours}:${minutes}:${seconds}.${milliseconds}`;
+      const timePoint = recordTime.toLocaleTimeString('ko-KR', {
+        hour12: false,
+        timeZone: 'Asia/Seoul',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).replace(/:/g, ':') + '.' + String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
       
       records.push({
         event_id: 132,
