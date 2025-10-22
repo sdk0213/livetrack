@@ -22,14 +22,14 @@ export default async function handler(req, res) {
     // 현재 시간 (한국 시간으로 변환)
     const now = new Date();
     const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
-    const startTime = new Date(eventDate + 'T16:00:00+09:00'); // 한국 시간 16:00
+    const startTime = new Date(eventDate + 'T18:00:00+09:00'); // 한국 시간 16:00
     
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
     // 주자별 설정
     const runners = {
-      '2634': { name: '장건희', team_name: 'B', pace: 292 }, // 3:25 (4:52/km)
+      '2634': { name: '장건희', team_name: 'B', pace: 292 }, // 3:25
       '2912': { name: '김이수', team_name: 'B', pace: 254 }, // 2:59
       '3097': { name: '유재원', team_name: 'B', pace: 269 }, // 3:09
       '3148': { name: '이재경', team_name: 'B', pace: 297 }, // 3:29
