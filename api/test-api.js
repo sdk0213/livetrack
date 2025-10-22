@@ -158,9 +158,17 @@ export default async function handler(req, res) {
     // 완주 여부 확인
     const isFinished = distanceKm >= 42.20;
     const netTime = isFinished ? formatTime(cumulativeSeconds) : null;
-    const paceMin = Math.floor(runner.pace / 60);
-    const paceSec = Math.floor(runner.pace % 60);
-    const pace = isFinished ? `${paceMin}'${String(paceSec).padStart(2, '0')}"` : null;
+    
+    // 페이스 계산 - 진행 중에도 현재 평균 페이스 제공
+    let pace = null;
+    if (cumulativeSeconds > 0 && records.length > 1) {
+      // 마지막 체크포인트까지의 평균 페이스 계산
+      const lastCp = checkpoints[records.length - 1];
+      const avgPaceSeconds = cumulativeSeconds / lastCp.distance;
+      const paceMin = Math.floor(avgPaceSeconds / 60);
+      const paceSec = Math.floor(avgPaceSeconds % 60);
+      pace = `${paceMin}'${String(paceSec).padStart(2, '0')}"`;
+    }
     
     // 테스트 데이터
     const testData = {
