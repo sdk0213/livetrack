@@ -143,9 +143,9 @@ function calcDistance(lat1,lng1,lat2,lng2){const R=6371;const dLat=(lat2-lat1)*M
 
 function getPositionOnRoute(distanceKm){if(!S.gpxPoints||S.gpxPoints.length===0)return null;let accumulated=0;for(let i=1;i<S.gpxPoints.length;i++){const prev=S.gpxPoints[i-1];const curr=S.gpxPoints[i];const segDist=calcDistance(prev.lat(),prev.lng(),curr.lat(),curr.lng());if(accumulated+segDist>=distanceKm){const ratio=(distanceKm-accumulated)/segDist;const lat=prev.lat()+(curr.lat()-prev.lat())*ratio;const lng=prev.lng()+(curr.lng()-prev.lng())*ratio;return new naver.maps.LatLng(lat,lng);}accumulated+=segDist;}return S.gpxPoints[S.gpxPoints.length-1];}
 
-async function loadGPXCourse(){
+async function loadGPXCourse(filename='/course.gpx'){
   try{
-    const r=await fetch('/course.gpx');
+    const r=await fetch(filename);
     const text=await r.text();
     const parser=new DOMParser();
     const xml=parser.parseFromString(text,'text/xml');
@@ -157,7 +157,7 @@ async function loadGPXCourse(){
       if(lat&&lon)path.push(new naver.maps.LatLng(lat,lon));
     });
     S.gpxPoints=path;
-    console.log(`GPX loaded: ${path.length} points`);
+    console.log(`GPX loaded: ${path.length} points from ${filename}`);
     return path;
   }catch(e){
     console.error('Failed to load GPX:',e);
@@ -165,9 +165,49 @@ async function loadGPXCourse(){
   }
 }
 
-async function drawCoursePath(){
+async function drawCoursePath(eventId){
   if(!S.map)return;
-  const path=await loadGPXCourse();
+  let gpxFile=null;
+  let checkpoints=[];
+  
+  if(eventId===133){
+    // 2025 JTBC 서울마라톤
+    gpxFile='/course-jtbc2025.gpx';
+    checkpoints=[
+      {name:'출발',distance:0.00},
+      {name:'5K',distance:5.00},
+      {name:'10K',distance:10.00},
+      {name:'15K',distance:15.00},
+      {name:'20K',distance:20.00},
+      {name:'Half',distance:21.10},
+      {name:'25K',distance:25.00},
+      {name:'30K',distance:30.00},
+      {name:'35K',distance:35.00},
+      {name:'40K',distance:40.00},
+      {name:'도착',distance:42.195}
+    ];
+  }else if(eventId===132||eventId===91){
+    // 2025/2024 춘천마라톤
+    gpxFile='/course-chuncheon-2025.gpx';
+    checkpoints=[
+      {name:'출발',distance:0.00},
+      {name:'반환점',distance:4.00},
+      {name:'5K',distance:5.00},
+      {name:'10K',distance:10.00},
+      {name:'15K',distance:15.00},
+      {name:'20K',distance:20.00},
+      {name:'Half',distance:21.10},
+      {name:'25K',distance:25.00},
+      {name:'30K',distance:30.00},
+      {name:'35K',distance:35.00},
+      {name:'40K',distance:40.00},
+      {name:'도착',distance:42.20}
+    ];
+  }
+  
+  if(!gpxFile)return;
+  
+  const path=await loadGPXCourse(gpxFile);
   if(!path||path.length===0)return;
   if(S.coursePath){S.coursePath.setMap(null);}
   S.coursePath=new naver.maps.Polyline({
@@ -185,21 +225,7 @@ async function drawCoursePath(){
   S.checkpointMarkers.forEach(m=>m.setMap(null));
   S.checkpointMarkers=[];
   
-  // 체크포인트 마커 추가 (춘천마라톤만)
-  const checkpoints=[
-    {name:'출발',distance:0.00},
-    {name:'반환점',distance:4.00},
-    {name:'5K',distance:5.00},
-    {name:'10K',distance:10.00},
-    {name:'15K',distance:15.00},
-    {name:'20K',distance:20.00},
-    {name:'Half',distance:21.10},
-    {name:'25K',distance:25.00},
-    {name:'30K',distance:30.00},
-    {name:'35K',distance:35.00},
-    {name:'40K',distance:40.00},
-    {name:'도착',distance:42.20}
-  ];
+  // 체크포인트 마커 추가
   checkpoints.forEach(cp=>{
     const pos=getPositionOnRoute(cp.distance);
     if(pos){
@@ -219,7 +245,10 @@ async function drawCoursePath(){
 
 async function loadEvents(){
  const el=$('#eventsList');
- const list=[{id:132,name:'2025 춘천마라톤',date:'2025-10-26'}];
+ const list=[
+   {id:133,name:'2025 JTBC 서울마라톤',date:'2025-11-02'},
+   {id:132,name:'2025 춘천마라톤',date:'2025-10-26'}
+ ];
  el.innerHTML='';
  list.forEach(ev=>{
    const b=document.createElement('button');
@@ -230,7 +259,7 @@ async function loadEvents(){
  });
 }
 
-function pickEvent(ev,b){S.eventId=ev.id;$('#picked').textContent=`${ev.name} (#${ev.id})`;$$('.evbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const saved=localStorage.getItem(`bibs:${S.eventId}`);if(saved)$('#bibs').value=JSON.parse(saved).join('\n');if(S.map){if(ev.id===132||ev.id===91){drawCoursePath();}else{if(S.coursePath){S.coursePath.setMap(null);S.coursePath=null;}S.checkpointMarkers.forEach(m=>m.setMap(null));S.checkpointMarkers=[];}}}
+function pickEvent(ev,b){S.eventId=ev.id;$('#picked').textContent=`${ev.name} (#${ev.id})`;$$('.evbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const saved=localStorage.getItem(`bibs:${S.eventId}`);if(saved)$('#bibs').value=JSON.parse(saved).join('\n');if(S.map){if(ev.id===133||ev.id===132||ev.id===91){drawCoursePath(ev.id);}else{if(S.coursePath){S.coursePath.setMap(null);S.coursePath=null;}S.checkpointMarkers.forEach(m=>m.setMap(null));S.checkpointMarkers=[];}}}
 $('#saveBibs').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');localStorage.setItem(`bibs:${S.eventId}`,JSON.stringify(parseBibs($('#bibs').value)))};
 async function fetchPlayer(eid,bib){const r=await fetch(API(`event/${eid}/player/${bib}`));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
 function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);if(!recs.length)return{status:'대기',d:0,name:'',iso:'',estimated:0};const lastRec=recs.at(-1);const d=parseFloat(lastRec.point.distance);const name=lastRec.point.name;const time=lastRec.time_point;const date=j.event?.date;const lastTime=new Date(`${date}T${time}`);const now=new Date();const elapsedSec=(now-lastTime)/1000;let estimatedDist=d;if(elapsedSec>0&&!j.result_nettime){let paceSec=360;if(j.pace_nettime){const paceStr=j.pace_nettime.split('.')[0];paceSec=timeToSeconds(paceStr);}if(paceSec>0){const kmPerSec=1/paceSec;const movedKm=kmPerSec*elapsedSec;estimatedDist=Math.min(d+movedKm,dist);}}return{status:j.result_nettime?'완주':'주행',d,name,iso:lastTime.toISOString(),estimated:estimatedDist}}
