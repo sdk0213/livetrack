@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>테스트 맵 - 좌표 확인</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+    #map { width: 100%; height: 100vh; }
+  </style>
+  <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=04ebpnqto6"></script>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    const points = [
+      { lat: 37.878647338613455, lng: 127.71512364547729, name: "출발" },
+      { lat: 37.87885058015693, lng: 127.71859978836059, name: "반환점" },
+      { lat: 37.879019947681456, lng: 127.72357796829223, name: "5K" },
+      { lat: 37.879121568009225, lng: 127.73040150802612, name: "10K" },
+      { lat: 37.879053821139635, lng: 127.73422097366333, name: "15K" },
+      { lat: 37.87918931481653, lng: 127.73821210067749, name: "20K" },
+      { lat: 37.8792231881968, lng: 127.74233197372436, name: "Half" },
+      { lat: 37.87929093491064, lng: 127.74567937057495, name: "25K" },
+      { lat: 37.87742787757546, lng: 127.7478680531311, name: "30K" },
+      { lat: 37.87539539764788, lng: 127.74846886795044, name: "35K" },
+      { lat: 37.87376937332855, lng: 127.74645184677124, name: "40K" },
+      { lat: 37.873566117765094, lng: 127.74164532821655, name: "도착" }
+    ];
+
+    // 지도 초기화
+    const map = new naver.maps.Map('map', {
+      center: new naver.maps.LatLng(37.878, 127.73),
+      zoom: 13
+    });
+
+    // 폴리라인 경로 생성
+    const path = points.map(p => new naver.maps.LatLng(p.lat, p.lng));
+    
+    // 빨간 선으로 경로 그리기
+    const polyline = new naver.maps.Polyline({
+      path: path,
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeWeight: 5,
+      map: map
+    });
+
+    // 각 지점에 마커와 라벨 표시
+    points.forEach((p, idx) => {
+      const position = new naver.maps.LatLng(p.lat, p.lng);
+      
+      // 마커
+      const marker = new naver.maps.Marker({
+        position: position,
+        map: map,
+        icon: {
+          content: `<div style="
+            width: 24px;
+            height: 24px;
+            background: #4285f4;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+          ">${idx}</div>`,
+          anchor: new naver.maps.Point(12, 12)
+        }
+      });
+
+      // 라벨
+      const label = new naver.maps.Marker({
+        position: position,
+        map: map,
+        icon: {
+          content: `<div style="
+            background: rgba(66, 133, 244, 0.95);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 12px;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: 2px solid white;
+          ">${p.name}</div>`,
+          anchor: new naver.maps.Point(0, 35)
+        }
+      });
+
+      // 클릭 시 좌표 정보 표시
+      const infoWindow = new naver.maps.InfoWindow({
+        content: `<div style="padding:10px;min-width:200px;">
+          <h3 style="margin:0 0 10px 0;">${p.name}</h3>
+          <p style="margin:5px 0;font-size:12px;"><strong>위도:</strong> ${p.lat}</p>
+          <p style="margin:5px 0;font-size:12px;"><strong>경도:</strong> ${p.lng}</p>
+          <p style="margin:5px 0;font-size:12px;"><strong>순서:</strong> ${idx}</p>
+        </div>`
+      });
+
+      naver.maps.Event.addListener(marker, 'click', () => {
+        if (infoWindow.getMap()) {
+          infoWindow.close();
+        } else {
+          infoWindow.open(map, marker);
+        }
+      });
+
+      naver.maps.Event.addListener(label, 'click', () => {
+        if (infoWindow.getMap()) {
+          infoWindow.close();
+        } else {
+          infoWindow.open(map, marker);
+        }
+      });
+    });
+
+    // 지도 범위를 모든 마커가 보이도록 조정
+    const bounds = new naver.maps.LatLngBounds();
+    points.forEach(p => {
+      bounds.extend(new naver.maps.LatLng(p.lat, p.lng));
+    });
+    map.fitBounds(bounds);
+
+    console.log(`총 ${points.length}개 지점 표시됨`);
+  </script>
+</body>
+</html>
