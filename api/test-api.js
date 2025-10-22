@@ -29,21 +29,27 @@ export default async function handler(req, res) {
     
     // 주자별 설정
     const runners = {
-      '1080': {
-        name: '성대경',
-        team_name: '런티풀',
-        pace: 270 // 4:30/km (4:00~6:00 사이 랜덤)
-      },
-      '2296': {
-        name: '고민지',
-        team_name: '달리기클럽',
-        pace: 330 // 5:30/km
-      },
-      '2634': {
-        name: '김이수',
-        team_name: '러닝크루',
-        pace: 250 // 4:10/km
-      }
+      '2634': { name: '장건희', team_name: 'B', pace: 292 }, // 3:25 (4:52/km)
+      '2912': { name: '김이수', team_name: 'B', pace: 254 }, // 2:59
+      '3097': { name: '유재원', team_name: 'B', pace: 269 }, // 3:09
+      '3148': { name: '이재경', team_name: 'B', pace: 297 }, // 3:29
+      '9430': { name: '박종현', team_name: 'D', pace: 254 }, // 2:59
+      '13292': { name: '문영채', team_name: 'E', pace: 300 }, // 완주
+      '1080': { name: '성대경', team_name: 'A', pace: 248 }, // 2:54
+      '16322': { name: '도시연', team_name: 'F', pace: 398 }, // 4:40
+      '2296': { name: '박용준', team_name: 'B', pace: 383 }, // 4:30
+      '14618': { name: '최병찬', team_name: 'F', pace: 426 }, // 5:00
+      '10384': { name: '이희수', team_name: '', pace: 383 }, // 4:30
+      '14614': { name: '최동철', team_name: 'F', pace: 426 }, // 5:00
+      '14906': { name: '박유영', team_name: 'F', pace: 339 }, // 3:59
+      '3212': { name: '전우진', team_name: 'B', pace: 298 }, // 3:30
+      '10352': { name: '어승혜', team_name: 'D', pace: 383 }, // 4:30
+      '5969': { name: '이득우', team_name: 'C', pace: 341 }, // 4:00
+      '13373': { name: '황민효', team_name: 'E', pace: 383 }, // 4:30
+      '15493': { name: '강한철', team_name: 'F', pace: 370 }, // 4:20
+      '7153': { name: '최인아', team_name: 'C', pace: 426 }, // 5:00
+      '13306': { name: '송주엽', team_name: 'E', pace: 469 }, // 5:30
+      '13366': { name: '허수민', team_name: 'E', pace: 362 }  // 4:15
     };
     
     const runner = runners[bib] || runners['1080'];
