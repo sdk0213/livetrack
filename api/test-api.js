@@ -125,9 +125,7 @@ export default async function handler(req, res) {
       
       const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
       const milliseconds = String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
-      const timePoint = new Date(startTime.getTime() + cumulativeSeconds * 1000)
-        .toLocaleTimeString('ko-KR', { hour12: false })
-        .split(' ')[0] + '.' + milliseconds;
+      const timePoint = recordTime.toTimeString().slice(0, 8) + '.' + milliseconds;
       
       records.push({
         event_id: 132,
