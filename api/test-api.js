@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // 현재 시간
     const now = new Date();
-    const eventDate = '2025-10-26'; // 춘천 마라톤 날짜
+    const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
     
     // 오후 3시 (출발 시간) - 고정
     const startTime = new Date(eventDate + 'T15:00:00');
