@@ -125,10 +125,6 @@
   <div class="wrap">
     <h1>RunCheer <span style="color:#5cc8ff;font-size:14px">Beta</span> <span style="font-size:10px;color:var(--muted);font-weight:normal">(v0.0.0.1)</span><br><span style="font-size:14px;font-weight:normal;color:var(--muted)">(러너를 응원하자! 🏃‍♂️💨)</span></h1>
     <div class="header-warning">⚠️ 런티풀 외 배포(유출) 절대 금지</div>
-    <div class="header-warning" style="color: #666;">
-      ℹ️ 주자의 예상 위치는 이전 구간의 페이스를 기준으로 산정됩니다<br>
-      ℹ️ 처음 출발시에는 6:30 페이스로 예측되어 산정됩니다
-    </div>
 
     <!-- 이벤트 리스트 -->
     <div class="card">
@@ -374,7 +370,7 @@ function pickEvent(ev,b){
 }
 $('#saveBibs').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');localStorage.setItem(`bibs:${S.eventId}`,JSON.stringify(parseBibs($('#bibs').value)))};
 async function fetchPlayer(eid,bib){const r=await fetch(API(`event/${eid}/player/${bib}`));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
-function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);if(!recs.length)return{status:'대기',d:0,name:'',iso:'',estimated:0};const lastRec=recs.at(-1);const d=parseFloat(lastRec.point.distance);const name=lastRec.point.name;const time=lastRec.time_point;const date=j.event?.date;const lastTime=new Date(`${date}T${time}`);const now=new Date();const elapsedSec=(now-lastTime)/1000;let estimatedDist=d;if(elapsedSec>0&&!j.result_nettime){let paceSec=390; if(j.pace_nettime){const paceStr=j.pace_nettime.split('.')[0];paceSec=timeToSeconds(paceStr);}if(paceSec>0){const kmPerSec=1/paceSec;const movedKm=kmPerSec*elapsedSec;estimatedDist=Math.min(d+movedKm,dist);}}return{status:j.result_nettime?'완주':'주행',d,name,iso:lastTime.toISOString(),estimated:estimatedDist}}
+function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);if(!recs.length)return{status:'대기',d:0,name:'',iso:'',estimated:0};const lastRec=recs.at(-1);const d=parseFloat(lastRec.point.distance);const name=lastRec.point.name;const time=lastRec.time_point;const date=j.event?.date;const lastTime=new Date(`${date}T${time}`);const now=new Date();const elapsedSec=(now-lastTime)/1000;let estimatedDist=d;if(elapsedSec>0&&!j.result_nettime){let paceSec=360;if(j.pace_nettime){const paceStr=j.pace_nettime.split('.')[0];paceSec=timeToSeconds(paceStr);}if(paceSec>0){const kmPerSec=1/paceSec;const movedKm=kmPerSec*elapsedSec;estimatedDist=Math.min(d+movedKm,dist);}}return{status:j.result_nettime?'완주':'주행',d,name,iso:lastTime.toISOString(),estimated:estimatedDist}}
 function cleanTime(t){if(!t)return'';return t.split('.')[0]}
 function timeToSeconds(t){if(!t)return 0;const clean=t.split('.')[0];const p=clean.split(':').map(Number);if(p.length===3)return p[0]*3600+p[1]*60+p[2];if(p.length===2)return p[0]*60+p[1];return 0}
 function calcPace(distKm,sec){if(!distKm||distKm<=0)return'';const minPerKm=sec/60/distKm;const m=Math.floor(minPerKm);const s=Math.round((minPerKm-m)*60);return`${m}'${s.toString().padStart(2,'0')}"`}
@@ -421,6 +417,7 @@ $('#stopBtn').onclick=()=>{clearInterval(S.timer);clearInterval(S.mapTimer);stop
 $('#runtifulBtn').onclick=()=>{const runtifulBibs=[1080,2296,2634,2912,3097,3148,3212,5969,7153,8904,9430,10352,10384,13292,13306,13324,13366,13373,14614,14618,14906,15493,16322];$('#bibs').value=runtifulBibs.join(', ')};
 loadEvents();
 setTimeout(initMap,500);
+</script>
 </script>
 </body>
 </html>
