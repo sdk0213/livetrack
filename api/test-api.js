@@ -15,26 +15,24 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "missing 'path' query" });
     }
 
-    // 현재 시간 기준으로 동적 데이터 생성 (출발: 오후 3시, 현재: 오후 2시 55분)
+    // 현재 시간
     const now = new Date();
-    const eventDate = now.toISOString().split('T')[0]; // 오늘 날짜
+    const eventDate = '2025-10-26'; // 춘천 마라톤 날짜
     
-    // 오후 2시 55분 (현재 시간으로 설정)
-    const currentTime = new Date(eventDate + 'T14:55:00');
-    
-    // 오후 3시 (출발 시간)
+    // 오후 3시 (출발 시간) - 고정
     const startTime = new Date(eventDate + 'T15:00:00');
     
-    // 경과 시간 계산 (초)
-    const elapsedSeconds = Math.max(0, (currentTime - startTime) / 1000);
+    // 현재 시간과 출발 시간의 차이 계산 (실시간)
+    const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
-    // 주행 거리 계산 (5분/km 페이스로 가정 = 12km/h)
-    const paceSecondsPerKm = 300; // 5분/km = 300초/km
-    const distanceKm = Math.min(42.195, elapsedSeconds / paceSecondsPerKm);
+    // 주행 거리 계산 (5분/km 페이스로 가정 = 12km/h = 300초/km)
+    const paceSecondsPerKm = 300;
+    const distanceKm = Math.min(42.20, elapsedSeconds / paceSecondsPerKm);
     
-    // 체크포인트 기록 생성
+    // 체크포인트 (춘천 마라톤 기준)
     const checkpoints = [
       { name: '출발', distance: 0.00 },
+      { name: '반환점', distance: 4.00 },
       { name: '5K', distance: 5.00 },
       { name: '10K', distance: 10.00 },
       { name: '15K', distance: 15.00 },
@@ -44,17 +42,16 @@ export default async function handler(req, res) {
       { name: '30K', distance: 30.00 },
       { name: '35K', distance: 35.00 },
       { name: '40K', distance: 40.00 },
-      { name: '도착', distance: 42.195 }
+      { name: '도착', distance: 42.20 }
     ];
     
     const records = [];
-    let cumulativeSeconds = 0;
     
     for (const cp of checkpoints) {
       if (cp.distance > distanceKm) break;
       
-      cumulativeSeconds = cp.distance * paceSecondsPerKm;
-      const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
+      const cpSeconds = cp.distance * paceSecondsPerKm;
+      const recordTime = new Date(startTime.getTime() + cpSeconds * 1000);
       const timePoint = recordTime.toTimeString().split(' ')[0]; // HH:MM:SS
       
       records.push({
@@ -67,8 +64,8 @@ export default async function handler(req, res) {
     }
     
     // 완주 여부 확인
-    const isFinished = distanceKm >= 42.195;
-    const netTime = isFinished ? formatTime(42.195 * paceSecondsPerKm) : null;
+    const isFinished = distanceKm >= 42.20;
+    const netTime = isFinished ? formatTime(42.20 * paceSecondsPerKm) : null;
     const pace = isFinished ? "5'00\"" : null;
     
     // 테스트 데이터
@@ -78,12 +75,12 @@ export default async function handler(req, res) {
       name: '성대경',
       team_name: '런티풀',
       event: {
-        id: 133,
-        name: '2025 JTBC 서울마라톤',
+        id: 132,
+        name: '2025 춘천마라톤',
         date: eventDate
       },
       course: {
-        distance: '42.195'
+        distance: '42.20'
       },
       records: records,
       result_nettime: netTime,
