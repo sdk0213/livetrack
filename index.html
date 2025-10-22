@@ -83,7 +83,7 @@
       <div id="status" class="tiny muted">이벤트를 선택하고 시작을 누르세요.</div>
       <table>
         <thead>
-          <tr><th>이름</th><th>배번</th><th>상태</th><th>누적(km)</th><th>마지막 통과</th><th>시각</th><th>넷기록</th><th>페이스</th><th>스플릿</th><th>오류</th></tr>
+          <tr><th>이름</th><th>배번</th><th>상태</th><th>누적(km)</th><th>마지막 통과</th><th>넷기록</th><th>페이스</th><th>스플릿</th><th>오류</th></tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -134,9 +134,9 @@ $('#saveBibs').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');local
 async function fetchPlayer(eid,bib){const r=await fetch(API(`event/${eid}/player/${bib}`));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
 function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);if(!recs.length)return{status:'대기',d:0,last:'',iso:''};const d=recs.at(-1).point.distance;const name=recs.at(-1).point.name;const time=recs.at(-1).time_point;const date=j.event?.date;return{status:j.result_nettime?'완주':'주행',d,name,iso:new Date(`${date}T${time}`).toISOString()}}
 function renderSplits(j){return `<div class='splits'>${(j.records||[]).map(r=>`<div>${r.point.name||''} ${r.point.distance}km ${r.time_point}</div>`).join('')}</div>`}
-function ensureRow(bib){if(S.rows.has(bib))return S.rows.get(bib);const tr=document.createElement('tr');tr.innerHTML='<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';$('#tbody').appendChild(tr);const c=tr.querySelectorAll('td');S.rows.set(bib,{tr,c});return S.rows.get(bib)}
-function updateRow(j){const bib=j.num||j.tag;const r=ensureRow(bib);const est=estimateNow(j);r.c[0].textContent=j.name;r.c[1].textContent=bib;r.c[2].textContent=est.status;r.c[3].textContent=est.d;r.c[4].textContent=est.last;r.c[5].textContent=fmtClockISO(est.iso);r.c[6].textContent=j.result_nettime;r.c[7].textContent=j.pace_nettime;r.c[8].innerHTML=renderSplits(j);r.c[9].textContent='';}
-function updateError(bib,e){const r=ensureRow(bib);r.c[9].textContent=e;}
+function ensureRow(bib){if(S.rows.has(bib))return S.rows.get(bib);const tr=document.createElement('tr');tr.innerHTML='<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';$('#tbody').appendChild(tr);const c=tr.querySelectorAll('td');S.rows.set(bib,{tr,c});return S.rows.get(bib)}
+function updateRow(j){const bib=j.num||j.tag;const r=ensureRow(bib);const est=estimateNow(j);r.c[0].textContent=j.name;r.c[1].textContent=bib;r.c[2].textContent=est.status;r.c[3].textContent=est.d;r.c[4].textContent=est.name;r.c[5].textContent=j.result_nettime;r.c[6].textContent=j.pace_nettime;r.c[7].innerHTML=renderSplits(j);r.c[8].textContent='';}
+function updateError(bib,e){const r=ensureRow(bib);r.c[8].textContent=e;}
 async function tick(){if(!S.eventId)return;const bibs=parseBibs($('#bibs').value);const seen=new Set(bibs);for(const b of bibs){try{const j=await fetchPlayer(S.eventId,b);updateRow(j);}catch(e){updateError(b,e)}}for(const [b,{tr}]of S.rows){if(!seen.has(b)){tr.remove();S.rows.delete(b)}}}
 $('#startBtn').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');$('#startBtn').disabled=true;$('#stopBtn').disabled=false;tick();S.timer=setInterval(tick,Math.max(5,Number($('#intervalSec').value))*1000)};
 $('#stopBtn').onclick=()=>{clearInterval(S.timer);S.timer=null;$('#startBtn').disabled=false;$('#stopBtn').disabled=true};
