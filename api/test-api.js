@@ -78,11 +78,41 @@ export default async function handler(req, res) {
       return x - Math.floor(x);
     }
     
-    for (let i = 0; i < checkpoints.length; i++) {
+    // 출발점(P0)은 무조건 추가
+    records.push({
+      event_id: 132,
+      course_cd: 'Full',
+      point_cd: 'P0',
+      lap: 1,
+      player_num: bib,
+      created_at: new Date(eventDate + 'T06:00:00.000Z').toISOString(),
+      updated_at: null,
+      time_section: null,
+      time_sum: "0:00:00",
+      time_point: startTime.toTimeString().split(' ')[0] + '.00',
+      point: {
+        event_id: 132,
+        course_cd: 'Full',
+        point_cd: 'P0',
+        lap: 1,
+        created_at: new Date(eventDate + 'T01:19:24.294Z').toISOString(),
+        updated_at: null,
+        name: '출발',
+        distance: "0.00",
+        checkpoint: true,
+        before_record: true,
+        lat: 37.874123,
+        lng: 127.734567
+      }
+    });
+    
+    // 나머지 체크포인트 처리 (P1부터)
+    for (let i = 1; i < checkpoints.length; i++) {
       const cp = checkpoints[i];
+      const prevCp = checkpoints[i-1];
       
-      // 구간별 랜덤 페이스 적용 (±10초 변동) - 배번과 체크포인트 인덱스로 시드 생성
-      const sectionDistance = i === 0 ? cp.distance : cp.distance - checkpoints[i-1].distance;
+      // 구간별 랜덤 페이스 적용 (±10초 변동)
+      const sectionDistance = cp.distance - prevCp.distance;
       const seed = parseInt(bib) * 100 + i;
       const variation = (seededRandom(seed) - 0.5) * 20; // -10 ~ +10초
       const sectionPace = runner.pace + variation;
@@ -90,7 +120,7 @@ export default async function handler(req, res) {
       
       cumulativeSeconds += sectionSeconds;
       
-      console.log(`체크포인트 ${i}: ${cp.name}, 누적시간: ${cumulativeSeconds}초, 경과시간: ${elapsedSeconds}초`);
+      console.log(`체크포인트 ${i}: ${cp.name}, 구간거리: ${sectionDistance}km, 구간시간: ${sectionSeconds}초, 누적시간: ${cumulativeSeconds}초, 경과시간: ${elapsedSeconds}초`);
       
       // 현재까지 누적 시간이 경과 시간보다 크면 아직 도달하지 않음
       if (cumulativeSeconds > elapsedSeconds) {
@@ -102,8 +132,6 @@ export default async function handler(req, res) {
       const milliseconds = String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
       const timePoint = recordTime.toTimeString().split(' ')[0] + '.' + milliseconds;
       
-      const sectionTime = i === 0 ? null : formatTime(sectionSeconds);
-      
       records.push({
         event_id: 132,
         course_cd: 'Full',
@@ -112,7 +140,7 @@ export default async function handler(req, res) {
         player_num: bib,
         created_at: new Date(eventDate + 'T06:00:00.000Z').toISOString(),
         updated_at: null,
-        time_section: sectionTime,
+        time_section: formatTime(sectionSeconds),
         time_sum: formatTime(cumulativeSeconds),
         time_point: timePoint,
         point: {
