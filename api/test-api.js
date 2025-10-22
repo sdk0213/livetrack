@@ -48,8 +48,6 @@ export default async function handler(req, res) {
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
-    console.log(`배번: ${bib}, 경과시간: ${elapsedSeconds}초 (${Math.floor(elapsedSeconds/60)}분)`);
-    
     // 주행 거리 계산
     const distanceKm = Math.min(42.20, elapsedSeconds / runner.pace);
     
@@ -120,11 +118,8 @@ export default async function handler(req, res) {
       
       cumulativeSeconds += sectionSeconds;
       
-      console.log(`체크포인트 ${i}: ${cp.name}, 구간거리: ${sectionDistance}km, 구간시간: ${sectionSeconds}초, 누적시간: ${cumulativeSeconds}초, 경과시간: ${elapsedSeconds}초`);
-      
       // 현재까지 누적 시간이 경과 시간보다 크면 아직 도달하지 않음
       if (cumulativeSeconds > elapsedSeconds) {
-        console.log(`Break at ${cp.name} - 아직 도달 안함`);
         break;
       }
       
@@ -183,7 +178,13 @@ export default async function handler(req, res) {
       },
       records: records,
       result_nettime: netTime,
-      pace_nettime: pace
+      pace_nettime: pace,
+      _debug: {
+        elapsedSeconds: elapsedSeconds,
+        elapsedMinutes: Math.floor(elapsedSeconds / 60),
+        pace: runner.pace,
+        recordsCount: records.length
+      }
     };
 
     res.setHeader('Content-Type', 'application/json');
