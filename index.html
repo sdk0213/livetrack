@@ -120,7 +120,46 @@ function API(path){return `/api/proxy?path=${encodeURIComponent(path)}`;}
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
 function parseBibs(t){return t.split(/[\n,\s]+/).map(s=>s.trim()).filter(Boolean)}
 function fmtClockISO(i){return i?i.replace('T',' ').replace('Z',''):''}
-const S={eventId:null,timer:null,rows:new Map(),map:null,markers:new Map(),eventData:null};
+const S={eventId:null,timer:null,rows:new Map(),map:null,markers:new Map(),eventData:null,coursePath:null};
+
+async function loadGPXCourse(){
+  try{
+    const r=await fetch('/course.gpx');
+    const text=await r.text();
+    const parser=new DOMParser();
+    const xml=parser.parseFromString(text,'text/xml');
+    const trkpts=xml.querySelectorAll('trkpt');
+    const path=[];
+    trkpts.forEach(pt=>{
+      const lat=parseFloat(pt.getAttribute('lat'));
+      const lon=parseFloat(pt.getAttribute('lon'));
+      if(lat&&lon)path.push(new naver.maps.LatLng(lat,lon));
+    });
+    console.log(`GPX loaded: ${path.length} points`);
+    return path;
+  }catch(e){
+    console.error('Failed to load GPX:',e);
+    return null;
+  }
+}
+
+async function drawCoursePath(){
+  if(!S.map)return;
+  const path=await loadGPXCourse();
+  if(!path||path.length===0)return;
+  if(S.coursePath){S.coursePath.setMap(null);}
+  S.coursePath=new naver.maps.Polyline({
+    path:path,
+    strokeColor:'#FF0000',
+    strokeOpacity:0.6,
+    strokeWeight:4,
+    map:S.map
+  });
+  const bounds=new naver.maps.LatLngBounds();
+  path.forEach(p=>bounds.extend(p));
+  S.map.fitBounds(bounds);
+  console.log('Course path drawn');
+}
 
 async function loadEvents(){
  const el=$('#eventsList');el.innerHTML='<div>불러오는 중...</div>';
@@ -153,7 +192,7 @@ async function loadEvents(){
  }
 }
 
-function pickEvent(ev,b){S.eventId=ev.id;$('#picked').textContent=`${ev.name} (#${ev.id})`;$$('.evbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const saved=localStorage.getItem(`bibs:${S.eventId}`);if(saved)$('#bibs').value=JSON.parse(saved).join('\n');}
+function pickEvent(ev,b){S.eventId=ev.id;$('#picked').textContent=`${ev.name} (#${ev.id})`;$$('.evbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const saved=localStorage.getItem(`bibs:${S.eventId}`);if(saved)$('#bibs').value=JSON.parse(saved).join('\n');if(S.map){if(ev.id===132||ev.id===91){drawCoursePath();}else{if(S.coursePath){S.coursePath.setMap(null);S.coursePath=null;}}}}
 $('#reloadEv').onclick=loadEvents;
 $('#saveBibs').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');localStorage.setItem(`bibs:${S.eventId}`,JSON.stringify(parseBibs($('#bibs').value)))};
 async function fetchPlayer(eid,bib){const r=await fetch(API(`event/${eid}/player/${bib}`));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
