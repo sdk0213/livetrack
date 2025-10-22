@@ -26,8 +26,9 @@
     table{width:100%;border-collapse:separate;border-spacing:0 8px}
     th,td{text-align:left;padding:10px 12px;vertical-align:top}
     tbody tr{background:#0e111a}
-    tbody tr td:first-child{border-radius:10px 0 0 10px}
-    tbody tr td:last-child{border-radius:0 10px 10px 0}
+    tbody tr.player-main td:first-child{border-radius:10px 0 0 0}
+    tbody tr.player-main td:last-child{border-radius:0 10px 0 0}
+    tbody tr.player-splits td{border-top:1px solid #1a1f2e;border-radius:0 0 10px 10px;padding-top:8px}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
     .tiny{font-size:12px}
     .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
@@ -35,7 +36,11 @@
     .pill.fin{background:rgba(159,176,199,.12);color:#d7e1f3}
     .pill.wait{background:rgba(159,176,199,.08);color:#b6c3d7}
     .err{color:var(--err)}
-    .splits{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+    .splits{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);padding:5px 0}
+    .splits.collapsed{max-height:60px;overflow:hidden;position:relative}
+    .splits.collapsed::after{content:'';position:absolute;bottom:0;left:0;right:0;height:30px;background:linear-gradient(transparent,#0e111a)}
+    .toggle-splits{cursor:pointer;color:var(--acc);font-size:11px;margin-top:5px;user-select:none}
+    .toggle-splits:hover{text-decoration:underline}
     #map{width:100%;height:500px;border-radius:10px;background:#0e111a}
     .player-label{
       background:rgba(92,200,255,0.95);
@@ -108,7 +113,7 @@
       <div id="status" class="tiny muted">이벤트를 선택하고 시작을 누르세요.</div>
       <table>
         <thead>
-          <tr><th>이름</th><th>배번</th><th>상태</th><th>누적(km)</th><th>마지막 통과</th><th>넷기록</th><th>페이스</th><th>스플릿</th><th>오류</th></tr>
+          <tr><th>이름</th><th>배번</th><th>상태</th><th>누적(km)</th><th>마지막 통과</th><th>넷기록</th><th>페이스</th><th>오류</th></tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -239,14 +244,15 @@ function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const rec
 function cleanTime(t){if(!t)return'';return t.split('.')[0]}
 function timeToSeconds(t){if(!t)return 0;const clean=t.split('.')[0];const p=clean.split(':').map(Number);if(p.length===3)return p[0]*3600+p[1]*60+p[2];if(p.length===2)return p[0]*60+p[1];return 0}
 function calcPace(distKm,sec){if(!distKm||distKm<=0)return'';const minPerKm=sec/60/distKm;const m=Math.floor(minPerKm);const s=Math.round((minPerKm-m)*60);return`${m}'${s.toString().padStart(2,'0')}"`}
-function renderSplits(j){const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);return`<div class='splits'>${recs.map((r,i)=>{let pace='';if(i>0){const prevDist=recs[i-1].point.distance;const dist=r.point.distance-prevDist;const prevSec=timeToSeconds(recs[i-1].time_point);const sec=timeToSeconds(r.time_point)-prevSec;pace=` (${calcPace(dist,sec)})`}return`<div>${r.point.name||''} ${r.point.distance}km ${cleanTime(r.time_point)}${pace}</div>`}).join('')}</div>`}
-function ensureRow(bib){if(S.rows.has(bib))return S.rows.get(bib);const tr=document.createElement('tr');tr.innerHTML='<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';$('#tbody').appendChild(tr);const c=tr.querySelectorAll('td');S.rows.set(bib,{tr,c});return S.rows.get(bib)}
-function updateRow(j){const bib=j.num||j.tag;const r=ensureRow(bib);const est=estimateNow(j);r.c[0].textContent=j.name;r.c[1].textContent=bib;r.c[2].textContent=est.status;r.c[3].textContent=est.d;r.c[4].textContent=est.name;r.c[5].textContent=cleanTime(j.result_nettime);r.c[6].textContent=cleanTime(j.pace_nettime);r.c[7].innerHTML=renderSplits(j);r.c[8].textContent='';updateMarker(j,bib);}
-function updateError(bib,e){const r=ensureRow(bib);r.c[8].textContent=e;}
+function renderSplits(j){const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);const bib=j.num||j.tag;const splitsId=`splits-${bib}`;const toggleId=`toggle-${bib}`;return`<div class='splits collapsed' id='${splitsId}'>${recs.map((r,i)=>{let pace='';if(i>0){const prevDist=recs[i-1].point.distance;const dist=r.point.distance-prevDist;const prevSec=timeToSeconds(recs[i-1].time_point);const sec=timeToSeconds(r.time_point)-prevSec;pace=` (${calcPace(dist,sec)})`}return`<div>${r.point.name||''} ${r.point.distance}km ${cleanTime(r.time_point)}${pace}</div>`}).join('')}</div><div class='toggle-splits' id='${toggleId}' onclick="toggleSplits('${splitsId}','${toggleId}')">▼ 더보기</div>`}
+function ensureRow(bib){if(S.rows.has(bib))return S.rows.get(bib);const trMain=document.createElement('tr');trMain.className='player-main';trMain.innerHTML='<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';const trSplits=document.createElement('tr');trSplits.className='player-splits';trSplits.innerHTML='<td colspan="8" style="padding:8px 12px"></td>';$('#tbody').appendChild(trMain);$('#tbody').appendChild(trSplits);const c=trMain.querySelectorAll('td');const splitsCell=trSplits.querySelector('td');S.rows.set(bib,{trMain,trSplits,c,splitsCell});return S.rows.get(bib)}
+function updateRow(j){const bib=j.num||j.tag;const r=ensureRow(bib);const est=estimateNow(j);r.c[0].textContent=j.name;r.c[1].textContent=bib;r.c[2].textContent=est.status;r.c[3].textContent=est.d;r.c[4].textContent=est.name;r.c[5].textContent=cleanTime(j.result_nettime);r.c[6].textContent=cleanTime(j.pace_nettime);r.c[7].textContent='';r.splitsCell.innerHTML=renderSplits(j);updateMarker(j,bib);}
+function updateError(bib,e){const r=ensureRow(bib);r.c[7].textContent=e;}
+function toggleSplits(splitsId,toggleId){const splits=document.getElementById(splitsId);const toggle=document.getElementById(toggleId);if(!splits||!toggle)return;if(splits.classList.contains('collapsed')){splits.classList.remove('collapsed');toggle.textContent='▲ 접기';}else{splits.classList.add('collapsed');toggle.textContent='▼ 더보기';}}
 function initMap(){if(!window.naver||!window.naver.maps){console.error('Naver Maps API not loaded');return}const center=new naver.maps.LatLng(37.5665,126.9780);S.map=new naver.maps.Map('map',{center:center,zoom:13,mapTypeControl:true});console.log('Map initialized');}
 function updateMarker(playerData,bib){if(!S.map)return;const est=estimateNow(playerData);const distKm=parseFloat(est.estimated);if(!distKm||distKm===0){console.log(`No distance for player ${bib}`);return;}const pos=getPositionOnRoute(distKm);if(!pos){console.log(`Cannot calculate position for player ${bib} at ${distKm}km`);return;}if(S.markers.has(bib)){const item=S.markers.get(bib);item.marker.setPosition(pos);item.label.setPosition(pos);const newContent=`<div class="player-label" style="background:rgba(66,133,244,0.95);">${playerData.name}</div>`;item.label.setIcon({content:newContent,anchor:new naver.maps.Point(0,30)});}else{const marker=new naver.maps.Marker({position:pos,map:S.map,icon:{content:`<div style="width:12px;height:12px;background:#5cc8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,anchor:new naver.maps.Point(9,9)}});const labelContent=`<div class="player-label" style="background:rgba(66,133,244,0.95);">${playerData.name}</div>`;const label=new naver.maps.Marker({position:pos,map:S.map,icon:{content:labelContent,anchor:new naver.maps.Point(0,30)}});const infoContent=`<div style="padding:10px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px"><div style="font-weight:700;margin-bottom:5px;color:#333">${playerData.name}</div><div style="font-size:12px;color:#666">배번: ${bib}</div><div style="font-size:12px;color:#666">마지막 통과: ${est.name}</div><div style="font-size:12px;color:#666">통과 거리: ${est.d}km</div><div style="font-size:12px;color:#4285f4;font-weight:bold">📍 예상 위치: ${est.estimated.toFixed(2)}km${est.estimated>est.d?` (+${(est.estimated-est.d).toFixed(2)}km)`:''}</div><div style="font-size:12px;color:#666">넷기록: ${playerData.result_nettime||'-'}</div><div style="font-size:12px;color:#666">페이스: ${playerData.pace_nettime||'-'}</div></div>`;const infoWindow=new naver.maps.InfoWindow({content:infoContent});naver.maps.Event.addListener(marker,'click',()=>{if(infoWindow.getMap()){infoWindow.close()}else{infoWindow.open(S.map,marker)}});naver.maps.Event.addListener(label,'click',()=>{if(infoWindow.getMap()){infoWindow.close()}else{infoWindow.open(S.map,marker)}});S.markers.set(bib,{marker:marker,label:label,infoWindow:infoWindow});if(S.markers.size===1){S.map.setCenter(pos);S.map.setZoom(14);}};}
 async function loadEventData(){if(!S.eventId)return;try{const r=await fetch(API(`event/${S.eventId}`));const data=await r.json();S.eventData=data;console.log('Event data loaded:',data);}catch(e){console.error('Failed to load event data:',e);}}
-async function tick(){if(!S.eventId)return;const bibs=parseBibs($('#bibs').value);const seen=new Set(bibs);for(const b of bibs){try{const j=await fetchPlayer(S.eventId,b);updateRow(j);}catch(e){updateError(b,e)}}for(const [b,{tr}]of S.rows){if(!seen.has(b)){tr.remove();S.rows.delete(b);const item=S.markers.get(b);if(item){item.marker.setMap(null);item.label.setMap(null);S.markers.delete(b)}}}}
+async function tick(){if(!S.eventId)return;const bibs=parseBibs($('#bibs').value);const seen=new Set(bibs);for(const b of bibs){try{const j=await fetchPlayer(S.eventId,b);updateRow(j);}catch(e){updateError(b,e)}}for(const [b,{trMain,trSplits}]of S.rows){if(!seen.has(b)){trMain.remove();trSplits.remove();S.rows.delete(b);const item=S.markers.get(b);if(item){item.marker.setMap(null);item.label.setMap(null);S.markers.delete(b)}}}}
 $('#startBtn').onclick=async()=>{if(!S.eventId)return alert('이벤트 선택');$('#startBtn').disabled=true;$('#stopBtn').disabled=false;await loadEventData();tick();S.timer=setInterval(tick,Math.max(5,Number($('#intervalSec').value))*1000)};
 $('#stopBtn').onclick=()=>{clearInterval(S.timer);S.timer=null;$('#startBtn').disabled=false;$('#stopBtn').disabled=true};
 loadEvents();
