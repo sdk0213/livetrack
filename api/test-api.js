@@ -15,8 +15,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "missing 'path' query" });
     }
 
-    // 배번 추출 (path에서)
-    const bibMatch = path.match(/num=(\d+)/);
+    // 배번 추출 (path에서) - path 형식: event/132/player/2296
+    const bibMatch = path.match(/player\/(\d+)/);
     const bib = bibMatch ? bibMatch[1] : '1080';
 
     // 현재 시간
