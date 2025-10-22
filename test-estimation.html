@@ -218,7 +218,7 @@
         const paceStr = playerData.pace_nettime.split('.')[0];
         const paceSec = timeToSeconds(paceStr);
         if (paceSec > 0) {
-          const kmPerSec = 1 / (paceSec / 60);
+          const kmPerSec = 1 / paceSec;  // 1km당 paceSec초 걸리므로, 1초당 1/paceSec km 이동
           const movedKm = kmPerSec * elapsedSec;
           estimatedDist = Math.min(d + movedKm, dist);
         }
