@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     // 현재 시간
     const now = new Date();
     const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
-    const startTime = new Date(eventDate + 'T14:00:00'); // 오후 2시 출발
+    const startTime = new Date(eventDate + 'T08:00:00'); // 오전 8시 출발 (테스트용)
     
     // 주자별 설정
     const runners = {
