@@ -48,6 +48,8 @@ export default async function handler(req, res) {
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
+    console.log(`배번: ${bib}, 경과시간: ${elapsedSeconds}초 (${Math.floor(elapsedSeconds/60)}분)`);
+    
     // 주행 거리 계산
     const distanceKm = Math.min(42.20, elapsedSeconds / runner.pace);
     
@@ -88,12 +90,19 @@ export default async function handler(req, res) {
       
       cumulativeSeconds += sectionSeconds;
       
+      console.log(`체크포인트 ${i}: ${cp.name}, 누적시간: ${cumulativeSeconds}초, 경과시간: ${elapsedSeconds}초`);
+      
       // 현재까지 누적 시간이 경과 시간보다 크면 아직 도달하지 않음
-      if (cumulativeSeconds > elapsedSeconds) break;
+      if (cumulativeSeconds > elapsedSeconds) {
+        console.log(`Break at ${cp.name} - 아직 도달 안함`);
+        break;
+      }
       
       const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
       const milliseconds = String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
       const timePoint = recordTime.toTimeString().split(' ')[0] + '.' + milliseconds;
+      
+      const sectionTime = i === 0 ? null : formatTime(sectionSeconds);
       
       records.push({
         event_id: 132,
@@ -103,7 +112,7 @@ export default async function handler(req, res) {
         player_num: bib,
         created_at: new Date(eventDate + 'T06:00:00.000Z').toISOString(),
         updated_at: null,
-        time_section: i === 0 ? null : formatTime(sectionSeconds),
+        time_section: sectionTime,
         time_sum: formatTime(cumulativeSeconds),
         time_point: timePoint,
         point: {
