@@ -170,12 +170,12 @@ export default async function handler(req, res) {
     const isFinished = distanceKm >= 42.20;
     const netTime = isFinished ? formatTime(cumulativeSeconds) : null;
     
-    // 페이스 계산 - 진행 중에도 현재 평균 페이스 제공
+    // 페이스 계산 - 완주한 경우에만 페이스 표시
     let pace = null;
-    if (cumulativeSeconds > 0 && records.length > 1) {
-      // 마지막 체크포인트까지의 평균 페이스 계산
-      const lastCp = checkpoints[records.length - 1];
-      const avgPaceSeconds = cumulativeSeconds / lastCp.distance;
+    if (isFinished && cumulativeSeconds > 0 && records.length > 1) {
+      // 완주 시의 평균 페이스 계산
+      const totalDistance = 42.20;
+      const avgPaceSeconds = cumulativeSeconds / totalDistance;
       const paceMin = Math.floor(avgPaceSeconds / 60);
       const paceSec = Math.floor(avgPaceSeconds % 60);
       pace = `${paceMin}'${String(paceSec).padStart(2, '0')}"`;
