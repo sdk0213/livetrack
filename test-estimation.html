@@ -6,18 +6,27 @@
   <title>예상 위치 계산 테스트 - 춘천마라톤</title>
   <style>
     body { margin: 0; padding: 0; font-family: sans-serif; background: #0e111a; color: #e0e6ed; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    h1 { color: #5cc8ff; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    h1 { color: #5cc8ff; margin-bottom: 20px; }
     .controls { background: #1a1f2e; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
     label { display: block; margin: 10px 0 5px 0; font-weight: bold; color: #5cc8ff; }
-    input, select { width: 100%; padding: 8px; border: 1px solid #2a3f5f; border-radius: 5px; background: #0e111a; color: #e0e6ed; box-sizing: border-box; }
-    button { background: #5cc8ff; color: #0e111a; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 5px; }
+    input, select { padding: 8px; border: 1px solid #2a3f5f; border-radius: 5px; background: #0e111a; color: #e0e6ed; }
+    button { background: #5cc8ff; color: #0e111a; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 3px; font-size: 12px; }
     button:hover { background: #1a9fff; }
-    #map { width: 100%; height: 500px; border-radius: 10px; margin-bottom: 20px; }
+    button.passed { background: #4caf50; }
+    #map { width: 100%; height: 600px; border-radius: 10px; margin-bottom: 20px; }
     .info-panel { background: #1a1f2e; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
     .player-info { background: #0e111a; padding: 10px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #5cc8ff; }
     .estimated { color: #ff9800; }
     .actual { color: #4285f4; }
+    .checkpoint-controls { background: #1a1f2e; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    .checkpoint-item { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 10px; background: #0e111a; border-radius: 5px; }
+    .checkpoint-item label { margin: 0; flex: 0 0 120px; }
+    .checkpoint-item input { width: 150px; }
+    .checkpoint-item button { flex: 0 0 100px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table td { padding: 8px; border-bottom: 1px solid #2a3f5f; }
+    table td:first-child { font-weight: bold; color: #5cc8ff; }
   </style>
   <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=04ebpnqto6"></script>
 </head>
@@ -29,13 +38,16 @@
       <label>현재 시간 (테스트용)</label>
       <input type="datetime-local" id="currentTime" value="2025-10-26T10:30:00">
       
-      <label>배번</label>
-      <input type="number" id="bib" value="1003">
-      
       <button onclick="updateTest()">위치 업데이트</button>
       <button onclick="addMinutes(5)">+5분</button>
       <button onclick="addMinutes(10)">+10분</button>
       <button onclick="addMinutes(30)">+30분</button>
+      <button onclick="resetCheckpoints()">초기화</button>
+    </div>
+
+    <div class="checkpoint-controls">
+      <h3 style="color: #5cc8ff; margin-top: 0;">체크포인트 통과 설정</h3>
+      <div id="checkpointList"></div>
     </div>
     
     <div id="info" class="info-panel"></div>
@@ -45,9 +57,364 @@
 
   <script>
     let map = null;
-    let marker = null;
-    let label = null;
+    let markers = new Map();
     let coursePath = null;
+    let gpxPoints = [];
+    let checkpointMarkers = [];
+    
+    const checkpoints = [
+      { code: "P0", name: "출발", distance: 0.00 },
+      { code: "P2", name: "반환점", distance: 4.00 },
+      { code: "P4", name: "5K", distance: 5.00 },
+      { code: "P5", name: "10K", distance: 10.00 },
+      { code: "P6", name: "15K", distance: 15.00 },
+      { code: "P7", name: "20K", distance: 20.00 },
+      { code: "P8", name: "Half", distance: 21.10 },
+      { code: "P9", name: "25K", distance: 25.00 },
+      { code: "P10", name: "30K", distance: 30.00 },
+      { code: "P11", name: "35K", distance: 35.00 },
+      { code: "P12", name: "40K", distance: 40.00 },
+      { code: "P13", name: "도착", distance: 42.20 }
+    ];
+    
+    // 가짜 주자 데이터
+    const playerData = {
+      num: "1003",
+      name: "테스트 주자",
+      result_nettime: null,
+      pace_nettime: "05:48",
+      event: { id: 132, name: "2025 춘천마라톤", date: "2025-10-26" },
+      course: { distance: "42.195" },
+      records: []
+    };
+    
+    function renderCheckpointControls() {
+      const container = document.getElementById('checkpointList');
+      container.innerHTML = checkpoints.map((cp, idx) => `
+        <div class="checkpoint-item">
+          <label>${cp.name} (${cp.distance}km)</label>
+          <input type="time" id="time_${cp.code}" value="" step="1" placeholder="통과 시간">
+          <input type="text" id="pace_${cp.code}" value="05:48" placeholder="페이스" style="width: 80px;">
+          <button id="btn_${cp.code}" onclick="passCheckpoint('${cp.code}', ${idx})">통과 설정</button>
+        </div>
+      `).join('');
+    }
+    
+    function passCheckpoint(code, idx) {
+      const timeInput = document.getElementById(`time_${code}`);
+      const paceInput = document.getElementById(`pace_${code}`);
+      const btn = document.getElementById(`btn_${code}`);
+      
+      if (!timeInput.value) {
+        // 자동으로 현재 시간 설정
+        const currentTime = new Date(document.getElementById('currentTime').value);
+        timeInput.value = currentTime.toTimeString().slice(0, 8);
+      }
+      
+      const checkpoint = checkpoints[idx];
+      const existingIdx = playerData.records.findIndex(r => r.point.distance === checkpoint.distance.toString());
+      
+      const record = {
+        point: { 
+          name: checkpoint.name, 
+          distance: checkpoint.distance.toFixed(2)
+        },
+        time_point: timeInput.value
+      };
+      
+      if (existingIdx >= 0) {
+        playerData.records[existingIdx] = record;
+      } else {
+        playerData.records.push(record);
+      }
+      
+      // 레코드 정렬
+      playerData.records.sort((a, b) => parseFloat(a.point.distance) - parseFloat(b.point.distance));
+      
+      // 페이스 업데이트
+      playerData.pace_nettime = paceInput.value;
+      
+      btn.classList.add('passed');
+      btn.textContent = '✓ 통과됨';
+      
+      updateTest();
+    }
+    
+    function resetCheckpoints() {
+      playerData.records = [];
+      checkpoints.forEach(cp => {
+        const btn = document.getElementById(`btn_${cp.code}`);
+        const timeInput = document.getElementById(`time_${cp.code}`);
+        btn.classList.remove('passed');
+        btn.textContent = '통과 설정';
+        timeInput.value = '';
+      });
+      
+      // 마커 제거
+      markers.forEach(item => {
+        if (item.marker) item.marker.setMap(null);
+        if (item.label) item.label.setMap(null);
+      });
+      markers.clear();
+      
+      updateTest();
+    }
+    
+    function timeToSeconds(t) {
+      if (!t) return 0;
+      const clean = t.split('.')[0];
+      const p = clean.split(':').map(Number);
+      if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
+      if (p.length === 2) return p[0] * 60 + p[1];
+      return 0;
+    }
+    
+    function calcDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+    
+    function getPositionOnRoute(distanceKm) {
+      if (!gpxPoints || gpxPoints.length === 0) return null;
+      let accumulated = 0;
+      for (let i = 1; i < gpxPoints.length; i++) {
+        const prev = gpxPoints[i - 1];
+        const curr = gpxPoints[i];
+        const segDist = calcDistance(prev.lat(), prev.lng(), curr.lat(), curr.lng());
+        if (accumulated + segDist >= distanceKm) {
+          const ratio = (distanceKm - accumulated) / segDist;
+          const lat = prev.lat() + (curr.lat() - prev.lat()) * ratio;
+          const lng = prev.lng() + (curr.lng() - prev.lng()) * ratio;
+          return new naver.maps.LatLng(lat, lng);
+        }
+        accumulated += segDist;
+      }
+      return gpxPoints[gpxPoints.length - 1];
+    }
+    
+    function estimateNow(currentTime) {
+      const dist = parseFloat(playerData.course?.distance || '0');
+      const recs = playerData.records.sort((a, b) => parseFloat(a.point.distance) - parseFloat(b.point.distance));
+      if (!recs.length) return { status: '대기', d: 0, name: '', estimated: 0 };
+      
+      const lastRec = recs[recs.length - 1];
+      const d = parseFloat(lastRec.point.distance);
+      const name = lastRec.point.name;
+      const time = lastRec.time_point;
+      const date = playerData.event?.date;
+      
+      const lastTime = new Date(`${date}T${time}`);
+      const now = new Date(currentTime);
+      const elapsedSec = (now - lastTime) / 1000;
+      
+      let estimatedDist = d;
+      if (playerData.pace_nettime && elapsedSec > 0 && !playerData.result_nettime) {
+        const paceStr = playerData.pace_nettime.split('.')[0];
+        const paceSec = timeToSeconds(paceStr);
+        if (paceSec > 0) {
+          const kmPerSec = 1 / (paceSec / 60);
+          const movedKm = kmPerSec * elapsedSec;
+          estimatedDist = Math.min(d + movedKm, dist);
+        }
+      }
+      
+      return {
+        status: playerData.result_nettime ? '완주' : '주행',
+        d,
+        name,
+        estimated: estimatedDist,
+        elapsedSec,
+        lastTime
+      };
+    }
+    
+    async function loadGPX() {
+      try {
+        const r = await fetch('/course.gpx');
+        const text = await r.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const trkpts = xml.querySelectorAll('trkpt');
+        const path = [];
+        trkpts.forEach(pt => {
+          const lat = parseFloat(pt.getAttribute('lat'));
+          const lon = parseFloat(pt.getAttribute('lon'));
+          if (lat && lon) path.push(new naver.maps.LatLng(lat, lon));
+        });
+        gpxPoints = path;
+        
+        // 코스 경로 그리기
+        coursePath = new naver.maps.Polyline({
+          path: path,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.6,
+          strokeWeight: 4,
+          map: map
+        });
+        
+        const bounds = new naver.maps.LatLngBounds();
+        path.forEach(p => bounds.extend(p));
+        map.fitBounds(bounds);
+        
+        // 체크포인트 마커 표시
+        checkpoints.forEach((cp, idx) => {
+          const pos = getPositionOnRoute(cp.distance);
+          if (pos) {
+            const marker = new naver.maps.Marker({
+              position: pos,
+              map: map,
+              icon: {
+                content: `<div style="
+                  background: #2a3f5f;
+                  color: white;
+                  padding: 4px 8px;
+                  border-radius: 12px;
+                  font-size: 11px;
+                  font-weight: bold;
+                  border: 2px solid white;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                ">${cp.name}</div>`,
+                anchor: new naver.maps.Point(0, 25)
+              }
+            });
+            checkpointMarkers.push(marker);
+          }
+        });
+        
+      } catch (e) {
+        console.error('Failed to load GPX:', e);
+      }
+    }
+    
+    function updateMarker(bib, pos, isEstimated, info) {
+      if (markers.has(bib)) {
+        const item = markers.get(bib);
+        item.marker.setPosition(pos);
+        item.label.setPosition(pos);
+        const newContent = `<div style="
+          background: ${isEstimated ? 'rgba(255,152,0,0.95)' : 'rgba(66,133,244,0.95)'};
+          color: white;
+          padding: 6px 12px;
+          border-radius: 16px;
+          font-weight: bold;
+          font-size: 13px;
+          white-space: nowrap;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          border: 2px solid white;
+        ">${playerData.name}${isEstimated ? ' 📍' : ''}</div>`;
+        item.label.setIcon({ content: newContent, anchor: new naver.maps.Point(0, 30) });
+      } else {
+        const marker = new naver.maps.Marker({
+          position: pos,
+          map: map,
+          icon: {
+            content: `<div style="width:12px;height:12px;background:#5cc8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+            anchor: new naver.maps.Point(9, 9)
+          }
+        });
+        
+        const labelContent = `<div style="
+          background: ${isEstimated ? 'rgba(255,152,0,0.95)' : 'rgba(66,133,244,0.95)'};
+          color: white;
+          padding: 6px 12px;
+          border-radius: 16px;
+          font-weight: bold;
+          font-size: 13px;
+          white-space: nowrap;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          border: 2px solid white;
+        ">${playerData.name}${isEstimated ? ' 📍' : ''}</div>`;
+        
+        const label = new naver.maps.Marker({
+          position: pos,
+          map: map,
+          icon: { content: labelContent, anchor: new naver.maps.Point(0, 30) }
+        });
+        
+        markers.set(bib, { marker, label });
+      }
+      
+      map.setCenter(pos);
+      if (markers.size === 1) map.setZoom(14);
+    }
+    
+    function updateTest() {
+      const currentTime = document.getElementById('currentTime').value;
+      
+      if (playerData.records.length === 0) {
+        document.getElementById('info').innerHTML = `
+          <div class="player-info">
+            <h3>${playerData.name}</h3>
+            <p style="color: #ff9800;">체크포인트를 통과 설정하세요.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      const est = estimateNow(currentTime);
+      const pos = getPositionOnRoute(est.estimated);
+      
+      if (!pos) {
+        alert('GPX 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+      
+      const isEstimated = est.estimated > est.d;
+      updateMarker(playerData.num, pos, isEstimated, est);
+      
+      // 정보 패널 업데이트
+      const info = document.getElementById('info');
+      info.innerHTML = `
+        <div class="player-info">
+          <h3>${playerData.name} (#${playerData.num})</h3>
+          <table>
+            <tr><td>마지막 통과</td><td>${est.name} (${est.d}km) - ${est.lastTime.toLocaleTimeString()}</td></tr>
+            <tr><td>현재 시간</td><td>${new Date(currentTime).toLocaleTimeString()}</td></tr>
+            <tr><td>경과 시간</td><td>${Math.floor(est.elapsedSec / 60)}분 ${Math.floor(est.elapsedSec % 60)}초</td></tr>
+            <tr><td>페이스</td><td>${playerData.pace_nettime}/km</td></tr>
+            ${isEstimated ? 
+              `<tr><td class="estimated">📍 예상 위치</td><td class="estimated">${est.estimated.toFixed(2)}km (추가 이동: ${(est.estimated - est.d).toFixed(2)}km)</td></tr>` :
+              `<tr><td class="actual">현재 위치</td><td class="actual">${est.d}km</td></tr>`
+            }
+          </table>
+          <h4 style="color: #5cc8ff; margin-top: 15px;">통과 기록:</h4>
+          <table>
+            ${playerData.records.map(r => 
+              `<tr><td>${r.point.name}</td><td>${r.point.distance}km - ${r.time_point}</td></tr>`
+            ).join('')}
+          </table>
+        </div>
+      `;
+    }
+    
+    function addMinutes(min) {
+      const input = document.getElementById('currentTime');
+      const current = new Date(input.value);
+      current.setMinutes(current.getMinutes() + min);
+      input.value = current.toISOString().slice(0, 16);
+      updateTest();
+    }
+    
+    // 초기화
+    window.onload = async () => {
+      map = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(37.878, 127.73),
+        zoom: 13
+      });
+      
+      await loadGPX();
+      renderCheckpointControls();
+      updateTest();
+    };
+  </script>
+</body>
+</html>
     let gpxPoints = [];
     
     // 가짜 주자 데이터 (춘천마라톤 132번)
