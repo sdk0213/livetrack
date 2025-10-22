@@ -125,7 +125,9 @@ export default async function handler(req, res) {
       
       const recordTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
       const milliseconds = String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
-      const timePoint = recordTime.toTimeString().split(' ')[0] + '.' + milliseconds;
+      const timePoint = new Date(startTime.getTime() + cumulativeSeconds * 1000)
+        .toLocaleTimeString('ko-KR', { hour12: false })
+        .split(' ')[0] + '.' + milliseconds;
       
       records.push({
         event_id: 132,
@@ -133,7 +135,7 @@ export default async function handler(req, res) {
         point_cd: cp.code,
         lap: 1,
         player_num: bib,
-        created_at: new Date(eventDate + 'T16:00:00+09:00').toISOString(),
+        created_at: recordTime.toISOString(),
         updated_at: null,
         time_section: formatTime(sectionSeconds),
         time_sum: formatTime(cumulativeSeconds),
@@ -143,7 +145,7 @@ export default async function handler(req, res) {
           course_cd: 'Full',
           point_cd: cp.code,
           lap: 1,
-          created_at: new Date(eventDate + 'T16:00:00+09:00').toISOString(),
+          created_at: recordTime.toISOString(),
           updated_at: null,
           name: cp.name,
           distance: cp.distance.toFixed(2),
