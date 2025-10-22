@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>예상 위치 계산 테스트</title>
+  <style>
+    body { margin: 0; padding: 20px; font-family: sans-serif; background: #f5f5f5; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { margin: 0 0 20px 0; }
+    label { display: block; margin: 10px 0 5px 0; font-weight: bold; }
+    input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+    button { background: #4285f4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 10px; }
+    button:hover { background: #3367d6; }
+    .result { background: #e3f2fd; padding: 15px; border-radius: 5px; margin-top: 20px; }
+    .result h3 { margin: 0 0 10px 0; color: #1976d2; }
+    .info { font-size: 14px; margin: 5px 0; }
+    .estimated { color: #ff9800; font-weight: bold; }
+    .actual { color: #4285f4; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>📍 예상 위치 계산 테스트</h1>
+      
+      <label>마지막 체크포인트 거리 (km)</label>
+      <input type="number" id="lastDistance" value="10" step="0.1">
+      
+      <label>마지막 체크포인트 통과 시간</label>
+      <input type="time" id="lastTime" value="10:00:00" step="1">
+      
+      <label>현재 시간 (테스트용)</label>
+      <input type="time" id="currentTime" value="10:15:00" step="1">
+      
+      <label>페이스 (분:초/km)</label>
+      <input type="text" id="pace" value="05:30" placeholder="예: 05:30">
+      
+      <label>전체 코스 거리 (km)</label>
+      <input type="number" id="totalDistance" value="42.195" step="0.001">
+      
+      <button onclick="calculate()">계산하기</button>
+      
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    function timeToSeconds(t) {
+      if (!t) return 0;
+      const clean = t.split('.')[0];
+      const p = clean.split(':').map(Number);
+      if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
+      if (p.length === 2) return p[0] * 60 + p[1];
+      return 0;
+    }
+
+    function calculate() {
+      const lastDistance = parseFloat(document.getElementById('lastDistance').value);
+      const lastTime = document.getElementById('lastTime').value;
+      const currentTime = document.getElementById('currentTime').value;
+      const paceStr = document.getElementById('pace').value;
+      const totalDistance = parseFloat(document.getElementById('totalDistance').value);
+      
+      // 시간 계산
+      const lastTimeSec = timeToSeconds(lastTime);
+      const currentTimeSec = timeToSeconds(currentTime);
+      const elapsedSec = currentTimeSec - lastTimeSec;
+      
+      // 페이스 계산 (초/km)
+      const paceSec = timeToSeconds(paceStr);
+      
+      // 예상 이동 거리 계산
+      let estimatedDistance = lastDistance;
+      let movedKm = 0;
+      
+      if (paceSec > 0 && elapsedSec > 0) {
+        const kmPerSec = 1 / (paceSec / 60); // km/초
+        movedKm = kmPerSec * elapsedSec;
+        estimatedDistance = Math.min(lastDistance + movedKm, totalDistance);
+      }
+      
+      // 결과 표시
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        <div class="result">
+          <h3>계산 결과</h3>
+          <div class="info">⏱️ <strong>경과 시간:</strong> ${Math.floor(elapsedSec / 60)}분 ${elapsedSec % 60}초 (${elapsedSec}초)</div>
+          <div class="info">🏃 <strong>페이스:</strong> ${paceStr}/km (${paceSec}초/km)</div>
+          <div class="info">📏 <strong>이동한 거리:</strong> ${movedKm.toFixed(3)}km</div>
+          <div class="info actual">📍 <strong>마지막 통과 거리:</strong> ${lastDistance}km</div>
+          <div class="info estimated">📍 <strong>예상 현재 위치:</strong> ${estimatedDistance.toFixed(3)}km</div>
+          <div class="info">➕ <strong>추가 이동:</strong> ${(estimatedDistance - lastDistance).toFixed(3)}km</div>
+          ${estimatedDistance >= totalDistance ? '<div class="info" style="color: green; font-weight: bold;">✅ 완주!</div>' : ''}
+        </div>
+      `;
+    }
+    
+    // 페이지 로드 시 자동 계산
+    window.onload = calculate;
+  </script>
+</body>
+</html>
