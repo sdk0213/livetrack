@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     // 현재 시간 (한국 시간으로 변환)
     const now = new Date();
     const eventDate = '2025-10-22'; // 춘천 마라톤 날짜
-    const startTime = new Date(eventDate + 'T14:00:00+09:00'); // 한국 시간 명시
+    const startTime = new Date(eventDate + 'T16:00:00+09:00'); // 한국 시간 명시
     
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
