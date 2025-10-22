@@ -365,8 +365,8 @@
         return;
       }
       
-      const isEstimated = est.estimated > est.d;
-      updateMarker(playerData.num, pos, isEstimated, est);
+      // 항상 파란색으로 표시 (예상 위치 계산 중)
+      updateMarker(playerData.num, pos, false, est);
       
       // 정보 패널 업데이트
       const info = document.getElementById('info');
@@ -378,10 +378,7 @@
             <tr><td>현재 시간</td><td>${new Date(currentTime).toLocaleTimeString()}</td></tr>
             <tr><td>경과 시간</td><td>${Math.floor(est.elapsedSec / 60)}분 ${Math.floor(est.elapsedSec % 60)}초</td></tr>
             <tr><td>페이스</td><td>${playerData.pace_nettime}/km</td></tr>
-            ${isEstimated ? 
-              `<tr><td class="estimated">📍 예상 위치</td><td class="estimated">${est.estimated.toFixed(2)}km (추가 이동: ${(est.estimated - est.d).toFixed(2)}km)</td></tr>` :
-              `<tr><td class="actual">현재 위치</td><td class="actual">${est.d}km</td></tr>`
-            }
+            <tr><td class="actual">📍 예상 위치</td><td class="actual">${est.estimated.toFixed(2)}km ${est.estimated > est.d ? `(+${(est.estimated - est.d).toFixed(2)}km)` : ''}</td></tr>
           </table>
           <h4 style="color: #5cc8ff; margin-top: 15px;">통과 기록:</h4>
           <table>
