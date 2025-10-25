@@ -218,8 +218,8 @@ class AuthManager {
           return;
         }
 
-        // Kakao.API.request 방식으로 로그인
-        Kakao.Auth.login({
+        // SDK 2.x에서는 loginForm 사용
+        Kakao.Auth.loginForm({
           success: async (authObj) => {
             console.log('Kakao login success:', authObj);
             try {
