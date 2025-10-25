@@ -940,12 +940,33 @@ class RunCheerApp {
   }
 
   async handleDeleteAccount() {
-    if (!confirm('정말 회원탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.')) return;
+    if (!confirm('정말 회원탈퇴하시겠습니까? 모든 데이터가 삭제되며 카카오 연동도 해제됩니다.')) return;
     
     try {
       const user = this.authManager.getUser();
       
-      // 카카오 로그아웃
+      // 1. 카카오 연결 끊기 (다음 로그인 시 다시 동의 받기 위함)
+      if (window.Kakao && Kakao.API) {
+        try {
+          await new Promise((resolve, reject) => {
+            Kakao.API.request({
+              url: '/v1/user/unlink',
+              success: function(response) {
+                console.log('Kakao unlink success:', response);
+                resolve(response);
+              },
+              fail: function(error) {
+                console.log('Kakao unlink failed:', error);
+                resolve(); // 실패해도 계속 진행
+              }
+            });
+          });
+        } catch (e) {
+          console.log('Kakao unlink error:', e);
+        }
+      }
+      
+      // 2. 카카오 로그아웃
       if (window.Kakao && Kakao.Auth) {
         try {
           await Kakao.Auth.logout();
@@ -954,20 +975,20 @@ class RunCheerApp {
         }
       }
       
-      // 서버에서 사용자 삭제
+      // 3. 서버에서 사용자 삭제
       await APIService.deleteUser(user.id);
       
-      // 로컬 데이터 정리
+      // 4. 로컬 데이터 정리
       this.authManager.user = null;
       localStorage.clear();
       this.imageCache.clear();
       
-      Utils.showToast('회원탈퇴가 완료되었습니다.', 'success');
+      Utils.showToast('회원탈퇴가 완료되었습니다. 다음 로그인 시 다시 동의가 필요합니다.', 'success');
       
-      // 페이지 새로고침으로 완전히 초기화
+      // 5. 페이지 새로고침으로 완전히 초기화
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error('Failed to delete account:', error);
       Utils.showToast('회원탈퇴에 실패했습니다.', 'error');
