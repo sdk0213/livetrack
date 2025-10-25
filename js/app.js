@@ -715,7 +715,19 @@ class RunCheerApp {
       || user.name 
       || '사용자';
     
+    const profileImage = user.properties?.profile_image 
+      || user.kakao_account?.profile?.profile_image_url 
+      || user.profile_image
+      || '';
+    
     document.getElementById('profileName').value = nickname;
+    
+    // 프로필 이미지 설정
+    const profileImageEl = document.getElementById('profileImage');
+    if (profileImageEl && profileImage) {
+      profileImageEl.src = profileImage;
+      profileImageEl.style.display = 'block';
+    }
     
     // 그룹 정보 로드
     await this.loadUserGroup();
