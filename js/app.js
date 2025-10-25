@@ -1282,9 +1282,11 @@ class RunCheerApp {
       
       console.log(`${runners.length}명의 주자 추적을 시작합니다.`);
       
-      // 주자 배번 목록 저장
-      this.trackingBibs = runners.map(r => r.bib_number);
+      // 주자 배번 목록 저장 (DB 필드명은 bib)
+      this.trackingBibs = runners.map(r => r.bib).filter(b => b); // undefined 제거
       this.trackingEventId = group.event_id;
+      
+      console.log('Tracking bibs:', this.trackingBibs);
       
       // 지도 초기화
       setTimeout(() => {
