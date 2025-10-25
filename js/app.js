@@ -1166,8 +1166,91 @@ class RunCheerApp {
   }
 
   async handleStartTracking() {
-    // TODO: 기존 추적 로직 구현
-    Utils.showToast('추적 기능은 곧 구현됩니다.', 'info');
+    const group = this.groupManager.currentGroup;
+    if (!group) {
+      Utils.showToast('그룹 정보를 불러올 수 없습니다.', 'error');
+      return;
+    }
+
+    // 응원 탭으로 이동
+    this.ui.switchTab('cheer');
+    
+    // 지도 섹션 표시
+    const mapSection = document.getElementById('mapSection');
+    mapSection.classList.remove('hidden');
+    
+    // 주자 목록 가져오기
+    try {
+      const runners = await this.groupManager.getGroupRunners(group.code);
+      
+      if (!runners || runners.length === 0) {
+        Utils.showToast('등록된 주자가 없습니다.', 'info');
+        return;
+      }
+      
+      Utils.showToast(`${runners.length}명의 주자 추적을 시작합니다.`, 'success');
+      
+      // 지도 초기화 및 추적 시작
+      this.initializeMap(group.event_id, runners);
+      
+    } catch (error) {
+      console.error('Failed to start tracking:', error);
+      Utils.showToast('추적 시작에 실패했습니다.', 'error');
+    }
+  }
+
+  initializeMap(eventId, runners) {
+    // 지도 컨테이너 확인
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+      console.error('Map container not found');
+      return;
+    }
+
+    // 대회별 중심점 설정
+    const eventCenters = {
+      133: { lat: 37.5665, lng: 126.9780 }, // JTBC 서울마라톤
+      132: { lat: 37.8813, lng: 127.7299 }  // 춘천마라톤
+    };
+
+    const center = eventCenters[eventId] || eventCenters[133];
+
+    // 네이버 지도 생성
+    const mapOptions = {
+      center: new naver.maps.LatLng(center.lat, center.lng),
+      zoom: 13,
+      mapTypeControl: true
+    };
+
+    const map = new naver.maps.Map('map', mapOptions);
+    
+    // 주자 마커 생성
+    runners.forEach((runner, index) => {
+      const marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(center.lat + (Math.random() - 0.5) * 0.01, center.lng + (Math.random() - 0.5) * 0.01),
+        map: map,
+        title: `${runner.runner_name} (${runner.bib_number})`,
+        icon: {
+          content: `<div style="background:${this.getRunnerColor(index)};color:white;padding:8px 12px;border-radius:20px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${runner.bib_number}</div>`,
+          anchor: new naver.maps.Point(20, 20)
+        }
+      });
+
+      // 마커 클릭 이벤트
+      naver.maps.Event.addListener(marker, 'click', () => {
+        const infoWindow = new naver.maps.InfoWindow({
+          content: `<div style="padding:10px;"><strong>${runner.runner_name}</strong><br>배번: ${runner.bib_number}</div>`
+        });
+        infoWindow.open(map, marker);
+      });
+    });
+
+    Utils.showToast('지도가 로드되었습니다. 실제 추적은 대회 당일에 시작됩니다.', 'info');
+  }
+
+  getRunnerColor(index) {
+    const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+    return colors[index % colors.length];
   }
 }
 
