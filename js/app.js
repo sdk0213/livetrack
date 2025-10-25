@@ -607,8 +607,15 @@ class UIManager {
     
     // 그룹
     this.createGroupBtn.addEventListener('click', () => {
-      // 베타 서비스 - 그룹 생성 제한
-      Utils.showToast('현재 베타 서비스로 사용자 임의 생성이 불가능합니다.', 'error');
+      // 관리자 권한 확인 (카카오 ID: 4510043030)
+      const currentUser = this.app.currentUser;
+      if (currentUser && currentUser.kakao_id === '4510043030') {
+        // 관리자는 그룹 생성 가능
+        this.showModal('createGroupModal');
+      } else {
+        // 일반 사용자는 베타 서비스로 제한
+        Utils.showToast('현재 베타 서비스로 사용자 임의 생성이 불가능합니다.', 'error');
+      }
     });
     this.joinGroupBtn.addEventListener('click', () => this.showModal('joinGroupModal'));
     document.getElementById('confirmCreateGroupBtn').addEventListener('click', () => this.app.handleCreateGroup());
