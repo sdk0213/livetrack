@@ -2120,16 +2120,12 @@ function handleRoleChange() {
   
   if (isRunner) {
     runnerFields.style.display = 'block';
-    runnerRoleLabel.style.borderColor = '#3b82f6';
-    runnerRoleLabel.style.background = '#eff6ff';
-    supporterRoleLabel.style.borderColor = '#cbd5e1';
-    supporterRoleLabel.style.background = '#f8fafc';
+    runnerRoleLabel.classList.add('selected');
+    supporterRoleLabel.classList.remove('selected');
   } else {
     runnerFields.style.display = 'none';
-    supporterRoleLabel.style.borderColor = '#3b82f6';
-    supporterRoleLabel.style.background = '#eff6ff';
-    runnerRoleLabel.style.borderColor = '#cbd5e1';
-    runnerRoleLabel.style.background = '#f8fafc';
+    supporterRoleLabel.classList.add('selected');
+    runnerRoleLabel.classList.remove('selected');
   }
 }
 

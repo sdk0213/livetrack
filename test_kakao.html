@@ -231,6 +231,51 @@
       color:var(--muted);
     }
     
+    /* 라디오 버튼 스타일 */
+    input[type="radio"]{
+      width:auto;
+      margin:0;
+      cursor:pointer;
+      flex-shrink:0;
+    }
+    
+    .role-option{
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px;
+      background:#f8fafc;
+      border:2px solid #cbd5e1;
+      border-radius:10px;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    
+    .role-option:hover{
+      border-color:#94a3b8;
+    }
+    
+    .role-option.selected{
+      border-color:#3b82f6;
+      background:#eff6ff;
+    }
+    
+    .role-content{
+      flex:1;
+    }
+    
+    .role-title{
+      font-weight:700;
+      font-size:14px;
+      margin-bottom:2px;
+    }
+    
+    .role-desc{
+      font-size:11px;
+      color:var(--muted);
+    }
+    
     /* 지도 */
     #map{width:100%;height:400px;border-radius:10px;background:#e2e8f0}
     
@@ -634,18 +679,18 @@
       <div class="mt-2">
         <label class="muted" style="font-size:12px;font-weight:600">참여 역할</label>
         <div style="display:flex;gap:10px;margin-top:8px">
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;background:#f8fafc;border:2px solid #cbd5e1;border-radius:10px;cursor:pointer;transition:all 0.2s" id="runnerRoleLabel">
+          <label class="role-option selected" id="runnerRoleLabel">
             <input type="radio" name="memberRole" value="runner" id="runnerRole" checked onchange="handleRoleChange()" />
-            <div>
-              <div style="font-weight:700">🏃‍♂️ 주자</div>
-              <div style="font-size:11px;color:var(--muted)">배번 + 레디샷 필요</div>
+            <div class="role-content">
+              <div class="role-title">🏃‍♂️ 주자</div>
+              <div class="role-desc">배번 + 레디샷 필요</div>
             </div>
           </label>
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;background:#f8fafc;border:2px solid #cbd5e1;border-radius:10px;cursor:pointer;transition:all 0.2s" id="supporterRoleLabel">
+          <label class="role-option" id="supporterRoleLabel">
             <input type="radio" name="memberRole" value="supporter" id="supporterRole" onchange="handleRoleChange()" />
-            <div>
-              <div style="font-weight:700">📣 응원자</div>
-              <div style="font-size:11px;color:var(--muted)">정보 불필요</div>
+            <div class="role-content">
+              <div class="role-title">📣 응원자</div>
+              <div class="role-desc">정보 불필요</div>
             </div>
           </label>
         </div>
