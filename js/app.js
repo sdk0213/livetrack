@@ -1497,6 +1497,16 @@ class RunCheerApp {
     }
 
     for (const bib of this.trackingBibs) {
+      // 기존 마커에서 완주 여부 확인
+      const existingMarker = this.mapMarkers.find(m => m.bib === bib);
+      if (existingMarker && existingMarker.playerData) {
+        const estimated = this.estimateNow(existingMarker.playerData);
+        if (estimated.status === '완주') {
+          console.log(`완주한 주자 건너뜀: ${bib} (${existingMarker.playerData.name})`);
+          continue;
+        }
+      }
+
       try {
         const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}`);
         if (response.ok) {
