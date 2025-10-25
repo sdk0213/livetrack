@@ -156,7 +156,7 @@ class APIService {
   }
 
   // 사용자 관련
-  static async getUser(kakaoId) {
+  static async ㅇgetUser(kakaoId) {
     return this.request(`/users/${kakaoId}`);
   }
 
@@ -472,7 +472,7 @@ class GroupManager {
       throw new Error('그룹에 참여하지 않았습니다.');
     }
 
-    // 응원자 정보 등록 (배번과 사진 불필요)
+    // 응원 정보 등록 (배번과 사진 불필요)
     const supporterData = {
       code: this.currentGroup.code,
       kakaoId,
@@ -752,7 +752,7 @@ class UIManager {
   updateRunnersList(runners) {
     this.runnersList.innerHTML = '';
     
-    // 주자와 응원자 분리
+    // 주자와 응원 분리
     const runnerList = runners.filter(r => r.role === 'runner');
     const supporterList = runners.filter(r => r.role === 'supporter');
     
@@ -802,11 +802,11 @@ class UIManager {
       });
     }
     
-    // 응원자 목록
+    // 응원 목록
     if (supporterList.length > 0) {
       const supporterHeader = document.createElement('div');
       supporterHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin:16px 0 8px 0;padding:0 4px;';
-      supporterHeader.textContent = `📣 응원자 (${supporterList.length}명)`;
+      supporterHeader.textContent = `📣 응원 (${supporterList.length}명)`;
       this.runnersList.appendChild(supporterHeader);
       
       supporterList.forEach(supporter => {
@@ -823,7 +823,7 @@ class UIManager {
           </div>
           <div class="runner-info">
             <div class="runner-name">${supporter.name}</div>
-            <div class="runner-bib" style="color:#64748b;">응원자</div>
+            <div class="runner-bib" style="color:#64748b;">응원</div>
           </div>
         `;
         
@@ -1278,7 +1278,7 @@ class RunCheerApp {
         
         await APIService.joinGroup(joinData);
         this.pendingGroup = null;
-        Utils.showToast(role === 'runner' ? '주자로 그룹에 참여했습니다!' : '응원자로 그룹에 참여했습니다!', 'success');
+        Utils.showToast(role === 'runner' ? '주자로 그룹에 참여했습니다!' : '응원으로 그룹에 참여했습니다!', 'success');
       }
       
       this.ui.hideModal('registerRunnerModal');
