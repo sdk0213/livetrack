@@ -606,27 +606,34 @@ class UIManager {
     this.kakaoLoginBtn.addEventListener('click', () => this.app.handleLogin());
     
     // 그룹
-    this.createGroupBtn.addEventListener('click', () => {
-      // 관리자 권한 확인 (카카오 ID: 4510515635, 4510578446, 4510305710)
-      const currentUser = this.app.authManager.getUser();
-      const adminIds = ['4510515635', '4510578446', '4510305710'];
-      
-      console.log('==================== 그룹 생성 권한 체크 ====================');
-      console.log('현재 사용자:', currentUser);
-      console.log('사용자 ID:', currentUser?.id);
-      console.log('사용자 ID 타입:', typeof currentUser?.id);
-      console.log('관리자 목록:', adminIds);
-      console.log('권한 체크 결과:', currentUser && adminIds.includes(currentUser.id));
-      console.log('========================================================');
-      
-      if (currentUser && adminIds.includes(currentUser.id)) {
-        // 관리자는 그룹 생성 가능
-        console.log('✅ 관리자 권한 확인 - 그룹 생성 허용');
-        this.showModal('createGroupModal');
-      } else {
-        // 일반 사용자는 베타 서비스로 제한
-        console.log('❌ 일반 사용자 - 그룹 생성 제한');
-        Utils.showToast('현재 베타 서비스로 사용자 임의 생성이 불가능합니다.', 'error');
+    this.createGroupBtn.addEventListener('click', async () => {
+      try {
+        // 관리자 권한 확인 (카카오 ID: 4510515635, 4510578446, 4510305710)
+        const user = this.app.authManager.getUser();
+        const dbUser = await APIService.getUser(user.id);
+        const adminIds = ['4510515635', '4510578446', '4510305710'];
+        
+        console.log('==================== 그룹 생성 권한 체크 ====================');
+        console.log('현재 사용자 (authManager):', user);
+        console.log('DB 사용자:', dbUser);
+        console.log('DB kakao_id:', dbUser.kakao_id);
+        console.log('kakao_id 타입:', typeof dbUser.kakao_id);
+        console.log('관리자 목록:', adminIds);
+        console.log('권한 체크 결과:', adminIds.includes(dbUser.kakao_id));
+        console.log('========================================================');
+        
+        if (adminIds.includes(dbUser.kakao_id)) {
+          // 관리자는 그룹 생성 가능
+          console.log('✅ 관리자 권한 확인 - 그룹 생성 허용');
+          this.showModal('createGroupModal');
+        } else {
+          // 일반 사용자는 베타 서비스로 제한
+          console.log('❌ 일반 사용자 - 그룹 생성 제한');
+          Utils.showToast('현재 베타 서비스로 사용자 임의 생성이 불가능합니다.', 'error');
+        }
+      } catch (error) {
+        console.error('권한 체크 오류:', error);
+        Utils.showToast('권한 확인 중 오류가 발생했습니다.', 'error');
       }
     });
     this.joinGroupBtn.addEventListener('click', () => this.showModal('joinGroupModal'));
