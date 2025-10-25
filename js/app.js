@@ -727,10 +727,14 @@ class UIManager {
       // 이벤트 이름과 그룹장 정보 표시
       const eventInfo = this.getEventName(group.event_id);
       const leaderInfo = group.creator_name ? ` • 그룹장: ${group.creator_name}` : '';
-      const todayBadge = this.isEventToday(group.event_id) 
-        ? '<span style="color:#ef4444;font-weight:700;margin-left:8px;">🔴 대회 당일</span>' 
-        : '';
-      document.getElementById('groupEvent').innerHTML = eventInfo + leaderInfo + todayBadge;
+      let eventInfoHTML = eventInfo + leaderInfo;
+      
+      // 대회 당일이면 아래에 빨간색 문구 추가
+      if (this.isEventToday(group.event_id)) {
+        eventInfoHTML += '<br><span style="color:#ef4444;font-weight:700;font-size:13px;margin-top:4px;display:inline-block;">🔴 대회 당일입니다</span>';
+      }
+      
+      document.getElementById('groupEvent').innerHTML = eventInfoHTML;
       
       // 지도와 결과 섹션 표시
       this.mapSection.classList.remove('hidden');
