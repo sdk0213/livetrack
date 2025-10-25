@@ -210,48 +210,85 @@ class AuthManager {
     }
   }
 
-  async login() {
-    return new Promise((resolve, reject) => {
+  // 페이지 로드 시 인가 코드 확인
+  async handleRedirect() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+
+    if (error) {
+      console.error('Login error:', error);
+      alert('로그인에 실패했습니다.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return null;
+    }
+
+    if (code) {
       try {
-        if (!window.Kakao) {
-          reject(new Error('Kakao SDK not loaded'));
-          return;
+        // URL에서 code 제거
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // 서버에서 토큰 요청
+        const response = await fetch('/api/auth/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get token');
         }
 
-        // SDK 2.x에서는 loginForm 사용
-        Kakao.Auth.loginForm({
-          success: async (authObj) => {
-            console.log('Kakao login success:', authObj);
-            try {
-              const userInfo = await this.getKakaoUserInfo();
-              this.user = userInfo;
-              
-              // 서버에 사용자 정보 저장
-              try {
-                await APIService.getUser(userInfo.id);
-              } catch (e) {
-                // 신규 사용자
-                await APIService.createUser({
-                  kakaoId: userInfo.id,
-                  name: userInfo.properties.nickname,
-                  profileImage: userInfo.properties.profile_image
-                });
-              }
-              
-              resolve(userInfo);
-            } catch (error) {
-              reject(error);
-            }
-          },
-          fail: (err) => {
-            console.error('Kakao login failed:', err);
-            reject(err);
-          }
-        });
+        const data = await response.json();
+        
+        // 액세스 토큰 설정
+        Kakao.Auth.setAccessToken(data.access_token);
+        
+        const userInfo = data.user;
+        this.user = userInfo;
+        
+        // 서버에 사용자 정보 저장
+        try {
+          await APIService.getUser(userInfo.id);
+        } catch (e) {
+          // 신규 사용자
+          await APIService.createUser({
+            kakaoId: userInfo.id,
+            name: userInfo.properties.nickname,
+            profileImage: userInfo.properties.profile_image
+          });
+        }
+        
+        return userInfo;
       } catch (error) {
-        reject(error);
+        console.error('Failed to get user info:', error);
+        alert('로그인 처리 중 오류가 발생했습니다.');
+        return null;
       }
-    });
+    }
+
+    return null;
+  }
+
+  async login() {
+    try {
+      if (!window.Kakao) {
+        throw new Error('Kakao SDK not loaded');
+      }
+
+      // 공식 문서에 따른 정확한 방식: Kakao.Auth.authorize()
+      // 리다이렉트 방식이므로 Promise가 아닌 페이지 이동 발생
+      Kakao.Auth.authorize({
+        redirectUri: `${window.location.origin}/test_kakao.html`
+      });
+      
+      // authorize는 페이지를 리다이렉트하므로 여기 코드는 실행되지 않음
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   }
 
   async getKakaoUserInfo() {
@@ -615,8 +652,15 @@ class RunCheerApp {
   }
 
   async init() {
+    // 페이지 로드 시 인가 코드 처리
+    const user = await this.authManager.handleRedirect();
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+      await this.onLoginSuccess();
+      return;
+    }
+
     // 로그인 상태 확인
-    // TODO: 실제로는 토큰 검증 필요
     this.checkLoginStatus();
   }
 
@@ -643,9 +687,8 @@ class RunCheerApp {
     const originalText = Utils.showLoading(this.ui.kakaoLoginBtn);
     
     try {
-      const user = await this.authManager.login();
-      localStorage.setItem('user', JSON.stringify(user));
-      await this.onLoginSuccess();
+      // authorize는 페이지를 리다이렉트하므로 여기는 실행되지 않음
+      await this.authManager.login();
     } catch (error) {
       console.error('Login failed:', error);
       Utils.showToast('로그인에 실패했습니다.', 'error');
