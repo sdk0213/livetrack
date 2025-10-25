@@ -1172,6 +1172,9 @@ class RunCheerApp {
       return;
     }
 
+    console.log('Starting tracking for group:', group);
+    console.log('Event ID:', group.event_id);
+
     // 지도 섹션 표시
     const mapSection = document.getElementById('mapSection');
     const resultsSection = document.getElementById('resultsSection');
@@ -1182,6 +1185,8 @@ class RunCheerApp {
     try {
       const runners = await this.groupManager.getGroupRunners(group.code);
       
+      console.log('Runners loaded:', runners);
+      
       if (!runners || runners.length === 0) {
         Utils.showToast('등록된 주자가 없습니다.', 'info');
         return;
@@ -1189,14 +1194,10 @@ class RunCheerApp {
       
       Utils.showToast(`${runners.length}명의 주자 추적을 시작합니다.`, 'success');
       
-      // index.html의 추적 시스템 사용
-      // 배번 목록을 전역 변수에 저장
-      window.trackingBibs = runners.map(r => r.bib_number);
-      window.trackingEventId = group.event_id;
-      
-      // 추적 로직은 index.html과 동일하게 구현 예정
-      // 현재는 기본 지도와 마커만 표시
-      this.initializeTrackingMap(group.event_id, runners);
+      // 지도 초기화를 약간 지연시켜 DOM이 완전히 렌더링되도록 함
+      setTimeout(() => {
+        this.initializeTrackingMap(group.event_id, runners);
+      }, 100);
       
     } catch (error) {
       console.error('Failed to start tracking:', error);
@@ -1205,6 +1206,8 @@ class RunCheerApp {
   }
 
   initializeTrackingMap(eventId, runners) {
+    console.log('Initializing map for event:', eventId);
+    
     if (!window.naver || !window.naver.maps) {
       console.error('Naver Maps API not loaded');
       Utils.showToast('지도 API가 로드되지 않았습니다.', 'error');
@@ -1217,6 +1220,8 @@ class RunCheerApp {
       return;
     }
 
+    console.log('Map container found:', mapContainer);
+
     // 대회별 중심점
     const eventCenters = {
       133: { lat: 37.5665, lng: 126.9780 }, // JTBC 서울마라톤
@@ -1224,6 +1229,8 @@ class RunCheerApp {
     };
 
     const center = eventCenters[eventId] || eventCenters[133];
+    
+    console.log('Creating map with center:', center);
 
     // 지도 생성
     const map = new naver.maps.Map('map', {
@@ -1232,13 +1239,22 @@ class RunCheerApp {
       mapTypeControl: true
     });
 
+    console.log('Map created:', map);
+
     // 코스 경로 로드 (GPX 파일)
     this.loadGPXCourse(eventId, map);
 
+    console.log('Creating markers for', runners.length, 'runners');
+
     // 주자 마커 생성 (임시)
     runners.forEach((runner, index) => {
+      const markerLat = center.lat + (Math.random() - 0.5) * 0.01;
+      const markerLng = center.lng + (Math.random() - 0.5) * 0.01;
+      
+      console.log(`Creating marker for ${runner.runner_name} at`, markerLat, markerLng);
+      
       const marker = new naver.maps.Marker({
-        position: new naver.maps.LatLng(center.lat + (Math.random() - 0.5) * 0.01, center.lng + (Math.random() - 0.5) * 0.01),
+        position: new naver.maps.LatLng(markerLat, markerLng),
         map: map,
         title: `${runner.runner_name} (${runner.bib_number})`,
         icon: {
@@ -1246,6 +1262,8 @@ class RunCheerApp {
           anchor: new naver.maps.Point(0, 30)
         }
       });
+
+      console.log('Marker created:', marker);
 
       naver.maps.Event.addListener(marker, 'click', () => {
         const infoWindow = new naver.maps.InfoWindow({
@@ -1262,6 +1280,8 @@ class RunCheerApp {
         }
       });
     });
+
+    console.log('All markers created');
 
     Utils.showToast('지도가 로드되었습니다. 대회 당일 실시간 추적이 시작됩니다.', 'info');
     
