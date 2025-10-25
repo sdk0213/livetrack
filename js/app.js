@@ -1520,15 +1520,15 @@ class RunCheerApp {
     // 첫 데이터 로드
     await this.updateTrackingData();
 
-    // 60초마다 갱신
+    // 90초마다 갱신 (Function 비용 절감)
     if (this.trackingTimer) {
       clearInterval(this.trackingTimer);
     }
     this.trackingTimer = setInterval(() => {
       this.updateTrackingData();
-    }, 60000); // 60초
+    }, 90000); // 90초
 
-    // 15초마다 마커 위치 업데이트 (예상 위치)
+    // 15초마다 마커 위치 업데이트 (예상 위치, 클라이언트 작업만 - 비용 무관)
     if (this.mapUpdateTimer) {
       clearInterval(this.mapUpdateTimer);
     }
@@ -1542,8 +1542,8 @@ class RunCheerApp {
 
     console.log('Updating tracking data...');
     
-    // 카운트다운 리셋
-    this.remainingSeconds = 60;
+    // 카운트다운 리셋 (90초)
+    this.remainingSeconds = 90;
     this.updateCountdown();
     
     const statusEl = document.getElementById('status');
@@ -1557,13 +1557,15 @@ class RunCheerApp {
       sortInfoEl.style.display = 'none';
     }
 
-    for (const bib of this.trackingBibs) {
+    for (const bib of [...this.trackingBibs]) {
       // 기존 마커에서 완주 여부 확인
       const existingMarker = this.mapMarkers.find(m => m.bib === bib);
       if (existingMarker && existingMarker.playerData) {
         const estimated = this.estimateNow(existingMarker.playerData);
         if (estimated.status === '완주') {
-          console.log(`완주한 주자 건너뜀: ${bib} (${existingMarker.playerData.name})`);
+          console.log(`✅ 완주한 주자 추적 중단: ${bib} (${existingMarker.playerData.name})`);
+          // 추적 배열에서 제거하여 더 이상 API 호출 안 함
+          this.trackingBibs = this.trackingBibs.filter(b => b !== bib);
           continue;
         }
       }
@@ -1572,6 +1574,14 @@ class RunCheerApp {
         const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}`);
         if (response.ok) {
           const playerData = await response.json();
+          
+          // 새로 조회한 데이터로 완주 여부 재확인
+          const estimated = this.estimateNow(playerData);
+          if (estimated.status === '완주') {
+            console.log(`✅ 완주 확인 - 추적 중단: ${bib} (${playerData.name})`);
+            this.trackingBibs = this.trackingBibs.filter(b => b !== bib);
+          }
+          
           this.updatePlayerMarker(bib, playerData);
           console.log(`Updated player ${bib}:`, playerData.name);
         }

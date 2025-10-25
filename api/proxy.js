@@ -18,7 +18,8 @@ export default async function handler(req, res) {
     const body = await r.text();
 
     res.setHeader('Content-Type', r.headers.get('content-type') || 'application/json');
-    res.setHeader('Cache-Control', 'no-cache');
+    // 60초(1분) 캐싱으로 중복 호출 방지 (Function 비용 절감)
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
     // 외부 출처 허용 원하면 다음 줄 주석 해제
     // res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(r.status).send(body);
