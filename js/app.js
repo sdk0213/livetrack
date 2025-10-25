@@ -743,6 +743,9 @@ class RunCheerApp {
   async onLoginSuccess() {
     this.ui.showPage('mainApp');
     
+    // 응원 탭을 기본으로 활성화
+    this.ui.switchTab('cheer');
+    
     // 사용자 정보 로드
     const user = this.authManager.getUser();
     console.log('onLoginSuccess - user:', user);
