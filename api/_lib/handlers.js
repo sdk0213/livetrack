@@ -171,28 +171,28 @@ export async function handleGroupCreate(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, eventId, leaderId } = req.body;
+  const { code, name, eventId, creatorKakaoId } = req.body;
 
-  if (!name || !eventId || !leaderId) {
-    return res.status(400).json({ error: 'name, eventId, leaderId are required' });
+  if (!code || !name || !eventId || !creatorKakaoId) {
+    console.error('Missing required fields:', { code, name, eventId, creatorKakaoId });
+    return res.status(400).json({ error: 'code, name, eventId, creatorKakaoId are required' });
   }
 
-  const code = Math.floor(1000 + Math.random() * 9000).toString();
+  try {
+    const result = await sql`
+      INSERT INTO groups (code, name, event_id, creator_kakao_id)
+      VALUES (${code}, ${name}, ${eventId}, ${creatorKakaoId})
+      RETURNING *
+    `;
 
-  const result = await sql`
-    INSERT INTO groups (name, code, event_id, leader_id)
-    VALUES (${name}, ${code}, ${eventId}, ${leaderId})
-    RETURNING *
-  `;
-
-  const group = result.rows[0];
-
-  await sql`
-    INSERT INTO group_members (group_id, kakao_id)
-    VALUES (${group.id}, ${leaderId})
-  `;
-
-  return res.status(201).json(group);
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Group creation error:', error);
+    if (error.code === '23505') { // 중복 코드
+      return res.status(409).json({ error: 'Code already exists' });
+    }
+    throw error;
+  }
 }
 
 export async function handleGroupJoin(req, res) {

@@ -367,9 +367,8 @@ class GroupManager {
     const groupData = {
       code,
       name,
-      eventId,
-      creatorKakaoId,
-      createdAt: new Date().toISOString()
+      eventId: parseInt(eventId, 10),
+      creatorKakaoId
     };
 
     const group = await APIService.createGroup(groupData);
