@@ -606,7 +606,10 @@ class UIManager {
     this.kakaoLoginBtn.addEventListener('click', () => this.app.handleLogin());
     
     // 그룹
-    this.createGroupBtn.addEventListener('click', () => this.showModal('createGroupModal'));
+    this.createGroupBtn.addEventListener('click', () => {
+      // 베타 서비스 - 그룹 생성 제한
+      Utils.showToast('현재 베타 서비스로 사용자 임의 생성이 불가능합니다.', 'error');
+    });
     this.joinGroupBtn.addEventListener('click', () => this.showModal('joinGroupModal'));
     document.getElementById('confirmCreateGroupBtn').addEventListener('click', () => this.app.handleCreateGroup());
     document.getElementById('confirmJoinGroupBtn').addEventListener('click', () => this.app.handleJoinGroup());
