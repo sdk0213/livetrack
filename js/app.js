@@ -665,7 +665,7 @@ class UIManager {
       `;
       
       // 그룹장이면 "그룹 삭제" 버튼, 멤버면 "그룹 탈퇴" 버튼
-      this.leaveGroupBtn.textContent = isLeader ? '🗑️ 그룹 삭제' : '👋 그룹 탈퇴';
+      this.leaveGroupBtn.textContent = isLeader ? '그룹 삭제' : '그룹 탈퇴';
       this.leaveGroupBtn.classList.remove('hidden');
       
       // 버튼 스타일 변경 (그룹장은 danger)
