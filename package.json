@@ -2,6 +2,10 @@
   "name": "runcheer-livetrack",
   "version": "1.0.0",
   "description": "RunCheer - 마라톤 크루 응원 시스템",
+  "type": "module",
+  "engines": {
+    "node": ">=18.x"
+  },
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'No build step required'",
