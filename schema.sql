@@ -27,14 +27,19 @@ CREATE TABLE IF NOT EXISTS group_members (
   id SERIAL PRIMARY KEY,
   group_code VARCHAR(4) NOT NULL,
   kakao_id VARCHAR(50) NOT NULL,
-  bib VARCHAR(10) NOT NULL,
-  photo_url TEXT NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'runner', -- 'runner' 또는 'supporter'
+  bib VARCHAR(10), -- runner인 경우에만 필수
+  photo_url TEXT, -- runner인 경우에만 필수
   team_name VARCHAR(50),
   joined_at TIMESTAMP DEFAULT NOW(),
   CONSTRAINT unique_member UNIQUE (kakao_id),
   CONSTRAINT unique_bib_in_group UNIQUE (group_code, bib),
   CONSTRAINT fk_group FOREIGN KEY (group_code) REFERENCES groups(code) ON DELETE CASCADE,
-  CONSTRAINT fk_user FOREIGN KEY (kakao_id) REFERENCES users(kakao_id) ON DELETE CASCADE
+  CONSTRAINT fk_user FOREIGN KEY (kakao_id) REFERENCES users(kakao_id) ON DELETE CASCADE,
+  CONSTRAINT check_runner_required_fields CHECK (
+    (role = 'supporter') OR 
+    (role = 'runner' AND bib IS NOT NULL AND photo_url IS NOT NULL)
+  )
 );
 
 -- 이미지 테이블 (Vercel Blob 저장)

@@ -626,25 +626,47 @@
   <div id="registerRunnerModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>주자 정보 등록</h2>
+        <h2>그룹 참여 정보 등록</h2>
         <button class="modal-close" onclick="closeModal('registerRunnerModal')">×</button>
       </div>
-      <p id="registerRunnerDescription" class="muted" style="font-size:12px">그룹 참여를 위해 배번과 사진을 등록해주세요.</p>
+      <p id="registerRunnerDescription" class="muted" style="font-size:12px">그룹 참여를 위해 역할을 선택하고 필요한 정보를 등록해주세요.</p>
       
       <div class="mt-2">
-        <label class="muted" style="font-size:12px">배번 (Bib Number)</label>
-        <input type="number" id="runnerBib" placeholder="예: 12345" />
+        <label class="muted" style="font-size:12px;font-weight:600">참여 역할</label>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;background:#f8fafc;border:2px solid #cbd5e1;border-radius:10px;cursor:pointer;transition:all 0.2s" id="runnerRoleLabel">
+            <input type="radio" name="memberRole" value="runner" id="runnerRole" checked onchange="handleRoleChange()" />
+            <div>
+              <div style="font-weight:700">🏃‍♂️ 주자</div>
+              <div style="font-size:11px;color:var(--muted)">배번 + 레디샷 필요</div>
+            </div>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;background:#f8fafc;border:2px solid #cbd5e1;border-radius:10px;cursor:pointer;transition:all 0.2s" id="supporterRoleLabel">
+            <input type="radio" name="memberRole" value="supporter" id="supporterRole" onchange="handleRoleChange()" />
+            <div>
+              <div style="font-weight:700">📣 응원자</div>
+              <div style="font-size:11px;color:var(--muted)">정보 불필요</div>
+            </div>
+          </label>
+        </div>
       </div>
       
-      <div class="mt-2">
-        <label class="muted" style="font-size:12px">주자 사진</label>
-        <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('runnerPhoto').click()">
-          <div id="uploadPlaceholder">
-            <div style="font-size:32px">📷</div>
-            <div style="margin-top:8px">클릭하여 사진 업로드</div>
+      <div id="runnerFields" class="mt-2">
+        <div class="mt-2">
+          <label class="muted" style="font-size:12px">배번 (Bib Number)</label>
+          <input type="number" id="runnerBib" placeholder="예: 12345" />
+        </div>
+        
+        <div class="mt-2">
+          <label class="muted" style="font-size:12px">레디샷 사진</label>
+          <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('runnerPhoto').click()">
+            <div id="uploadPlaceholder">
+              <div style="font-size:32px">📷</div>
+              <div style="margin-top:8px">클릭하여 사진 업로드</div>
+            </div>
+            <img id="imagePreview" class="image-preview hidden" />
+            <input type="file" id="runnerPhoto" accept="image/*" class="hidden" onchange="handleImageSelect(event)" />
           </div>
-          <img id="imagePreview" class="image-preview hidden" />
-          <input type="file" id="runnerPhoto" accept="image/*" class="hidden" onchange="handleImageSelect(event)" />
         </div>
       </div>
       

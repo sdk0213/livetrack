@@ -429,27 +429,48 @@ class GroupManager {
     return group;
   }
 
-  async registerRunner(kakaoId, bib, photoBlob) {
+  async registerRunner(kakaoId, bib, photoBlob, photoUrl = null) {
     if (!this.currentGroup) {
       throw new Error('그룹에 참여하지 않았습니다.');
     }
 
-    // 이미지 업로드
-    const imageResult = await APIService.uploadImage(
-      photoBlob,
-      this.currentGroup.code,
-      kakaoId
-    );
+    let imageUrl = photoUrl;
+    
+    // photoBlob이 있으면 이미지 업로드
+    if (photoBlob) {
+      const imageResult = await APIService.uploadImage(
+        photoBlob,
+        this.currentGroup.code,
+        kakaoId
+      );
+      imageUrl = imageResult.url;
+    }
 
     // 주자 정보 등록
     const runnerData = {
       code: this.currentGroup.code,
       kakaoId,
+      role: 'runner',
       bib,
-      photoUrl: imageResult.url
+      photoUrl: imageUrl
     };
 
     return APIService.joinGroup(runnerData);
+  }
+
+  async registerSupporter(kakaoId) {
+    if (!this.currentGroup) {
+      throw new Error('그룹에 참여하지 않았습니다.');
+    }
+
+    // 응원자 정보 등록 (배번과 사진 불필요)
+    const supporterData = {
+      code: this.currentGroup.code,
+      kakaoId,
+      role: 'supporter'
+    };
+
+    return APIService.joinGroup(supporterData);
   }
 
   async getRunners() {
@@ -690,43 +711,95 @@ class UIManager {
   updateRunnersList(runners) {
     this.runnersList.innerHTML = '';
     
-    runners.forEach(runner => {
-      const card = document.createElement('div');
-      card.className = 'runner-card';
+    // 주자와 응원자 분리
+    const runnerList = runners.filter(r => r.role === 'runner');
+    const supporterList = runners.filter(r => r.role === 'supporter');
+    
+    // 주자 목록
+    if (runnerList.length > 0) {
+      const runnerHeader = document.createElement('div');
+      runnerHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin-bottom:8px;padding:0 4px;';
+      runnerHeader.textContent = `🏃‍♂️ 주자 (${runnerList.length}명)`;
+      this.runnersList.appendChild(runnerHeader);
       
-      // 프로필 이미지 (카카오)
-      const profileImage = runner.profile_image || '/RunCheer.png';
+      runnerList.forEach(runner => {
+        const card = document.createElement('div');
+        card.className = 'runner-card';
+        
+        // 프로필 이미지 (카카오)
+        const profileImage = runner.profile_image || '/RunCheer.png';
+        
+        // 레디샷 이미지
+        const cachedImage = this.app.imageCache.get(runner.kakao_id);
+        const readyShotImage = cachedImage || runner.photo_url || '/RunCheer.png';
+        
+        if (!cachedImage && runner.photo_url) {
+          this.app.imageCache.set(runner.kakao_id, runner.photo_url);
+        }
+        
+        card.innerHTML = `
+          <div style="display:flex;gap:8px;align-items:center;">
+            <img src="${profileImage}" alt="${runner.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" />
+            <img src="${readyShotImage}" alt="${runner.name} 레디샷" class="runner-photo" data-full-image="${readyShotImage}" style="cursor:pointer;" />
+          </div>
+          <div class="runner-info">
+            <div class="runner-name">${runner.name}</div>
+            <div class="runner-bib">배번: ${runner.bib}${runner.team_name ? ` (${runner.team_name})` : ''}</div>
+            <div style="font-size:10px;color:#94a3b8;margin-top:2px;">프로필 / 레디샷</div>
+          </div>
+        `;
+        
+        // 이미지 클릭 이벤트
+        const images = card.querySelectorAll('.runner-photo');
+        images.forEach(img => {
+          img.addEventListener('click', () => {
+            this.showImageViewer(img.dataset.fullImage);
+          });
+        });
+        
+        this.runnersList.appendChild(card);
+      });
+    }
+    
+    // 응원자 목록
+    if (supporterList.length > 0) {
+      const supporterHeader = document.createElement('div');
+      supporterHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin:16px 0 8px 0;padding:0 4px;';
+      supporterHeader.textContent = `📣 응원자 (${supporterList.length}명)`;
+      this.runnersList.appendChild(supporterHeader);
       
-      // 레디샷 이미지
-      const cachedImage = this.app.imageCache.get(runner.kakao_id);
-      const readyShotImage = cachedImage || runner.photo_url || '/RunCheer.png';
-      
-      if (!cachedImage && runner.photo_url) {
-        this.app.imageCache.set(runner.kakao_id, runner.photo_url);
-      }
-      
-      card.innerHTML = `
-        <div style="display:flex;gap:8px;align-items:center;">
-          <img src="${profileImage}" alt="${runner.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" />
-          <img src="${readyShotImage}" alt="${runner.name} 레디샷" class="runner-photo" data-full-image="${readyShotImage}" style="cursor:pointer;" />
-        </div>
-        <div class="runner-info">
-          <div class="runner-name">${runner.name}</div>
-          <div class="runner-bib">배번: ${runner.bib}${runner.team_name ? ` (${runner.team_name})` : ''}</div>
-          <div style="font-size:10px;color:#94a3b8;margin-top:2px;">프로필 / 레디샷</div>
-        </div>
-      `;
-      
-      // 이미지 클릭 이벤트
-      const images = card.querySelectorAll('.runner-photo');
-      images.forEach(img => {
+      supporterList.forEach(supporter => {
+        const card = document.createElement('div');
+        card.className = 'runner-card';
+        card.style.background = '#f8fafc';
+        
+        // 프로필 이미지만 (카카오)
+        const profileImage = supporter.profile_image || '/RunCheer.png';
+        
+        card.innerHTML = `
+          <div style="display:flex;gap:8px;align-items:center;">
+            <img src="${profileImage}" alt="${supporter.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" />
+          </div>
+          <div class="runner-info">
+            <div class="runner-name">${supporter.name}</div>
+            <div class="runner-bib" style="color:#64748b;">응원자</div>
+          </div>
+        `;
+        
+        // 이미지 클릭 이벤트
+        const img = card.querySelector('.runner-photo');
         img.addEventListener('click', () => {
           this.showImageViewer(img.dataset.fullImage);
         });
+        
+        this.runnersList.appendChild(card);
       });
-      
-      this.runnersList.appendChild(card);
-    });
+    }
+    
+    // 멤버가 없는 경우
+    if (runners.length === 0) {
+      this.runnersList.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">아직 등록된 멤버가 없습니다.</div>';
+    }
   }
 
   showImageViewer(imageUrl) {
@@ -1048,10 +1121,12 @@ class RunCheerApp {
   }
 
   async handleRegisterRunner() {
+    const role = document.querySelector('input[name="memberRole"]:checked').value;
     const bib = document.getElementById('runnerBib').value.trim();
     const photoInput = document.getElementById('runnerPhoto');
     
-    if (!bib || !photoInput.files.length) {
+    // 주자인 경우 배번과 사진 필수
+    if (role === 'runner' && (!bib || !photoInput.files.length)) {
       Utils.showToast('배번과 사진을 모두 입력해주세요.', 'error');
       return;
     }
@@ -1061,10 +1136,28 @@ class RunCheerApp {
     
     try {
       const user = this.authManager.getUser();
-      const file = photoInput.files[0];
+      let photoUrl = null;
       
-      // 이미지 압축
-      const compressedBlob = await Utils.compressImage(file);
+      // 주자인 경우에만 이미지 업로드
+      if (role === 'runner') {
+        const file = photoInput.files[0];
+        const compressedBlob = await Utils.compressImage(file);
+        
+        // pendingGroup이 있으면 그룹 코드 생성 또는 사용
+        const groupCode = this.pendingGroup?.code || this.groupManager.currentGroup?.code;
+        if (!groupCode && !this.pendingGroup) {
+          throw new Error('그룹 정보가 없습니다.');
+        }
+        
+        // 임시 코드 생성 (그룹 생성 전)
+        let uploadCode = groupCode;
+        if (!uploadCode) {
+          uploadCode = Utils.generateGroupCode();
+        }
+        
+        const imageResult = await APIService.uploadImage(compressedBlob, uploadCode, user.id);
+        photoUrl = imageResult.url;
+      }
       
       // pendingGroup이 있으면 그룹 생성부터 시작
       if (this.pendingGroup && !this.pendingGroup.code) {
@@ -1088,17 +1181,15 @@ class RunCheerApp {
           throw new Error('그룹 코드 생성에 실패했습니다.');
         }
         
-        // 이미지 업로드
-        const imageResult = await APIService.uploadImage(compressedBlob, code, user.id);
-        
         // 그룹 + 멤버를 한 번에 생성
         const groupData = {
           code,
           name: this.pendingGroup.name,
           eventId: parseInt(this.pendingGroup.eventId, 10),
           creatorKakaoId: user.id,
-          bib,
-          photoUrl: imageResult.url
+          role,
+          bib: role === 'runner' ? bib : null,
+          photoUrl: role === 'runner' ? photoUrl : null
         };
         
         const group = await APIService.createGroupWithMember(groupData);
@@ -1107,10 +1198,14 @@ class RunCheerApp {
         
         Utils.showToast(`그룹이 생성되었습니다! 코드: ${group.code}`, 'success');
       } else {
-        // 기존 그룹에 주자 등록
-        await this.groupManager.registerRunner(user.id, bib, compressedBlob);
+        // 기존 그룹에 멤버 등록
+        if (role === 'runner') {
+          await this.groupManager.registerRunner(user.id, bib, null, photoUrl);
+        } else {
+          await this.groupManager.registerSupporter(user.id);
+        }
         this.pendingGroup = null;
-        Utils.showToast('주자 정보가 등록되었습니다!', 'success');
+        Utils.showToast(role === 'runner' ? '주자 정보가 등록되었습니다!' : '응원자로 등록되었습니다!', 'success');
       }
       
       this.ui.hideModal('registerRunnerModal');
@@ -1118,6 +1213,8 @@ class RunCheerApp {
       // 입력 필드 초기화
       document.getElementById('runnerBib').value = '';
       document.getElementById('runnerPhoto').value = '';
+      document.getElementById('runnerRole').checked = true;
+      handleRoleChange();
       
       // UI 업데이트
       await this.loadUserGroup();
@@ -2003,6 +2100,27 @@ function handleImageSelect(event) {
     uploadArea.classList.add('has-image');
   };
   reader.readAsDataURL(file);
+}
+
+function handleRoleChange() {
+  const isRunner = document.getElementById('runnerRole').checked;
+  const runnerFields = document.getElementById('runnerFields');
+  const runnerRoleLabel = document.getElementById('runnerRoleLabel');
+  const supporterRoleLabel = document.getElementById('supporterRoleLabel');
+  
+  if (isRunner) {
+    runnerFields.style.display = 'block';
+    runnerRoleLabel.style.borderColor = '#3b82f6';
+    runnerRoleLabel.style.background = '#eff6ff';
+    supporterRoleLabel.style.borderColor = '#cbd5e1';
+    supporterRoleLabel.style.background = '#f8fafc';
+  } else {
+    runnerFields.style.display = 'none';
+    supporterRoleLabel.style.borderColor = '#3b82f6';
+    supporterRoleLabel.style.background = '#eff6ff';
+    runnerRoleLabel.style.borderColor = '#cbd5e1';
+    runnerRoleLabel.style.background = '#f8fafc';
+  }
 }
 
 // ============================================

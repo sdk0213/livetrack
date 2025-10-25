@@ -203,11 +203,17 @@ export async function handleGroupCreateWithMember(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { code, name, eventId, creatorKakaoId, bib, photoUrl } = req.body;
+  const { code, name, eventId, creatorKakaoId, role = 'runner', bib, photoUrl } = req.body;
 
-  if (!code || !name || !eventId || !creatorKakaoId || !bib || !photoUrl) {
-    console.error('Missing required fields:', { code, name, eventId, creatorKakaoId, bib, photoUrl });
-    return res.status(400).json({ error: 'All fields are required' });
+  if (!code || !name || !eventId || !creatorKakaoId) {
+    console.error('Missing required fields:', { code, name, eventId, creatorKakaoId });
+    return res.status(400).json({ error: 'code, name, eventId, and creatorKakaoId are required' });
+  }
+
+  // 주자인 경우 배번과 사진 필수
+  if (role === 'runner' && (!bib || !photoUrl)) {
+    console.error('Runner missing required fields:', { bib, photoUrl });
+    return res.status(400).json({ error: 'Runner role requires bib and photoUrl' });
   }
 
   try {
@@ -220,11 +226,18 @@ export async function handleGroupCreateWithMember(req, res) {
 
     const group = groupResult.rows[0];
 
-    // 2. 멤버 추가 (생성자를 주자로 등록)
-    await sql`
-      INSERT INTO group_members (group_code, kakao_id, bib, photo_url)
-      VALUES (${code}, ${creatorKakaoId}, ${bib}, ${photoUrl})
-    `;
+    // 2. 멤버 추가 (생성자를 주자 또는 응원자로 등록)
+    if (role === 'runner') {
+      await sql`
+        INSERT INTO group_members (group_code, kakao_id, role, bib, photo_url)
+        VALUES (${code}, ${creatorKakaoId}, ${role}, ${bib}, ${photoUrl})
+      `;
+    } else {
+      await sql`
+        INSERT INTO group_members (group_code, kakao_id, role)
+        VALUES (${code}, ${creatorKakaoId}, ${role})
+      `;
+    }
 
     return res.status(201).json(group);
   } catch (error) {
@@ -241,11 +254,18 @@ export async function handleGroupJoin(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { code, kakaoId, bib, photoUrl } = req.body;
+  const { code, kakaoId, role = 'runner', bib, photoUrl } = req.body;
 
-  if (!code || !kakaoId || !bib || !photoUrl) {
-    console.error('Missing required fields:', { code, kakaoId, bib, photoUrl });
-    return res.status(400).json({ error: 'code, kakaoId, bib, photoUrl are required' });
+  // 기본 필수 항목 확인
+  if (!code || !kakaoId) {
+    console.error('Missing required fields:', { code, kakaoId });
+    return res.status(400).json({ error: 'code and kakaoId are required' });
+  }
+
+  // 주자인 경우 배번과 사진 필수
+  if (role === 'runner' && (!bib || !photoUrl)) {
+    console.error('Runner missing required fields:', { bib, photoUrl });
+    return res.status(400).json({ error: 'Runner role requires bib and photoUrl' });
   }
 
   try {
@@ -268,11 +288,18 @@ export async function handleGroupJoin(req, res) {
       return res.status(400).json({ error: 'Already a member' });
     }
 
-    // 멤버 추가
-    await sql`
-      INSERT INTO group_members (group_code, kakao_id, bib, photo_url)
-      VALUES (${code}, ${kakaoId}, ${bib}, ${photoUrl})
-    `;
+    // 멤버 추가 (role에 따라 다르게)
+    if (role === 'runner') {
+      await sql`
+        INSERT INTO group_members (group_code, kakao_id, role, bib, photo_url)
+        VALUES (${code}, ${kakaoId}, ${role}, ${bib}, ${photoUrl})
+      `;
+    } else {
+      await sql`
+        INSERT INTO group_members (group_code, kakao_id, role)
+        VALUES (${code}, ${kakaoId}, ${role})
+      `;
+    }
 
     return res.status(200).json(group);
   } catch (error) {
