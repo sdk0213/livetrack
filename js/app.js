@@ -86,6 +86,39 @@ class Utils {
     // 간단한 토스트 메시지
     alert(message);
   }
+
+  // 거리 계산 (Haversine formula)
+  static calcDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371; // 지구 반지름 (km)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // GPX 포인트에서 특정 거리의 위치 계산
+  static getPositionOnRoute(gpxPoints, distanceKm) {
+    if (!gpxPoints || gpxPoints.length === 0) return null;
+    
+    let accumulated = 0;
+    for (let i = 1; i < gpxPoints.length; i++) {
+      const prev = gpxPoints[i - 1];
+      const curr = gpxPoints[i];
+      const segDist = this.calcDistance(prev.lat(), prev.lng(), curr.lat(), curr.lng());
+      
+      if (accumulated + segDist >= distanceKm) {
+        const ratio = (distanceKm - accumulated) / segDist;
+        const lat = prev.lat() + (curr.lat() - prev.lat()) * ratio;
+        const lng = prev.lng() + (curr.lng() - prev.lng()) * ratio;
+        return new naver.maps.LatLng(lat, lng);
+      }
+      accumulated += segDist;
+    }
+    return gpxPoints[gpxPoints.length - 1];
+  }
 }
 
 // ============================================
@@ -726,6 +759,9 @@ class RunCheerApp {
     this.pendingGroup = null; // 주자 등록 대기 중인 그룹
     this.currentMap = null; // 네이버 지도 인스턴스
     this.mapMarkers = []; // 지도 마커 배열
+    this.gpxPoints = []; // GPX 경로 포인트
+    this.coursePath = null; // 코스 경로 Polyline
+    this.checkpointMarkers = []; // 체크포인트 마커 배열
     
     this.init();
   }
@@ -1330,11 +1366,41 @@ class RunCheerApp {
 
   async loadGPXCourse(eventId, map) {
     let gpxFile = null;
+    let checkpoints = [];
     
     if (eventId === 133) {
+      // 2025 JTBC 서울마라톤
       gpxFile = '/course-jtbc2025.gpx';
+      checkpoints = [
+        {name: '출발', distance: 0.00},
+        {name: '5K', distance: 5.00},
+        {name: '10K', distance: 10.00},
+        {name: '15K', distance: 15.00},
+        {name: '20K', distance: 20.00},
+        {name: 'Half', distance: 21.10},
+        {name: '25K', distance: 25.00},
+        {name: '30K', distance: 30.00},
+        {name: '35K', distance: 35.00},
+        {name: '40K', distance: 40.00},
+        {name: '도착', distance: 42.195}
+      ];
     } else if (eventId === 132) {
+      // 2025 춘천마라톤
       gpxFile = '/course-chuncheon-2025.gpx';
+      checkpoints = [
+        {name: '출발', distance: 0.00},
+        {name: '반환점', distance: 4.00},
+        {name: '5K', distance: 5.00},
+        {name: '10K', distance: 10.00},
+        {name: '15K', distance: 15.00},
+        {name: '20K', distance: 20.00},
+        {name: 'Half', distance: 21.10},
+        {name: '25K', distance: 25.00},
+        {name: '30K', distance: 30.00},
+        {name: '35K', distance: 35.00},
+        {name: '40K', distance: 40.00},
+        {name: '도착', distance: 42.20}
+      ];
     }
     
     if (!gpxFile) return;
@@ -1354,7 +1420,16 @@ class RunCheerApp {
       });
       
       if (path.length > 0) {
-        const coursePath = new naver.maps.Polyline({
+        // GPX 포인트 저장
+        this.gpxPoints = path;
+        
+        // 기존 코스 경로 제거
+        if (this.coursePath) {
+          this.coursePath.setMap(null);
+        }
+        
+        // 코스 경로 그리기
+        this.coursePath = new naver.maps.Polyline({
           path: path,
           strokeColor: '#FF0000',
           strokeOpacity: 0.6,
@@ -1362,11 +1437,34 @@ class RunCheerApp {
           map: map
         });
         
+        // 지도 범위 조정
         const bounds = new naver.maps.LatLngBounds();
         path.forEach(p => bounds.extend(p));
         map.fitBounds(bounds);
         
-        console.log(`GPX 코스 로드 완료: ${path.length} 포인트`);
+        // 기존 체크포인트 마커 제거
+        if (this.checkpointMarkers) {
+          this.checkpointMarkers.forEach(m => m.setMap(null));
+        }
+        this.checkpointMarkers = [];
+        
+        // 체크포인트 마커 추가
+        checkpoints.forEach(cp => {
+          const pos = Utils.getPositionOnRoute(path, cp.distance);
+          if (pos) {
+            const marker = new naver.maps.Marker({
+              position: pos,
+              map: map,
+              icon: {
+                content: `<div style="background:#2a3f5f;color:white;padding:4px 8px;border-radius:12px;font-size:11px;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);">${cp.name}</div>`,
+                anchor: new naver.maps.Point(0, 25)
+              }
+            });
+            this.checkpointMarkers.push(marker);
+          }
+        });
+        
+        console.log(`GPX 코스 로드 완료: ${path.length} 포인트, ${checkpoints.length} 체크포인트`);
       }
     } catch (error) {
       console.error('GPX 로드 실패:', error);
