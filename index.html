@@ -3,76 +3,292 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RunCheer(러너를 응원하자!) 🏃‍♂️💨</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🏃‍♂️</text></svg>" />
+  <title>RunCheer - 크루 응원 🏃‍♂️💨</title>
+  <link rel="icon" href="/RunCheer.png" type="image/png" />
+  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" integrity="sha384-DKYJZ8NLiK8MN4/C5P2dtSmLQ4KwPaoqAfyA/DfmEc1VDxu4yyC7wy6K1Hs90nka" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=04ebpnqto6"></script>
   <style>
-    :root{--bg:#f5f7fa;--card:#ffffff;--muted:#64748b;--fg:#1e293b;--acc:#3b82f6;--ok:#22c55e;--err:#ef4444;--finished:#dbeafe}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Helvetica,Arial,sans-serif;scroll-behavior:auto}
-    .wrap{max-width:1100px;margin:22px auto;padding:0 16px}
+    :root{
+      --bg:#f5f7fa;
+      --card:#ffffff;
+      --muted:#64748b;
+      --fg:#1e293b;
+      --acc:#3b82f6;
+      --ok:#22c55e;
+      --err:#ef4444;
+      --warn:#f59e0b;
+      --finished:#dbeafe;
+      --kakao:#FEE500;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    html,body{
+      margin:0;
+      height:100%;
+      background:var(--bg);
+      color:var(--fg);
+      font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Helvetica,Arial,sans-serif;
+      scroll-behavior:smooth;
+    }
+    
+    .wrap{max-width:1100px;margin:22px auto;padding:0 16px;padding-bottom:80px}
+    
     h1{margin:0 0 6px;font-size:20px}
+    h2{margin:0 0 12px;font-size:18px;font-weight:700}
+    h3{margin:0 0 10px;font-size:16px;font-weight:700}
+    
     .muted{color:var(--muted)}
-    .card{background:var(--card);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:14px;margin:12px 0}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
+    
+    .card{
+      background:var(--card);
+      border-radius:14px;
+      box-shadow:0 2px 8px rgba(0,0,0,.1);
+      padding:14px;
+      margin:12px 0;
+    }
+    
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .col{flex:1 1 240px}
-    input,textarea,button{width:100%;box-sizing:border-box;background:#f8fafc;border:1px solid #cbd5e1;color:var(--fg);border-radius:10px;padding:10px}
-    button{cursor:pointer;background:linear-gradient(180deg,#3b82f6,#2563eb);border:none;color:#fff}
-    button.secondary{background:#f8fafc;border:1px solid #cbd5e1;color:var(--fg)}
-    button.ghost{background:transparent;border:1px dashed #cbd5e1;color:var(--fg)}
-    button:disabled{opacity:.5;cursor:not-allowed}
-    #eventsList{max-height:320px;overflow:auto;border:1px solid #cbd5e1;border-radius:10px;padding:8px;background:#f8fafc}
-    .evbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border-radius:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;margin:6px 0}
-    .evbtn .name{font-weight:700;color:var(--fg)}
-    .evbtn .date{font-size:12px;color:var(--muted)}
-    .active{outline:2px solid var(--acc)}
-    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px;table-layout:fixed}
-    th,td{text-align:left;padding:10px 12px;vertical-align:top;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    th{font-size:11px;line-height:1.3;white-space:normal}
-    tbody tr{background:#f8fafc}
-    tbody tr.finished{background:var(--finished)!important}
-    tbody tr.player-main td:first-child{border-radius:10px 0 0 0;white-space:normal}
-    tbody tr.player-main td:last-child{border-radius:0 10px 0 0}
-    tbody tr.player-splits td{border-top:1px solid #e2e8f0;border-radius:0 0 10px 10px;padding-top:8px;white-space:normal}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .tiny{font-size:12px}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
-    .pill.run{background:rgba(59,130,246,.12);color:var(--acc)}
-    .pill.fin{background:rgba(100,116,139,.12);color:var(--muted)}
-    .pill.wait{background:rgba(100,116,139,.08);color:var(--muted)}
-    .err{color:var(--err)}
-    .splits{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);padding:5px 0}
-    #map{width:100%;height:500px;border-radius:10px;background:#e2e8f0}
-    .loading{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--acc);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-left:8px}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .player-count{font-size:13px;color:var(--muted);margin-top:8px;font-weight:600}
-    .dev-info{position:fixed;top:10px;right:16px;text-align:right;font-size:11px;z-index:1000;background:rgba(255,255,255,0.95);padding:8px 12px;border-radius:8px;border:1px solid #cbd5e1;box-shadow:0 2px 4px rgba(0,0,0,.1)}
-    .dev-info .dev{color:var(--muted)}
-    .header-warning{color:var(--err);font-size:13px;font-weight:700;margin:8px 0 16px 0}
-    .player-label{
-      background:rgba(59,130,246,0.95);
+    
+    input,textarea,select,button{
+      width:100%;
+      box-sizing:border-box;
+      background:#f8fafc;
+      border:1px solid #cbd5e1;
+      color:var(--fg);
+      border-radius:10px;
+      padding:10px;
+      font-size:14px;
+    }
+    
+    button{
+      cursor:pointer;
+      background:linear-gradient(180deg,#3b82f6,#2563eb);
+      border:none;
       color:#fff;
-      padding:6px 12px;
-      border-radius:20px;
-      font-weight:700;
-      font-size:13px;
-      white-space:nowrap;
-      box-shadow:0 2px 8px rgba(0,0,0,0.3);
-      border:2px solid #fff;
+      font-weight:600;
+      transition:opacity 0.2s;
+    }
+    
+    button:hover:not(:disabled){opacity:0.9}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    
+    button.secondary{background:#f8fafc;border:1px solid #cbd5e1;color:var(--fg)}
+    button.success{background:linear-gradient(180deg,#22c55e,#16a34a)}
+    button.danger{background:linear-gradient(180deg,#ef4444,#dc2626)}
+    button.kakao{background:var(--kakao);color:#000;font-weight:700}
+    
+    .btn-small{padding:6px 12px;font-size:12px;width:auto}
+    
+    /* 탭 네비게이션 */
+    .tab-nav{
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      background:#fff;
+      border-top:1px solid #e2e8f0;
+      display:flex;
+      z-index:100;
+      box-shadow:0 -2px 10px rgba(0,0,0,.1);
+    }
+    
+    .tab-btn{
+      flex:1;
+      padding:12px;
+      background:transparent;
+      border:none;
+      border-radius:0;
+      color:var(--muted);
+      font-size:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+    }
+    
+    .tab-btn.active{color:var(--acc);font-weight:700}
+    .tab-btn .icon{font-size:20px}
+    
+    /* 페이지 */
+    .page{display:none}
+    .page.active{display:block}
+    
+    /* 로그인 화면 */
+    .login-container{
+      min-height:80vh;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+    }
+    
+    .login-logo{
+      width:120px;
+      height:120px;
+      margin-bottom:16px;
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow:0 4px 12px rgba(0,0,0,.15);
+    }
+    .login-logo img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+    .login-title{font-size:24px;font-weight:700;margin-bottom:8px}
+    .login-subtitle{color:var(--muted);margin-bottom:32px}
+    
+    /* 그룹 카드 */
+    .group-card{
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:12px;
+      margin:8px 0;
+    }
+    
+    .group-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .group-name{font-weight:700;font-size:16px}
+    .group-code{font-size:12px;color:var(--muted);font-family:monospace}
+    
+    /* 주자 리스트 */
+    .runner-list{display:flex;flex-direction:column;gap:10px}
+    
+    .runner-card{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:10px;
+    }
+    
+    .runner-photo{
+      width:60px;
+      height:60px;
+      border-radius:8px;
+      object-fit:cover;
+      background:#e2e8f0;
+      cursor:pointer;
+      transition:all 0.2s;
+      box-shadow:0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .runner-photo:hover{
+      opacity:0.8;
+      transform:scale(1.05);
+    }
+    
+    .runner-info{flex:1}
+    .runner-name{font-weight:700;margin-bottom:4px}
+    .runner-bib{font-size:12px;color:var(--muted)}
+    
+    /* 모달 */
+    .modal{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,0.5);
+      z-index:200;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    
+    .modal.active{display:flex}
+    
+    .modal-content{
+      background:#fff;
+      border-radius:14px;
+      padding:20px;
+      max-width:500px;
+      width:100%;
+      max-height:80vh;
+      overflow-y:auto;
+    }
+    
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+    
+    .modal-close{
+      background:transparent;
+      border:none;
+      font-size:24px;
+      cursor:pointer;
+      padding:0;
+      width:auto;
+      color:var(--muted);
+    }
+    
+    /* 라디오 버튼 스타일 */
+    input[type="radio"]{
+      width:auto;
+      margin:0;
+      cursor:pointer;
+      flex-shrink:0;
+    }
+    
+    .role-option{
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px;
+      background:#f8fafc;
+      border:2px solid #cbd5e1;
+      border-radius:10px;
       cursor:pointer;
       transition:all 0.2s;
     }
-    .player-label:hover{
-      background:rgba(37,99,235,1);
-      transform:scale(1.05);
+    
+    .role-option:hover{
+      border-color:#94a3b8;
     }
+    
+    .role-option.selected{
+      border-color:#3b82f6;
+      background:#eff6ff;
+    }
+    
+    .role-content{
+      flex:1;
+    }
+    
+    .role-title{
+      font-weight:700;
+      font-size:14px;
+      margin-bottom:2px;
+    }
+    
+    .role-desc{
+      font-size:11px;
+      color:var(--muted);
+    }
+    
+    /* 지도 */
+    #map{width:100%;height:400px;border-radius:10px;background:#e2e8f0}
+    
+    /* 새로고침 인디케이터 */
     .refresh-indicator{
       position:fixed;
-      bottom:20px;
+      bottom:80px;
       right:20px;
-      background:rgba(66,133,244,0.75);
+      background:rgba(66,133,244,0.95);
       color:#fff;
       padding:8px 14px;
       border-radius:20px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+      box-shadow:0 2px 8px rgba(0,0,0,0.2);
       font-size:11px;
       font-weight:600;
       display:none;
@@ -103,10 +319,152 @@
       stroke-linecap:round;
       transition:stroke-dashoffset 1s linear;
     }
+    
+    /* 지도 마커 레이블 */
+    .player-label{
+      background:rgba(59,130,246,0.95);
+      color:#fff;
+      padding:6px 12px;
+      border-radius:20px;
+      font-weight:700;
+      font-size:13px;
+      white-space:nowrap;
+      box-shadow:0 2px 8px rgba(0,0,0,0.3);
+      border:2px solid #fff;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .player-label:hover{
+      background:rgba(37,99,235,1);
+      transform:scale(1.05);
+    }
+    
+    /* 테이블 */
+    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px;table-layout:fixed}
+    th,td{text-align:left;padding:10px 12px;vertical-align:top;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    th{font-size:11px;line-height:1.3;white-space:normal;color:var(--muted);font-weight:600}
+    tbody tr{background:#f8fafc}
+    tbody tr.finished{background:var(--finished)!important}
+    tbody tr.player-main td:first-child{border-radius:10px 0 0 0;white-space:normal}
+    tbody tr.player-main td:last-child{border-radius:0 10px 0 0}
+    tbody tr.player-splits td{border-top:1px solid #e2e8f0;border-radius:0 0 10px 10px;padding-top:8px;white-space:normal}
+    
+    /* Splits 정보 */
+    .splits{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      font-size:12px;
+      color:var(--muted);
+      padding:5px 0;
+    }
+    
+    /* 상태 배지 */
+    .pill{
+      display:inline-block;
+      padding:3px 10px;
+      border-radius:12px;
+      font-size:11px;
+      font-weight:600;
+    }
+    .pill.run{background:rgba(59,130,246,.12);color:var(--acc)}
+    .pill.fin{background:rgba(100,116,139,.12);color:var(--muted)}
+    
+    /* 이미지 업로드 */
+    .image-upload-area{
+      border:2px dashed #cbd5e1;
+      border-radius:10px;
+      padding:20px;
+      text-align:center;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    
+    .image-upload-area:hover{border-color:var(--acc);background:#f8fafc}
+    .image-upload-area.has-image{border-style:solid;border-color:var(--ok)}
+    
+    .image-preview{
+      max-width:200px;
+      max-height:200px;
+      border-radius:8px;
+      margin:10px auto;
+    }
+    
+    .loading{
+      display:inline-block;
+      width:14px;
+      height:14px;
+      border:2px solid #cbd5e1;
+      border-top-color:var(--acc);
+      border-radius:50%;
+      animation:spin 0.6s linear infinite;
+      vertical-align:middle;
+      margin-left:8px;
+    }
+    
+    @keyframes spin{to{transform:rotate(360deg)}}
+    
+    /* 개발자 정보 */
+    .dev-info{
+      position:fixed;
+      top:10px;
+      right:16px;
+      text-align:right;
+      font-size:10px;
+      z-index:1000;
+      background:rgba(255,255,255,0.85);
+      padding:4px 8px;
+      border-radius:6px;
+      border:1px solid #e2e8f0;
+      box-shadow:0 1px 2px rgba(0,0,0,.08);
+    }
+    .dev-info .dev{color:var(--muted)}
+    
+    /* 이미지 뷰어 모달 */
+    .image-viewer-modal{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,0.9);
+      z-index:9999;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+    }
+    
+    .image-viewer-modal.active{
+      display:flex;
+    }
+    
+    .image-viewer-modal img{
+      max-width:80%;
+      max-height:80%;
+      border-radius:12px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    }
+    
+    .hidden{display:none!important}
+    
+    .text-center{text-align:center}
+    .mt-2{margin-top:16px}
+    .mb-2{margin-bottom:16px}
   </style>
-  <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=04ebpnqto6"></script>
 </head>
 <body>
+  <!-- 개발자 정보 -->
+  <div class="dev-info">
+    <div class="dev">개발자: 성대경</div>
+  </div>
+
+  <!-- 이미지 뷰어 모달 -->
+  <div id="imageViewerModal" class="image-viewer-modal">
+    <img id="imageViewerImg" src="" alt="주자 사진" />
+  </div>
+
+  <!-- 새로고침 인디케이터 -->
   <div id="refreshIndicator" class="refresh-indicator">
     <div class="refresh-progress">
       <svg width="28" height="28">
@@ -119,309 +477,287 @@
       <div id="countdown" style="font-size:12px;font-weight:700">60초</div>
     </div>
   </div>
-  <div class="dev-info">
-    <div class="dev">개발자: 성대경</div>
+
+  <div id="app">
+    <!-- 로그인 전 화면 -->
+    <div id="loginPage" class="page active">
+      <div class="wrap">
+        <div class="login-container">
+          <div class="login-logo">
+            <img src="/RunCheer.png" alt="RunCheer Logo">
+          </div>
+          <h1 class="login-title">RunCheer</h1>
+          <p class="login-subtitle">함께 응원하는 마라톤 크루</p>
+          <button id="kakaoLoginBtn" class="kakao" style="max-width:300px">
+            <span style="font-size:18px">💬</span> 카카오톡으로 시작하기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 로그인 중 로딩 화면 -->
+    <div id="loadingPage" class="page">
+      <div class="wrap">
+        <div class="login-container">
+          <div class="login-logo">
+            <img src="/RunCheer.png" alt="RunCheer Logo">
+          </div>
+          <h1 class="login-title">로그인 중...</h1>
+          <p class="login-subtitle">잠시만 기다려주세요</p>
+          <div style="text-align:center;margin-top:20px">
+            <div style="display:inline-block;width:40px;height:40px;border:4px solid #f3f3f3;border-top:4px solid #3b82f6;border-radius:50%;animation:spin 1s linear infinite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 메인 앱 (로그인 후) -->
+    <div id="mainApp" class="page">
+      <!-- 응원 탭 -->
+      <div id="cheerPage" class="page active">
+        <div class="wrap">
+                    <!-- 헤더 -->
+          <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h1 style="margin:0 0 4px 0;">RunCheer Beta <span style="font-size:12px;color:#94a3b8;font-weight:400;">(v0.0.0.1)</span></h1>
+              <p style="margin:0;font-size:14px;color:#64748b;">러너를 응원하자! 🏃‍♂️💨</p>
+            </div>
+          </div>
+          
+          <!-- 그룹 정보 -->
+          <div class="card">
+            <div id="noGroupMessage">
+              <p class="text-center muted">가입된 그룹이 없습니다.</p>
+              <button id="createGroupBtn" class="success">➕ 새 그룹 만들기</button>
+              <button id="joinGroupBtn" class="secondary mt-2">🔗 그룹 코드로 참여하기</button>
+            </div>
+            
+            <div id="groupInfo" class="hidden">
+              <div class="group-header">
+                <div>
+                  <div class="group-name" id="groupName"></div>
+                  <div class="group-code" id="groupCode"></div>
+                </div>
+                <button id="startTrackingBtn" class="success btn-small">🎯 그룹 추적 시작</button>
+              </div>
+              <div class="muted" style="font-size:12px" id="groupEvent"></div>
+            </div>
+          </div>
+
+          <!-- 주자 목록 -->
+          <div class="card" id="runnersSection" class="hidden">
+            <h3>👥 우리 크루 멤버</h3>
+            <div id="runnersList" class="runner-list"></div>
+          </div>
+
+          <!-- 지도 -->
+          <div class="card" id="mapSection" class="hidden">
+            <h3>📍 실시간 주자 위치 <span style="font-size:11px;color:#666;font-weight:normal">(15초 간격 위치 갱신)</span></h3>
+            <div style="color:var(--err);font-size:12px;margin-bottom:10px;font-weight:600">⚠️ 동작하지 않을 수 있습니다. 미동작 시 아래 테이블에서 마지막 위치를 직접 확인해주세요.</div>
+            <div style="color:#666;font-size:12px;margin-bottom:10px">
+              ℹ️ 주자의 예상 위치는 이전 구간의 페이스를 기준으로 산정됩니다<br>
+              ℹ️ 처음 출발시에는 6:30 페이스로 예측되어 산정됩니다
+            </div>
+            <div id="map"></div>
+          </div>
+
+          <!-- 결과 테이블 -->
+          <div class="card" id="resultsSection" class="hidden">
+            <div id="status" class="muted" style="font-size:12px"></div>
+            <div id="sortInfo" class="muted" style="font-size:12px;margin-top:8px;display:none">
+              <strong>정렬기준:</strong> 미완주자→완주자 / 가→나→다
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>이름<br>(배번)<br>(그룹)</th>
+                  <th>상태</th>
+                  <th>달린<br>거리</th>
+                  <th>마지막<br>위치</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 프로필 탭 -->
+      <div id="profilePage" class="page">
+        <div class="wrap">
+          <h1>👤 프로필</h1>
+          
+          <div class="card">
+            <h3>내 정보</h3>
+            <div style="text-align:center;margin:12px 0">
+              <img id="profileImage" src="" alt="프로필" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--acc)" />
+            </div>
+            <div style="margin:12px 0">
+              <label class="muted" style="font-size:12px">이름</label>
+              <input type="text" id="profileName" placeholder="이름을 입력하세요" />
+            </div>
+            <button id="updateNameBtn" class="success">이름 변경</button>
+          </div>
+
+          <div class="card">
+            <h3>가입된 그룹</h3>
+            <div id="myGroupInfo">
+              <p class="muted text-center">가입된 그룹이 없습니다.</p>
+            </div>
+            <button id="leaveGroupBtn" class="danger mt-2 hidden">그룹 탈퇴</button>
+          </div>
+
+          <div class="card">
+            <button id="privacyBtn" class="secondary">📋 개인정보 처리방침</button>
+            <button id="deleteAccountBtn" class="danger mt-2">🗑️ 회원 탈퇴</button>
+            <button id="logoutBtn" class="secondary mt-2">🚪 로그아웃</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 탭 네비게이션 -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="cheer">
+          <span class="icon">🎉</span>
+          <span>응원</span>
+        </button>
+        <button class="tab-btn" data-tab="profile">
+          <span class="icon">👤</span>
+          <span>프로필</span>
+        </button>
+      </nav>
+    </div>
   </div>
-  <div class="wrap">
-    <h1>RunCheer <span style="color:#5cc8ff;font-size:14px">Beta</span> <span style="font-size:10px;color:var(--muted);font-weight:normal">(v0.0.0.1)</span><br><span style="font-size:14px;font-weight:normal;color:var(--muted)">(러너를 응원하자! 🏃‍♂️💨)</span></h1>
-    <div class="header-warning">⚠️ 런티풀 외 배포(유출) 절대 금지</div>
 
-    <!-- 이벤트 리스트 -->
-    <div class="card">
-      <div style="font-weight:700">모든 이벤트</div>
-      <div id="eventsList"></div>
-    </div>
-
-    <!-- 배번 입력 & 제어 -->
-    <div class="card">
-      <div class="row">
-        <div class="col">
-          <label class="tiny muted">선택된 이벤트</label>
-          <div id="picked" class="mono">(없음)</div>
-        </div>
-        <div class="col" style="flex:0 0 220px;align-self:end;display:flex;gap:8px">
-          <button id="startBtn">위치 추적 시작</button>
-          <button id="stopBtn" class="secondary" disabled>위치 추적 정지</button>
-        </div>
+  <!-- 그룹 생성 모달 -->
+  <div id="createGroupModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>새 그룹 만들기</h2>
+        <button class="modal-close" onclick="closeModal('createGroupModal')">×</button>
       </div>
-      <div class="row" style="margin:16px 0">
-        <div class="col">
-          <button id="runtifulBtn" class="secondary" style="background:linear-gradient(180deg,#ff6b6b,#ee5a5a);color:#fff;border:none;font-weight:700">🏃 런티풀 주자 자동추가</button>
-        </div>
+      <div>
+        <label class="muted" style="font-size:12px">그룹 이름</label>
+        <input type="text" id="newGroupName" placeholder="예: 런티풀 춘천" maxlength="20" />
       </div>
-      <div class="row">
-        <div class="col">
-          <label class="tiny muted">배번 목록(쉼표/줄바꿈)</label>
-          <textarea id="bibs" rows="4"></textarea>
-          <div id="playerCount" class="player-count"></div>
-        </div>
-        <div class="col" style="flex:0 0 220px;align-self:end">
-          <button id="saveBibs" style="background:linear-gradient(180deg,#22c55e,#16a34a);color:#fff;border:none;font-weight:700">배번 저장</button>
-        </div>
+      <div class="mt-2">
+        <label class="muted" style="font-size:12px">대회 선택</label>
+        <select id="newGroupEvent">
+          <option value="">대회를 선택하세요</option>
+          <option value="133">2025 JTBC 서울마라톤</option>
+          <option value="132">2025 춘천마라톤</option>
+        </select>
       </div>
-    </div>
-
-    <!-- 지도 -->
-    <div class="card">
-      <div style="font-weight:700;margin-bottom:10px">📍 실시간 주자 위치 <span style="font-size:11px;color:#666;font-weight:normal">(15초 간격 위치 갱신)</span></div>
-      <div style="color:var(--err);font-size:12px;margin-bottom:10px;font-weight:600">⚠️ 동작하지 않을 수 있습니다. 미동작 시 아래 테이블에서 마지막 위치를 직접 확인해주세요.</div>
-      <div class="header-warning" style="color: #666;">
-        ℹ️ 주자의 예상 위치는 이전 구간의 페이스를 기준으로 산정됩니다<br>
-        ℹ️ 처음 출발시에는 6:30 페이스로 예측되어 산정됩니다
-      </div>
-      <div id="map"></div>
-    </div>
-
-    <!-- 결과 테이블 -->
-    <div class="card">
-      <div id="status" class="tiny muted">이벤트를 선택하고 시작을 누르세요.</div>
-      <div id="sortInfo" class="tiny muted" style="margin-top:8px;display:none">
-        <strong>정렬기준:</strong> 가→나→다 / 미완주자→완주자
-      </div>
-      <table>
-        <thead>
-          <tr><th>이름<br>(배번)<br>(그룹)</th><th>상태</th><th>달린<br>거리</th><th>마지막<br>위치</th></tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+      <button id="confirmCreateGroupBtn" class="success mt-2">그룹 생성</button>
     </div>
   </div>
 
-<script>
-function API(path){return `/api/proxy?path=${encodeURIComponent(path)}`;}
-const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
-function parseBibs(t){return t.split(/[\n,\s]+/).map(s=>s.trim()).filter(Boolean)}
-function fmtClockISO(i){return i?i.replace('T',' ').replace('Z',''):''}
-const S={eventId:null,timer:null,mapTimer:null,countdownTimer:null,rows:new Map(),map:null,markers:new Map(),eventData:null,coursePath:null,gpxPoints:[],checkpointMarkers:[],errorCounts:new Map(),remainingSeconds:60};
+  <!-- 그룹 참여 모달 -->
+  <div id="joinGroupModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>그룹 참여하기</h2>
+        <button class="modal-close" onclick="closeModal('joinGroupModal')">×</button>
+      </div>
+      <div>
+        <label class="muted" style="font-size:12px">그룹 코드 (4자리)</label>
+        <input type="text" id="joinGroupCode" placeholder="예: A1B2" maxlength="4" style="text-transform:uppercase" />
+      </div>
+      <button id="confirmJoinGroupBtn" class="success mt-2">그룹 참여</button>
+    </div>
+  </div>
 
-function calcDistance(lat1,lng1,lat2,lng2){const R=6371;const dLat=(lat2-lat1)*Math.PI/180;const dLng=(lng2-lng1)*Math.PI/180;const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));return R*c;}
+  <!-- 주자 정보 등록 모달 -->
+  <div id="registerRunnerModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>그룹 참여 정보 등록</h2>
+        <button class="modal-close" onclick="closeModal('registerRunnerModal')">×</button>
+      </div>
+      <p id="registerRunnerDescription" class="muted" style="font-size:12px">그룹 참여를 위해 역할을 선택하고 필요한 정보를 등록해주세요.</p>
+      
+      <div class="mt-2">
+        <label class="muted" style="font-size:12px;font-weight:600">참여 역할</label>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <label class="role-option selected" id="runnerRoleLabel">
+            <input type="radio" name="memberRole" value="runner" id="runnerRole" checked onchange="handleRoleChange()" />
+            <div class="role-content">
+              <div class="role-title">🏃‍♂️ 주자</div>
+              <div class="role-desc">배번 + 레디샷 필요</div>
+            </div>
+          </label>
+          <label class="role-option" id="supporterRoleLabel">
+            <input type="radio" name="memberRole" value="supporter" id="supporterRole" onchange="handleRoleChange()" />
+            <div class="role-content">
+              <div class="role-title">📣 응원자</div>
+              <div class="role-desc">정보 불필요</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      
+      <div id="runnerFields" class="mt-2">
+        <div class="mt-2">
+          <label class="muted" style="font-size:12px">배번 (Bib Number)</label>
+          <input type="number" id="runnerBib" placeholder="예: 12345" />
+        </div>
+        
+        <div class="mt-2">
+          <label class="muted" style="font-size:12px">레디샷 사진</label>
+          <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('runnerPhoto').click()">
+            <div id="uploadPlaceholder">
+              <div style="font-size:32px">📷</div>
+              <div style="margin-top:8px">클릭하여 사진 업로드</div>
+            </div>
+            <img id="imagePreview" class="image-preview hidden" />
+            <input type="file" id="runnerPhoto" accept="image/*" class="hidden" onchange="handleImageSelect(event)" />
+          </div>
+        </div>
+      </div>
+      
+      <button id="confirmRegisterRunnerBtn" class="success mt-2">등록 완료</button>
+    </div>
+  </div>
 
-function getPositionOnRoute(distanceKm){if(!S.gpxPoints||S.gpxPoints.length===0)return null;let accumulated=0;for(let i=1;i<S.gpxPoints.length;i++){const prev=S.gpxPoints[i-1];const curr=S.gpxPoints[i];const segDist=calcDistance(prev.lat(),prev.lng(),curr.lat(),curr.lng());if(accumulated+segDist>=distanceKm){const ratio=(distanceKm-accumulated)/segDist;const lat=prev.lat()+(curr.lat()-prev.lat())*ratio;const lng=prev.lng()+(curr.lng()-prev.lng())*ratio;return new naver.maps.LatLng(lat,lng);}accumulated+=segDist;}return S.gpxPoints[S.gpxPoints.length-1];}
+  <!-- 개인정보 처리방침 모달 -->
+  <div id="privacyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>개인정보 처리방침</h2>
+        <button class="modal-close" onclick="closeModal('privacyModal')">×</button>
+      </div>
+      <div style="font-size:13px;line-height:1.8;color:var(--fg)">
+        <h3>1. 수집하는 개인정보</h3>
+        <p>RunCheer는 다음의 개인정보를 수집합니다:</p>
+        <ul>
+          <li>카카오톡 계정 정보 (닉네임, 프로필 이미지)</li>
+          <li>사용자가 입력한 이름</li>
+          <li>배번 (Bib Number)</li>
+          <li>주자 사진</li>
+          <li>그룹 정보</li>
+        </ul>
 
-async function loadGPXCourse(filename='/course.gpx'){
-  try{
-    const r=await fetch(filename);
-    const text=await r.text();
-    const parser=new DOMParser();
-    const xml=parser.parseFromString(text,'text/xml');
-    const trkpts=xml.querySelectorAll('trkpt');
-    const path=[];
-    trkpts.forEach(pt=>{
-      const lat=parseFloat(pt.getAttribute('lat'));
-      const lon=parseFloat(pt.getAttribute('lon'));
-      if(lat&&lon)path.push(new naver.maps.LatLng(lat,lon));
-    });
-    S.gpxPoints=path;
-    console.log(`GPX loaded: ${path.length} points from ${filename}`);
-    return path;
-  }catch(e){
-    console.error('Failed to load GPX:',e);
-    return null;
-  }
-}
+        <h3>2. 개인정보의 이용 목적</h3>
+        <ul>
+          <li>마라톤 응원 서비스 제공</li>
+          <li>그룹 관리 및 주자 추적</li>
+          <li>사용자 식별 및 인증</li>
+        </ul>
 
-async function drawCoursePath(eventId){
-  if(!S.map)return;
-  let gpxFile=null;
-  let checkpoints=[];
-  
-  if(eventId===133){
-    // 2025 JTBC 서울마라톤
-    gpxFile='/course-jtbc2025.gpx';
-    checkpoints=[
-      {name:'출발',distance:0.00},
-      {name:'5K',distance:5.00},
-      {name:'10K',distance:10.00},
-      {name:'15K',distance:15.00},
-      {name:'20K',distance:20.00},
-      {name:'Half',distance:21.10},
-      {name:'25K',distance:25.00},
-      {name:'30K',distance:30.00},
-      {name:'35K',distance:35.00},
-      {name:'40K',distance:40.00},
-      {name:'도착',distance:42.195}
-    ];
-  }else if(eventId===132||eventId===91){
-    // 2025/2024 춘천마라톤
-    gpxFile='/course-chuncheon-2025.gpx';
-    checkpoints=[
-      {name:'출발',distance:0.00},
-      {name:'반환점',distance:4.00},
-      {name:'5K',distance:5.00},
-      {name:'10K',distance:10.00},
-      {name:'15K',distance:15.00},
-      {name:'20K',distance:20.00},
-      {name:'Half',distance:21.10},
-      {name:'25K',distance:25.00},
-      {name:'30K',distance:30.00},
-      {name:'35K',distance:35.00},
-      {name:'40K',distance:40.00},
-      {name:'도착',distance:42.20}
-    ];
-  }
-  
-  if(!gpxFile)return;
-  
-  const path=await loadGPXCourse(gpxFile);
-  if(!path||path.length===0)return;
-  if(S.coursePath){S.coursePath.setMap(null);}
-  S.coursePath=new naver.maps.Polyline({
-    path:path,
-    strokeColor:'#FF0000',
-    strokeOpacity:0.6,
-    strokeWeight:4,
-    map:S.map
-  });
-  const bounds=new naver.maps.LatLngBounds();
-  path.forEach(p=>bounds.extend(p));
-  S.map.fitBounds(bounds);
-  
-  // 기존 체크포인트 마커 제거
-  S.checkpointMarkers.forEach(m=>m.setMap(null));
-  S.checkpointMarkers=[];
-  
-  // 체크포인트 마커 추가
-  checkpoints.forEach(cp=>{
-    const pos=getPositionOnRoute(cp.distance);
-    if(pos){
-      const marker=new naver.maps.Marker({
-        position:pos,
-        map:S.map,
-        icon:{
-          content:`<div style="background:#2a3f5f;color:white;padding:4px 8px;border-radius:12px;font-size:11px;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);">${cp.name}</div>`,
-          anchor:new naver.maps.Point(0,25)
-        }
-      });
-      S.checkpointMarkers.push(marker);
-    }
-  });
-  console.log('Course path drawn');
-}
+        <h3>3. 개인정보 보유 및 이용기간</h3>
+        <p>수집된 개인정보는 <strong>대회 종료 후 30일 이내에 자동으로 폐기</strong>됩니다.</p>
 
-async function loadEvents(){
- const el=$('#eventsList');
- const list=[
-   {id:133,name:'2025 JTBC 서울마라톤',date:'2025-11-02'},
-   {id:132,name:'2025 춘천마라톤',date:'2025-10-26'}
- ];
- el.innerHTML='';
- list.forEach(ev=>{
-   const b=document.createElement('button');
-   b.className='evbtn';
-   b.innerHTML=`<div class="name">${ev.name}</div><div class="date">${ev.date||''}</div>`;
-   b.onclick=()=>pickEvent(ev,b);
-   el.appendChild(b);
- });
-}
+        <h3>4. 개인정보 제3자 제공</h3>
+        <p>회사는 이용자의 개인정보를 원칙적으로 외부에 제공하지 않습니다.</p>
 
-function pickEvent(ev,b){
-  // 기존 추적 중단
-  if(S.timer){
-    clearInterval(S.timer);
-    clearInterval(S.mapTimer);
-    stopCountdown();
-    S.timer=null;
-    S.mapTimer=null;
-    $('#startBtn').disabled=false;
-    $('#stopBtn').disabled=true;
-  }
-  
-  // 기존 데이터 모두 삭제
-  S.rows.forEach(({trMain,trSplits})=>{
-    trMain.remove();
-    trSplits.remove();
-  });
-  S.rows.clear();
-  S.errorCounts.clear();
-  
-  // 기존 마커 모두 삭제
-  S.markers.forEach(({marker,label,infoWindow})=>{
-    if(infoWindow)infoWindow.close();
-    marker.setMap(null);
-    label.setMap(null);
-  });
-  S.markers.clear();
-  
-  // 이벤트 선택
-  S.eventId=ev.id;
-  $('#picked').textContent=`${ev.name} (#${ev.id})`;
-  $$('.evbtn').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  
-  // 저장된 배번 불러오기
-  const saved=localStorage.getItem(`bibs:${S.eventId}`);
-  if(saved)$('#bibs').value=JSON.parse(saved).join('\n');
-  else $('#bibs').value='';
-  
-  // 코스 그리기
-  if(S.map){
-    if(ev.id===133||ev.id===132||ev.id===91){
-      drawCoursePath(ev.id);
-    }else{
-      if(S.coursePath){
-        S.coursePath.setMap(null);
-        S.coursePath=null;
-      }
-      S.checkpointMarkers.forEach(m=>m.setMap(null));
-      S.checkpointMarkers=[];
-    }
-  }
-  
-  // 상태 메시지 초기화
-  $('#status').textContent='이벤트를 선택하고 추적 시작을 누르세요.';
-  $('#sortInfo').style.display='none';
-  $('#playerCount').textContent='';
-}
-$('#saveBibs').onclick=()=>{if(!S.eventId)return alert('이벤트 선택');localStorage.setItem(`bibs:${S.eventId}`,JSON.stringify(parseBibs($('#bibs').value)))};
-async function fetchPlayer(eid,bib){const r=await fetch(API(`event/${eid}/player/${bib}`));if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
-function estimateNow(j){const dist=parseFloat(j.course?.distance||'0');const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);if(!recs.length)return{status:'대기',d:0,name:'',iso:'',estimated:0};const lastRec=recs.at(-1);const d=parseFloat(lastRec.point.distance);const name=lastRec.point.name;const time=lastRec.time_point;const date=j.event?.date;const lastTime=new Date(`${date}T${time}`);const now=new Date();const elapsedSec=(now-lastTime)/1000;let estimatedDist=d;if(elapsedSec>0&&!j.result_nettime){let paceSec=360;if(j.pace_nettime){const paceStr=j.pace_nettime.split('.')[0];paceSec=timeToSeconds(paceStr);}if(paceSec>0){const kmPerSec=1/paceSec;const movedKm=kmPerSec*elapsedSec;estimatedDist=Math.min(d+movedKm,dist);}}return{status:j.result_nettime?'완주':'주행',d,name,iso:lastTime.toISOString(),estimated:estimatedDist}}
-function cleanTime(t){if(!t)return'';return t.split('.')[0]}
-function timeToSeconds(t){if(!t)return 0;const clean=t.split('.')[0];const p=clean.split(':').map(Number);if(p.length===3)return p[0]*3600+p[1]*60+p[2];if(p.length===2)return p[0]*60+p[1];return 0}
-function calcPace(distKm,sec){if(!distKm||distKm<=0)return'';const minPerKm=sec/60/distKm;const m=Math.floor(minPerKm);const s=Math.round((minPerKm-m)*60);return`${m}'${s.toString().padStart(2,'0')}"`}
-function renderSplits(j){const recs=(j.records||[]).sort((a,b)=>a.point.distance-b.point.distance);const netTime=cleanTime(j.result_nettime);const pace=cleanTime(j.pace_nettime);const netPaceStr=netTime&&pace?`${netTime} (${pace})`:netTime||pace||'';let splitsHTML=recs.map((r,i)=>{let pace='';if(i>0){const prevDist=recs[i-1].point.distance;const dist=r.point.distance-prevDist;const prevSec=timeToSeconds(recs[i-1].time_point);const sec=timeToSeconds(r.time_point)-prevSec;pace=` (${calcPace(dist,sec)})`}return`<div>${r.point.name||''} ${r.point.distance}km ${cleanTime(r.time_point)}${pace}</div>`}).join('');if(netPaceStr){splitsHTML+=`<div style="margin-top:8px;font-weight:700;color:#4285f4">최종기록: ${netPaceStr}</div>`}return`<div class='splits'>${splitsHTML}</div>`}
-function ensureRow(bib){if(S.rows.has(bib))return S.rows.get(bib);const trMain=document.createElement('tr');trMain.className='player-main';trMain.innerHTML='<td></td><td></td><td></td><td></td>';const trSplits=document.createElement('tr');trSplits.className='player-splits';trSplits.innerHTML='<td colspan="4" style="padding:8px 12px"></td>';$('#tbody').appendChild(trMain);$('#tbody').appendChild(trSplits);const c=trMain.querySelectorAll('td');const splitsCell=trSplits.querySelector('td');S.rows.set(bib,{trMain,trSplits,c,splitsCell,data:null,hasError:false});return S.rows.get(bib)}
-function updateRow(j){const bib=j.num||j.tag;const r=ensureRow(bib);r.data=j;r.hasError=false;const est=estimateNow(j);const teamName=j.team_name?`<br>(${j.team_name})`:'';r.c[0].innerHTML=`${j.name}<br>(#${bib})${teamName}`;r.c[1].textContent=est.status;r.c[2].textContent=est.d;r.c[3].textContent=est.name;r.splitsCell.innerHTML=renderSplits(j);sortRows();}
-function updateError(bib,e){const r=ensureRow(bib);if(!r)return;r.hasError=true;r.errorMessage=String(e);r.c[0].innerHTML=`#${bib}<br><span style="color:var(--err)" title="${String(e)}">⚠️</span>`;}
-function sortRows(){const rows=Array.from(S.rows.entries());rows.sort((a,b)=>{const aHasError=a[1].hasError;const bHasError=b[1].hasError;if(aHasError&&!bHasError)return 1;if(!aHasError&&bHasError)return -1;const aData=a[1].data;const bData=b[1].data;if(!aData||!bData)return 0;const aEst=estimateNow(aData);const bEst=estimateNow(bData);const aFinished=aEst.estimated>=42;const bFinished=bEst.estimated>=42;if(aFinished&&!bFinished)return 1;if(!aFinished&&bFinished)return -1;return(aData.name||'').localeCompare(bData.name||'','ko')});rows.forEach(([bib,r],idx)=>{r.trMain.classList.toggle('finished',r.data&&estimateNow(r.data).estimated>=42);if(r.hasError){r.c[0].innerHTML=`${idx+1}. #${bib}<br><span style="color:var(--err)" title="${r.errorMessage||''}">⚠️</span>`;}else{const currentHTML=r.c[0].innerHTML;const baseHTML=currentHTML.replace(/^\d+\.\s*/,'').trim();r.c[0].innerHTML=`${idx+1}. ${baseHTML}`;}$('#tbody').appendChild(r.trMain);$('#tbody').appendChild(r.trSplits)});}
-function initMap(){if(!window.naver||!window.naver.maps){console.error('Naver Maps API not loaded');return}const center=new naver.maps.LatLng(37.5665,126.9780);S.map=new naver.maps.Map('map',{center:center,zoom:13,mapTypeControl:true});console.log('Map initialized');}
-function updateMarker(playerData,bib){if(!S.map)return;const est=estimateNow(playerData);const distKm=parseFloat(est.estimated);if(!distKm||distKm===0){console.log(`No distance for player ${bib}`);return;}const pos=getPositionOnRoute(distKm);if(!pos){console.log(`Cannot calculate position for player ${bib} at ${distKm}km`);return;}if(S.markers.has(bib)){const item=S.markers.get(bib);item.marker.setPosition(pos);item.label.setPosition(pos);const newContent=`<div class="player-label" style="background:rgba(66,133,244,0.95);">${playerData.name}</div>`;item.label.setIcon({content:newContent,anchor:new naver.maps.Point(0,30)});}else{const marker=new naver.maps.Marker({position:pos,map:S.map,icon:{content:`<div style="width:12px;height:12px;background:#5cc8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,anchor:new naver.maps.Point(9,9)}});const labelContent=`<div class="player-label" style="background:rgba(66,133,244,0.95);">${playerData.name}</div>`;const label=new naver.maps.Marker({position:pos,map:S.map,icon:{content:labelContent,anchor:new naver.maps.Point(0,30)}});const infoContent=`<div style="padding:10px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px"><div style="font-weight:700;margin-bottom:5px;color:#333">${playerData.name}</div><div style="font-size:12px;color:#666">배번: ${bib}</div><div style="font-size:12px;color:#666">마지막 통과: ${est.name}</div><div style="font-size:12px;color:#666">통과 거리: ${est.d}km</div><div style="font-size:12px;color:#4285f4;font-weight:bold">📍 예상 위치: ${est.estimated.toFixed(2)}km${est.estimated>est.d?` (+${(est.estimated-est.d).toFixed(2)}km)`:''}</div><div style="font-size:12px;color:#666">넷기록: ${playerData.result_nettime||'-'}</div><div style="font-size:12px;color:#666">페이스: ${playerData.pace_nettime||'-'}</div></div>`;const infoWindow=new naver.maps.InfoWindow({content:infoContent});naver.maps.Event.addListener(marker,'click',()=>{if(infoWindow.getMap()){infoWindow.close()}else{infoWindow.open(S.map,marker)}});naver.maps.Event.addListener(label,'click',()=>{if(infoWindow.getMap()){infoWindow.close()}else{infoWindow.open(S.map,marker)}});S.markers.set(bib,{marker:marker,label:label,infoWindow:infoWindow});if(S.markers.size===1){S.map.setCenter(pos);S.map.setZoom(14);}};}
-async function loadEventData(){if(!S.eventId)return;try{const r=await fetch(API(`event/${S.eventId}`));const data=await r.json();S.eventData=data;console.log('Event data loaded:',data);}catch(e){console.error('Failed to load event data:',e);}}
-function updateAllMarkers(){for(const [bib,r]of S.rows){if(r.data&&!r.hasError){updateMarker(r.data,bib);}}}
-function updateCountdown(){
-  const circumference=2*Math.PI*11;
-  const progressBar=$('#progressBar');
-  progressBar.style.strokeDasharray=circumference;
-  
-  S.remainingSeconds--;
-  if(S.remainingSeconds<0)S.remainingSeconds=60;
-  
-  const offset=circumference*(1-S.remainingSeconds/60);
-  progressBar.style.strokeDashoffset=offset;
-  $('#countdown').textContent=`${S.remainingSeconds}초`;
-}
+        <h3>5. 개인정보 삭제</h3>
+        <p>회원 탈퇴 시 모든 개인정보는 즉시 삭제됩니다.</p>
 
-function startCountdown(){
-  S.remainingSeconds=60;
-  $('#refreshIndicator').classList.add('active');
-  updateCountdown();
-  S.countdownTimer=setInterval(updateCountdown,1000);
-}
+        <p class="muted" style="margin-top:20px">최종 수정일: 2025년 10월 25일</p>
+      </div>
+    </div>
+  </div>
 
-function stopCountdown(){
-  if(S.countdownTimer){
-    clearInterval(S.countdownTimer);
-    S.countdownTimer=null;
-  }
-  $('#refreshIndicator').classList.remove('active');
-}
-
-async function tick(){if(!S.eventId)return;S.remainingSeconds=60;updateCountdown();const bibs=parseBibs($('#bibs').value);const statusEl=$('#status');const sortInfoEl=$('#sortInfo');statusEl.innerHTML='새로고침 중... <span class="loading"></span>';sortInfoEl.style.display='none';$('#playerCount').textContent=`총 ${bibs.length}명 조회중`;const seen=new Set(bibs);for(const b of bibs){const existingRow=S.rows.get(b);if(existingRow&&existingRow.data){const est=estimateNow(existingRow.data);if(est.status==='완주'){console.log(`Skip finished player: ${b}`);seen.add(b);continue;}}const errorCount=S.errorCounts.get(b)||0;if(errorCount>=3){console.log(`Skip player with too many errors: ${b}`);seen.add(b);continue;}try{const j=await fetchPlayer(S.eventId,b);updateRow(j);S.errorCounts.set(b,0);}catch(e){const newCount=(S.errorCounts.get(b)||0)+1;S.errorCounts.set(b,newCount);updateError(b,e);}}for(const [b,{trMain,trSplits}]of S.rows){if(!seen.has(b)){trMain.remove();trSplits.remove();S.rows.delete(b);S.errorCounts.delete(b);const item=S.markers.get(b);if(item){item.marker.setMap(null);item.label.setMap(null);S.markers.delete(b)}}}statusEl.textContent=`마지막 업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;sortInfoEl.style.display='block';updateAllMarkers();}
-$('#startBtn').onclick=async()=>{if(!S.eventId)return alert('이벤트 선택');$('#startBtn').disabled=true;$('#stopBtn').disabled=false;await loadEventData();tick();startCountdown();S.timer=setInterval(tick,60000);S.mapTimer=setInterval(updateAllMarkers,15000)};
-$('#stopBtn').onclick=()=>{clearInterval(S.timer);clearInterval(S.mapTimer);stopCountdown();S.timer=null;S.mapTimer=null;$('#startBtn').disabled=false;$('#stopBtn').disabled=true};
-$('#runtifulBtn').onclick=()=>{const runtifulBibs=[1080,2296,2634,2912,3097,3148,3212,5969,7153,8904,9430,10352,10384,13292,13306,13324,13366,13373,14614,14618,14906,15493,16322];$('#bibs').value=runtifulBibs.join(', ')};
-loadEvents();
-setTimeout(initMap,500);
-</script>
-</script>
+  <script src="/js/app.js"></script>
 </body>
 </html>
