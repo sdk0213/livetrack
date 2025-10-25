@@ -1138,27 +1138,6 @@ class RunCheerApp {
       const user = this.authManager.getUser();
       let photoUrl = null;
       
-      // 주자인 경우에만 이미지 업로드
-      if (role === 'runner') {
-        const file = photoInput.files[0];
-        const compressedBlob = await Utils.compressImage(file);
-        
-        // pendingGroup이 있으면 그룹 코드 생성 또는 사용
-        const groupCode = this.pendingGroup?.code || this.groupManager.currentGroup?.code;
-        if (!groupCode && !this.pendingGroup) {
-          throw new Error('그룹 정보가 없습니다.');
-        }
-        
-        // 임시 코드 생성 (그룹 생성 전)
-        let uploadCode = groupCode;
-        if (!uploadCode) {
-          uploadCode = Utils.generateGroupCode();
-        }
-        
-        const imageResult = await APIService.uploadImage(compressedBlob, uploadCode, user.id);
-        photoUrl = imageResult.url;
-      }
-      
       // pendingGroup이 있으면 그룹 생성부터 시작
       if (this.pendingGroup && !this.pendingGroup.code) {
         // 그룹 코드 생성
@@ -1179,6 +1158,14 @@ class RunCheerApp {
         
         if (attempts >= MAX_ATTEMPTS) {
           throw new Error('그룹 코드 생성에 실패했습니다.');
+        }
+        
+        // 주자인 경우에만 이미지 업로드
+        if (role === 'runner') {
+          const file = photoInput.files[0];
+          const compressedBlob = await Utils.compressImage(file);
+          const imageResult = await APIService.uploadImage(compressedBlob, code, user.id);
+          photoUrl = imageResult.url;
         }
         
         // 그룹 + 멤버를 한 번에 생성
