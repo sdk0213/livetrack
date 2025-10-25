@@ -114,7 +114,7 @@ class APIService {
   }
 
   static async createUser(userData) {
-    return this.request('/users', {
+    return this.request(`/users/${userData.kakaoId}`, {
       method: 'POST',
       body: JSON.stringify(userData)
     });
@@ -253,24 +253,33 @@ class AuthManager {
         
         console.log('User info from Kakao:', userInfo);
         
-        // 서버에 사용자 정보 저장
+        // 서버에 사용자 정보 저장/확인
         try {
           await APIService.getUser(userInfo.id);
+          console.log('Existing user found');
         } catch (e) {
-          // 신규 사용자
+          // 신규 사용자 생성
           const userData = {
             kakaoId: userInfo.id,
             name: userInfo.properties?.nickname || userInfo.kakao_account?.profile?.nickname || '사용자',
             profileImage: userInfo.properties?.profile_image || userInfo.kakao_account?.profile?.profile_image_url || ''
           };
-          console.log('Creating user with data:', userData);
-          await APIService.createUser(userData);
+          console.log('Creating new user with data:', userData);
+          try {
+            await APIService.createUser(userData);
+            console.log('User created successfully');
+          } catch (createError) {
+            console.error('Failed to create user:', createError);
+            throw new Error('사용자 생성에 실패했습니다. 다시 시도해주세요.');
+          }
         }
         
         return userInfo;
       } catch (error) {
         console.error('Failed to get user info:', error);
-        alert('로그인 처리 중 오류가 발생했습니다.');
+        alert(error.message || '로그인 처리 중 오류가 발생했습니다.');
+        // 로컬스토리지 정리
+        localStorage.removeItem('user');
         return null;
       }
     }
@@ -671,13 +680,28 @@ class RunCheerApp {
   }
 
   async checkLoginStatus() {
-    // 임시: 로컬스토리지에서 확인
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       try {
-        this.authManager.user = JSON.parse(savedUser);
-        await this.onLoginSuccess();
+        const user = JSON.parse(savedUser);
+        this.authManager.user = user;
+        
+        // 서버에서 사용자 존재 확인 (회원탈퇴 체크)
+        try {
+          await APIService.getUser(user.id);
+          await this.onLoginSuccess();
+        } catch (error) {
+          // 사용자가 서버에 없음 (회원탈퇴됨)
+          console.warn('User not found in server, clearing local data');
+          localStorage.removeItem('user');
+          this.authManager.logout();
+          this.imageCache.clear();
+          Utils.showToast('다시 로그인해주세요.', 'info');
+          this.showLoginPage();
+        }
       } catch (e) {
+        console.error('Invalid user data:', e);
+        localStorage.removeItem('user');
         this.showLoginPage();
       }
     } else {
