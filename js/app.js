@@ -662,6 +662,10 @@ class UIManager {
   }
 
   updateMyGroupInfo(group, isLeader) {
+    console.log('=== updateMyGroupInfo 호출 ===');
+    console.log('Group:', group);
+    console.log('isLeader:', isLeader);
+    
     const container = document.getElementById('myGroupInfo');
     if (group) {
       const leaderBadge = isLeader ? '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:8px;font-weight:600">👑 그룹장</span>' : '';
@@ -682,6 +686,8 @@ class UIManager {
       // 그룹장이면 "그룹 삭제" 버튼, 멤버면 "그룹 탈퇴" 버튼
       this.leaveGroupBtn.textContent = isLeader ? '그룹 삭제' : '그룹 탈퇴';
       this.leaveGroupBtn.classList.remove('hidden');
+      
+      console.log('버튼 텍스트:', this.leaveGroupBtn.textContent);
       
       // 버튼 스타일 변경 (그룹장은 danger)
       if (isLeader) {
@@ -856,6 +862,11 @@ class RunCheerApp {
         
         // 그룹장 여부 확인
         const isLeader = group.creator_kakao_id === user.id;
+        
+        console.log('=== 그룹장 판별 ===');
+        console.log('User ID:', user.id);
+        console.log('Creator Kakao ID:', group.creator_kakao_id);
+        console.log('Is Leader:', isLeader);
         
         this.ui.updateGroupInfo(group);
         this.ui.updateMyGroupInfo(group, isLeader);
