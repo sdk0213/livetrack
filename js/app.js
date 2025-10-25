@@ -736,7 +736,7 @@ class UIManager {
       // 지도 초기화 (그룹에 가입하면 자동으로 표시)
       setTimeout(() => {
         this.app.initializeMapForGroup(group.event_id);
-      }, 100);
+      }, 1000);
     } else {
       this.noGroupMessage.classList.remove('hidden');
       this.groupInfo.classList.add('hidden');
