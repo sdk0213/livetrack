@@ -901,10 +901,10 @@ class RunCheerApp {
     this.checkpointMarkers = []; // 체크포인트 마커 배열
     this.trackingBibs = []; // 추적 중인 배번 목록
     this.trackingEventId = null; // 추적 중인 이벤트 ID
-    this.trackingTimer = null; // 60초 갱신 타이머
+    this.trackingTimer = null; // 90초 갱신 타이머
     this.mapUpdateTimer = null; // 15초 마커 업데이트 타이머
     this.countdownTimer = null; // 카운트다운 타이머
-    this.remainingSeconds = 60; // 남은 시간(초)
+    this.remainingSeconds = 90; // 남은 시간(초)
     
     this.init();
   }
@@ -1938,7 +1938,7 @@ class RunCheerApp {
   }
 
   startCountdown() {
-    this.remainingSeconds = 60;
+    this.remainingSeconds = 90;
     const indicator = document.getElementById('refreshIndicator');
     if (indicator) {
       indicator.classList.add('active');
@@ -1970,11 +1970,11 @@ class RunCheerApp {
     
     this.remainingSeconds--;
     if (this.remainingSeconds < 0) {
-      this.remainingSeconds = 60;
+      this.remainingSeconds = 90;
     }
     
     if (progressBar) {
-      const offset = circumference * (1 - this.remainingSeconds / 60);
+      const offset = circumference * (1 - this.remainingSeconds / 90);
       progressBar.style.strokeDashoffset = offset;
     }
     
