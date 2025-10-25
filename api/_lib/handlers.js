@@ -195,40 +195,90 @@ export async function handleGroupCreate(req, res) {
   }
 }
 
+export async function handleGroupCreateWithMember(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { code, name, eventId, creatorKakaoId, bib, photoUrl } = req.body;
+
+  if (!code || !name || !eventId || !creatorKakaoId || !bib || !photoUrl) {
+    console.error('Missing required fields:', { code, name, eventId, creatorKakaoId, bib, photoUrl });
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    // 1. 그룹 생성
+    const groupResult = await sql`
+      INSERT INTO groups (code, name, event_id, creator_kakao_id)
+      VALUES (${code}, ${name}, ${eventId}, ${creatorKakaoId})
+      RETURNING *
+    `;
+
+    const group = groupResult.rows[0];
+
+    // 2. 멤버 추가 (생성자를 주자로 등록)
+    await sql`
+      INSERT INTO group_members (group_code, kakao_id, bib, photo_url)
+      VALUES (${code}, ${creatorKakaoId}, ${bib}, ${photoUrl})
+    `;
+
+    return res.status(201).json(group);
+  } catch (error) {
+    console.error('Group creation with member error:', error);
+    if (error.code === '23505') { // 중복 제약
+      return res.status(409).json({ error: 'Duplicate entry' });
+    }
+    throw error;
+  }
+}
+
 export async function handleGroupJoin(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { code, kakaoId } = req.body;
+  const { code, kakaoId, bib, photoUrl } = req.body;
 
-  if (!code || !kakaoId) {
-    return res.status(400).json({ error: 'code and kakaoId are required' });
+  if (!code || !kakaoId || !bib || !photoUrl) {
+    console.error('Missing required fields:', { code, kakaoId, bib, photoUrl });
+    return res.status(400).json({ error: 'code, kakaoId, bib, photoUrl are required' });
   }
 
-  const groupResult = await sql`SELECT * FROM groups WHERE code = ${code}`;
+  try {
+    // 그룹 존재 확인
+    const groupResult = await sql`SELECT * FROM groups WHERE code = ${code}`;
 
-  if (groupResult.rows.length === 0) {
-    return res.status(404).json({ error: 'Group not found' });
+    if (groupResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    const group = groupResult.rows[0];
+
+    // 이미 멤버인지 확인
+    const memberCheck = await sql`
+      SELECT * FROM group_members 
+      WHERE group_code = ${code} AND kakao_id = ${kakaoId}
+    `;
+
+    if (memberCheck.rows.length > 0) {
+      return res.status(400).json({ error: 'Already a member' });
+    }
+
+    // 멤버 추가
+    await sql`
+      INSERT INTO group_members (group_code, kakao_id, bib, photo_url)
+      VALUES (${code}, ${kakaoId}, ${bib}, ${photoUrl})
+    `;
+
+    return res.status(200).json(group);
+  } catch (error) {
+    console.error('Group join error:', error);
+    if (error.code === '23505') { // 중복 제약
+      return res.status(409).json({ error: 'Duplicate entry' });
+    }
+    throw error;
   }
-
-  const group = groupResult.rows[0];
-
-  const memberCheck = await sql`
-    SELECT * FROM group_members 
-    WHERE group_id = ${group.id} AND kakao_id = ${kakaoId}
-  `;
-
-  if (memberCheck.rows.length > 0) {
-    return res.status(400).json({ error: 'Already a member' });
-  }
-
-  await sql`
-    INSERT INTO group_members (group_id, kakao_id)
-    VALUES (${group.id}, ${kakaoId})
-  `;
-
-  return res.status(200).json(group);
 }
 
 export async function handleGroupLeave(req, res) {
@@ -277,17 +327,28 @@ export async function handleGroupRunners(req, res) {
 }
 
 export async function handleGroupByCode(req, res, code) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method === 'GET') {
+    const result = await sql`SELECT * FROM groups WHERE code = ${code}`;
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    return res.status(200).json(result.rows[0]);
   }
 
-  const result = await sql`SELECT * FROM groups WHERE code = ${code}`;
+  if (req.method === 'DELETE') {
+    // 그룹 삭제 (CASCADE로 group_members도 자동 삭제됨)
+    const result = await sql`DELETE FROM groups WHERE code = ${code} RETURNING *`;
 
-  if (result.rows.length === 0) {
-    return res.status(404).json({ error: 'Group not found' });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    return res.status(200).json({ message: 'Group deleted successfully' });
   }
 
-  return res.status(200).json(result.rows[0]);
+  return res.status(405).json({ error: 'Method not allowed' });
 }
 
 // ============================================
@@ -298,33 +359,37 @@ export async function handleImageUpload(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { kakaoId, bibNumber, imageData } = req.body;
+  // Vercel의 serverless function에서는 multipart/form-data를 직접 파싱할 수 없음
+  // 클라이언트에서 base64로 변환해서 보내야 함
+  const { kakaoId, groupCode, imageData } = req.body;
 
-  if (!kakaoId || !bibNumber || !imageData) {
-    return res.status(400).json({ error: 'kakaoId, bibNumber, imageData are required' });
+  if (!kakaoId || !groupCode || !imageData) {
+    console.error('Missing fields:', { kakaoId, groupCode, hasImageData: !!imageData });
+    return res.status(400).json({ error: 'kakaoId, groupCode, imageData are required' });
   }
 
-  const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-  const buffer = Buffer.from(base64Data, 'base64');
+  try {
+    // base64 데이터 추출
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
 
-  const filename = `runner-${kakaoId}-${Date.now()}.jpg`;
-  const blob = await put(filename, buffer, {
-    access: 'public',
-    contentType: 'image/jpeg',
-  });
+    // Vercel Blob에 업로드
+    const filename = `runner-${kakaoId}-${groupCode}-${Date.now()}.jpg`;
+    const blob = await put(filename, buffer, {
+      access: 'public',
+      contentType: 'image/jpeg',
+    });
 
-  const result = await sql`
-    INSERT INTO runner_images (kakao_id, bib_number, image_url)
-    VALUES (${kakaoId}, ${bibNumber}, ${blob.url})
-    ON CONFLICT (kakao_id)
-    DO UPDATE SET 
-      bib_number = ${bibNumber},
-      image_url = ${blob.url},
-      uploaded_at = NOW()
-    RETURNING *
-  `;
-
-  return res.status(200).json(result.rows[0]);
+    console.log('Image uploaded:', blob.url);
+    
+    return res.status(200).json({ 
+      url: blob.url,
+      filename: filename
+    });
+  } catch (error) {
+    console.error('Image upload error:', error);
+    return res.status(500).json({ error: error.message });
+  }
 }
 
 export async function handlePing(req, res) {

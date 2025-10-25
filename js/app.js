@@ -146,6 +146,13 @@ class APIService {
     });
   }
 
+  static async createGroupWithMember(groupData) {
+    return this.request('/groups/create-with-member', {
+      method: 'POST',
+      body: JSON.stringify(groupData)
+    });
+  }
+
   static async getGroup(code) {
     return this.request(`/groups/${code}`);
   }
@@ -174,21 +181,22 @@ class APIService {
 
   // 이미지 업로드
   static async uploadImage(blob, groupCode, kakaoId) {
-    const formData = new FormData();
-    formData.append('image', blob);
-    formData.append('groupCode', groupCode);
-    formData.append('kakaoId', kakaoId);
-
-    const response = await fetch(`${CONFIG.API_BASE}/images/upload`, {
-      method: 'POST',
-      body: formData
+    // Blob을 base64로 변환
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
 
-    if (!response.ok) {
-      throw new Error('Image upload failed');
-    }
-
-    return response.json();
+    return this.request('/images/upload', {
+      method: 'POST',
+      body: JSON.stringify({
+        imageData: base64,
+        groupCode,
+        kakaoId
+      })
+    });
   }
 
   // 주자 데이터 (기존 API)
@@ -665,6 +673,7 @@ class RunCheerApp {
     this.groupManager = new GroupManager();
     this.imageCache = new ImageCache();
     this.ui = new UIManager(this);
+    this.pendingGroup = null; // 주자 등록 대기 중인 그룹
     
     this.init();
   }
@@ -826,25 +835,14 @@ class RunCheerApp {
       return;
     }
     
-    const btn = document.getElementById('confirmCreateGroupBtn');
-    const originalText = Utils.showLoading(btn);
+    // 그룹 정보를 임시 저장 (아직 생성하지 않음)
+    this.pendingGroup = { name, eventId };
     
-    try {
-      const user = this.authManager.getUser();
-      const group = await this.groupManager.createGroup(name, eventId, user.id);
-      
-      Utils.showToast(`그룹이 생성되었습니다! 코드: ${group.code}`, 'success');
-      this.ui.hideModal('createGroupModal');
-      
-      // 주자 정보 등록 모달 표시
-      this.ui.showModal('registerRunnerModal');
-      
-    } catch (error) {
-      console.error('Failed to create group:', error);
-      Utils.showToast('그룹 생성에 실패했습니다.', 'error');
-    } finally {
-      Utils.hideLoading(btn, originalText);
-    }
+    this.ui.hideModal('createGroupModal');
+    
+    // 주자 정보 등록 모달 표시
+    this.ui.showModal('registerRunnerModal');
+    Utils.showToast('주자 정보를 입력하면 그룹이 생성됩니다.', 'info');
   }
 
   async handleJoinGroup() {
@@ -894,21 +892,82 @@ class RunCheerApp {
       // 이미지 압축
       const compressedBlob = await Utils.compressImage(file);
       
-      // 주자 등록
-      await this.groupManager.registerRunner(user.id, bib, compressedBlob);
+      // pendingGroup이 있으면 그룹 생성부터 시작
+      if (this.pendingGroup && !this.pendingGroup.code) {
+        // 그룹 코드 생성
+        let code;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 10;
+        
+        while (attempts < MAX_ATTEMPTS) {
+          code = Utils.generateGroupCode();
+          try {
+            await APIService.getGroup(code);
+            attempts++;
+          } catch (e) {
+            // 그룹이 없으면 사용 가능
+            break;
+          }
+        }
+        
+        if (attempts >= MAX_ATTEMPTS) {
+          throw new Error('그룹 코드 생성에 실패했습니다.');
+        }
+        
+        // 이미지 업로드
+        const imageResult = await APIService.uploadImage(compressedBlob, code, user.id);
+        
+        // 그룹 + 멤버를 한 번에 생성
+        const groupData = {
+          code,
+          name: this.pendingGroup.name,
+          eventId: parseInt(this.pendingGroup.eventId, 10),
+          creatorKakaoId: user.id,
+          bib,
+          photoUrl: imageResult.url
+        };
+        
+        const group = await APIService.createGroupWithMember(groupData);
+        this.groupManager.currentGroup = group;
+        this.pendingGroup = null;
+        
+        Utils.showToast(`그룹이 생성되었습니다! 코드: ${group.code}`, 'success');
+      } else {
+        // 기존 그룹에 주자 등록
+        await this.groupManager.registerRunner(user.id, bib, compressedBlob);
+        this.pendingGroup = null;
+        Utils.showToast('주자 정보가 등록되었습니다!', 'success');
+      }
       
-      Utils.showToast('주자 정보가 등록되었습니다!', 'success');
       this.ui.hideModal('registerRunnerModal');
+      
+      // 입력 필드 초기화
+      document.getElementById('runnerBib').value = '';
+      document.getElementById('runnerPhoto').value = '';
       
       // UI 업데이트
       await this.loadUserGroup();
       
     } catch (error) {
       console.error('Failed to register runner:', error);
-      Utils.showToast('주자 등록에 실패했습니다.', 'error');
+      Utils.showToast(error.message || '등록에 실패했습니다.', 'error');
     } finally {
       Utils.hideLoading(btn, originalText);
     }
+  }
+
+  async handleCancelRegisterRunner() {
+    // pendingGroup 초기화만 (DB 작업 없음)
+    if (this.pendingGroup) {
+      this.pendingGroup = null;
+      Utils.showToast('그룹 생성이 취소되었습니다.', 'info');
+    }
+    
+    // 입력 필드 초기화
+    document.getElementById('runnerBib').value = '';
+    document.getElementById('runnerPhoto').value = '';
+    
+    this.ui.hideModal('registerRunnerModal');
   }
 
   async loadGroupRunners() {
@@ -925,6 +984,18 @@ class RunCheerApp {
     
     if (!name) {
       Utils.showToast('이름을 입력해주세요.', 'error');
+      return;
+    }
+    
+    // 한글과 영어만 허용 (공백 포함)
+    const namePattern = /^[a-zA-Z가-힣\s]+$/;
+    if (!namePattern.test(name)) {
+      Utils.showToast('이름은 한글과 영어만 입력 가능합니다.', 'error');
+      return;
+    }
+    
+    if (name.length > 50) {
+      Utils.showToast('이름은 50자 이내로 입력해주세요.', 'error');
       return;
     }
     
@@ -1034,7 +1105,12 @@ class RunCheerApp {
 // 전역 함수
 // ============================================
 function closeModal(modalId) {
-  document.getElementById(modalId).classList.remove('active');
+  // 주자 등록 모달을 닫을 때 pendingGroup 처리
+  if (modalId === 'registerRunnerModal' && window.app && window.app.pendingGroup) {
+    window.app.handleCancelRegisterRunner();
+  } else {
+    document.getElementById(modalId).classList.remove('active');
+  }
 }
 
 function handleImageSelect(event) {
