@@ -238,7 +238,9 @@ class AuthManager {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to get token');
+          const errorText = await response.text();
+          console.error('Token request failed:', errorText);
+          throw new Error(`Failed to get token: ${response.status}`);
         }
 
         const data = await response.json();

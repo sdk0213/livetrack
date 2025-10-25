@@ -79,6 +79,10 @@ async function handleAuth(req, res, parts) {
     }
 
     // 카카오 토큰 요청
+    const redirectUri = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}/test_kakao.html`
+      : 'https://livetrack-theta.vercel.app/test_kakao.html';
+    
     const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: {
@@ -87,13 +91,14 @@ async function handleAuth(req, res, parts) {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: process.env.KAKAO_REST_API_KEY || '1c986b10c0401ffb6c00df1ccddef006',
-        redirect_uri: `${process.env.VERCEL_URL || 'https://livetrack-theta.vercel.app'}/test_kakao.html`,
+        redirect_uri: redirectUri,
         code: code,
       }),
     });
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json();
+      console.error('Kakao token error:', errorData);
       return res.status(tokenResponse.status).json(errorData);
     }
 
