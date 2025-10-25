@@ -417,6 +417,12 @@
       border-radius:6px;
       border:1px solid #e2e8f0;
       box-shadow:0 1px 2px rgba(0,0,0,.08);
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .dev-info:hover{
+      background:rgba(255,255,255,1);
+      box-shadow:0 2px 4px rgba(0,0,0,.15);
     }
     .dev-info .dev{color:var(--muted)}
     
@@ -455,7 +461,7 @@
 </head>
 <body>
   <!-- 개발자 정보 -->
-  <div class="dev-info">
+  <div class="dev-info" onclick="window.open('https://www.instagram.com/bigkyoung/', '_blank')">
     <div class="dev">개발자: 성대경</div>
   </div>
 
