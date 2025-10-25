@@ -1107,15 +1107,23 @@ class RunCheerApp {
     const originalText = Utils.showLoading(btn);
     
     try {
-      const group = await this.groupManager.joinGroup(code);
+      // 그룹 정보 확인
+      const group = await APIService.getGroup(code);
       
-      Utils.showToast('그룹에 참여했습니다!', 'success');
+      // pendingGroup에 그룹 코드 저장 (주자 등록 시 이미지 업로드에 사용)
+      this.pendingGroup = {
+        code: group.code,
+        name: group.name,
+        eventId: group.event_id
+      };
+      
+      Utils.showToast('그룹을 찾았습니다!', 'success');
       this.ui.hideModal('joinGroupModal');
       
       // 주자 정보 등록 모달의 설명 텍스트 변경
       const descriptionEl = document.getElementById('registerRunnerDescription');
       if (descriptionEl) {
-        descriptionEl.textContent = '그룹 참여를 위해 배번과 사진을 등록해주세요.';
+        descriptionEl.textContent = '그룹 참여를 위해 역할을 선택하고 정보를 등록해주세요.';
       }
       
       // 주자 정보 등록 모달 표시
@@ -1195,20 +1203,29 @@ class RunCheerApp {
         Utils.showToast(`그룹이 생성되었습니다! 코드: ${group.code}`, 'success');
       } else {
         // 기존 그룹에 멤버 등록
+        const groupCode = this.pendingGroup.code;
+        
         if (role === 'runner') {
           // 주자인 경우 이미지 업로드
           const file = photoInput.files[0];
           const compressedBlob = await Utils.compressImage(file);
-          const groupCode = this.pendingGroup.code;
           const imageResult = await APIService.uploadImage(compressedBlob, groupCode, user.id);
           photoUrl = imageResult.url;
-          
-          await this.groupManager.registerRunner(user.id, bib, null, photoUrl);
-        } else {
-          await this.groupManager.registerSupporter(user.id);
         }
+        
+        // 그룹 참여 API 호출
+        const joinData = {
+          code: groupCode,
+          kakaoId: user.id,
+          name: user.properties.nickname,
+          role,
+          bib: role === 'runner' ? bib : null,
+          photoUrl: role === 'runner' ? photoUrl : null
+        };
+        
+        await APIService.joinGroup(joinData);
         this.pendingGroup = null;
-        Utils.showToast(role === 'runner' ? '주자 정보가 등록되었습니다!' : '응원자로 등록되었습니다!', 'success');
+        Utils.showToast(role === 'runner' ? '주자로 그룹에 참여했습니다!' : '응원자로 그룹에 참여했습니다!', 'success');
       }
       
       this.ui.hideModal('registerRunnerModal');
