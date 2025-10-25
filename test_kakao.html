@@ -174,11 +174,13 @@
       object-fit:cover;
       background:#e2e8f0;
       cursor:pointer;
-      transition:opacity 0.2s;
+      transition:all 0.2s;
+      box-shadow:0 2px 4px rgba(0,0,0,0.1);
     }
     
     .runner-photo:hover{
       opacity:0.8;
+      transform:scale(1.05);
     }
     
     .runner-info{flex:1}
@@ -271,6 +273,27 @@
       stroke-width:3;
       stroke-linecap:round;
       transition:stroke-dashoffset 1s linear;
+    }
+    
+    /* 지도 마커 레이블 */
+    .player-label{
+      background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color:#fff;
+      padding:8px 16px;
+      border-radius:20px;
+      font-weight:700;
+      font-size:13px;
+      white-space:nowrap;
+      box-shadow:0 4px 12px rgba(102,126,234,0.4);
+      border:2px solid rgba(255,255,255,0.9);
+      cursor:pointer;
+      transition:all 0.3s ease;
+      backdrop-filter:blur(10px);
+    }
+    .player-label:hover{
+      background:linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+      transform:translateY(-2px) scale(1.05);
+      box-shadow:0 6px 16px rgba(102,126,234,0.5);
     }
     
     /* 테이블 */
@@ -450,14 +473,11 @@
       <!-- 응원 탭 -->
       <div id="cheerPage" class="page active">
         <div class="wrap">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+                    <!-- 헤더 -->
+          <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
             <div>
               <h1 style="margin:0 0 4px 0;">RunCheer Beta <span style="font-size:12px;color:#94a3b8;font-weight:400;">(v0.0.0.1)</span></h1>
               <p style="margin:0;font-size:14px;color:#64748b;">러너를 응원하자! 🏃‍♂️💨</p>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px;color:#94a3b8;">개발자</div>
-              <div style="font-size:13px;font-weight:600;color:#475569;">성대경</div>
             </div>
           </div>
           

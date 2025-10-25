@@ -694,25 +694,35 @@ class UIManager {
       const card = document.createElement('div');
       card.className = 'runner-card';
       
+      // 프로필 이미지 (카카오)
+      const profileImage = runner.profile_image || '/RunCheer.png';
+      
+      // 레디샷 이미지
       const cachedImage = this.app.imageCache.get(runner.kakao_id);
-      const imageUrl = cachedImage || runner.photo_url;
+      const readyShotImage = cachedImage || runner.photo_url || '/RunCheer.png';
       
       if (!cachedImage && runner.photo_url) {
         this.app.imageCache.set(runner.kakao_id, runner.photo_url);
       }
       
       card.innerHTML = `
-        <img src="${imageUrl}" alt="${runner.name}" class="runner-photo" data-full-image="${imageUrl}" />
+        <div style="display:flex;gap:8px;align-items:center;">
+          <img src="${profileImage}" alt="${runner.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" />
+          <img src="${readyShotImage}" alt="${runner.name} 레디샷" class="runner-photo" data-full-image="${readyShotImage}" style="cursor:pointer;" />
+        </div>
         <div class="runner-info">
           <div class="runner-name">${runner.name}</div>
           <div class="runner-bib">배번: ${runner.bib}${runner.team_name ? ` (${runner.team_name})` : ''}</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:2px;">프로필 / 레디샷</div>
         </div>
       `;
       
       // 이미지 클릭 이벤트
-      const img = card.querySelector('.runner-photo');
-      img.addEventListener('click', () => {
-        this.showImageViewer(imageUrl);
+      const images = card.querySelectorAll('.runner-photo');
+      images.forEach(img => {
+        img.addEventListener('click', () => {
+          this.showImageViewer(img.dataset.fullImage);
+        });
       });
       
       this.runnersList.appendChild(card);
@@ -1444,12 +1454,12 @@ class RunCheerApp {
         })
         .catch(err => console.error('Failed to get runner photo:', err));
 
-      // 이름 레이블만 표시 (파란 점 제거)
+      // 이름 레이블만 표시 (그라데이션 스타일)
       const label = new naver.maps.Marker({
         position: pos,
         map: this.currentMap,
         icon: {
-          content: `<div class="player-label" style="background:rgba(66,133,244,0.95);">${playerData.name}</div>`,
+          content: `<div class="player-label">${playerData.name}</div>`,
           anchor: new naver.maps.Point(0, 30)
         }
       });
