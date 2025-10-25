@@ -1538,7 +1538,7 @@ class RunCheerApp {
   }
 
   async updateTrackingData() {
-    if (!this.trackingEventId || !this.trackingBibs) return;
+    if (!this.trackingEventId || !this.trackingBibs || this.trackingBibs.length === 0) return;
 
     console.log('Updating tracking data...');
     
@@ -1557,36 +1557,83 @@ class RunCheerApp {
       sortInfoEl.style.display = 'none';
     }
 
-    for (const bib of [...this.trackingBibs]) {
-      // 기존 마커에서 완주 여부 확인
+    // 완주하지 않은 주자들만 필터링
+    const activeRunners = [...this.trackingBibs].filter(bib => {
       const existingMarker = this.mapMarkers.find(m => m.bib === bib);
       if (existingMarker && existingMarker.playerData) {
         const estimated = this.estimateNow(existingMarker.playerData);
         if (estimated.status === '완주') {
           console.log(`✅ 완주한 주자 추적 중단: ${bib} (${existingMarker.playerData.name})`);
-          // 추적 배열에서 제거하여 더 이상 API 호출 안 함
-          this.trackingBibs = this.trackingBibs.filter(b => b !== bib);
-          continue;
+          return false;
         }
       }
+      return true;
+    });
 
-      try {
-        const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}`);
-        if (response.ok) {
-          const playerData = await response.json();
-          
-          // 새로 조회한 데이터로 완주 여부 재확인
-          const estimated = this.estimateNow(playerData);
-          if (estimated.status === '완주') {
-            console.log(`✅ 완주 확인 - 추적 중단: ${bib} (${playerData.name})`);
-            this.trackingBibs = this.trackingBibs.filter(b => b !== bib);
-          }
-          
-          this.updatePlayerMarker(bib, playerData);
-          console.log(`Updated player ${bib}:`, playerData.name);
+    // 완주자 제거
+    this.trackingBibs = activeRunners;
+
+    if (activeRunners.length === 0) {
+      console.log('🎉 모든 주자 완주! 추적 종료');
+      if (statusEl) {
+        statusEl.textContent = '모든 주자 완주! 🎉';
+      }
+      return;
+    }
+
+    try {
+      // 🚀 배치 API로 한 번에 조회 (Function 호출 1회로 감소!)
+      const bibsParam = activeRunners.join(',');
+      const response = await fetch(`/api/proxy-batch?bibs=${encodeURIComponent(bibsParam)}&eventId=${this.trackingEventId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Batch API failed: ${response.status}`);
+      }
+
+      const batchResult = await response.json();
+      console.log(`📦 Batch API: ${batchResult.count}명 조회 완료 (Function 1회 실행)`);
+
+      // 각 주자 데이터 처리
+      for (const result of batchResult.results) {
+        if (result.error) {
+          console.error(`Failed to fetch player ${result.bib}:`, result.error);
+          continue;
         }
-      } catch (error) {
-        console.error(`Failed to fetch player ${bib}:`, error);
+
+        const playerData = result.data;
+        
+        // 완주 여부 확인
+        const estimated = this.estimateNow(playerData);
+        if (estimated.status === '완주') {
+          console.log(`✅ 완주 확인 - 추적 중단: ${result.bib} (${playerData.name})`);
+          this.trackingBibs = this.trackingBibs.filter(b => b !== result.bib);
+        }
+        
+        this.updatePlayerMarker(result.bib, playerData);
+        console.log(`Updated player ${result.bib}:`, playerData.name);
+      }
+    } catch (error) {
+      console.error('Batch update failed, falling back to individual requests:', error);
+      
+      // 배치 API 실패 시 기존 방식으로 폴백
+      for (const bib of activeRunners) {
+        try {
+          const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}`);
+          if (response.ok) {
+            const playerData = await response.json();
+            
+            const estimated = this.estimateNow(playerData);
+            if (estimated.status === '완주') {
+              console.log(`✅ 완주 확인 - 추적 중단: ${bib} (${playerData.name})`);
+              this.trackingBibs = this.trackingBibs.filter(b => b !== bib);
+            }
+            
+            this.updatePlayerMarker(bib, playerData);
+            console.log(`Updated player ${bib}:`, playerData.name);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch player ${bib}:`, error);
+        }
       }
     }
 
