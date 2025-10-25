@@ -147,7 +147,7 @@ export async function handleUserGroup(req, res) {
     const result = await sql`
       SELECT g.* 
       FROM groups g
-      INNER JOIN group_members gm ON g.id = gm.group_id
+      INNER JOIN group_members gm ON g.code = gm.group_code
       WHERE gm.kakao_id = ${kakaoIdStr}
       LIMIT 1
     `;
