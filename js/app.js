@@ -1472,11 +1472,20 @@ class RunCheerApp {
       
       console.log(`${runners.length}명의 주자 추적을 시작합니다.`);
       
+      // 주자 목록 캐싱 (마커 업데이트 시 재사용)
+      this.cachedRunners = runners.reduce((acc, runner) => {
+        if (runner.bib) {
+          acc[runner.bib] = runner; // bib을 키로 저장
+        }
+        return acc;
+      }, {});
+      
       // 주자 배번 목록 저장 (DB 필드명은 bib)
       this.trackingBibs = runners.map(r => r.bib).filter(b => b); // undefined 제거
       this.trackingEventId = group.event_id;
       
       console.log('Tracking bibs:', this.trackingBibs);
+      console.log('Cached runners:', Object.keys(this.cachedRunners).length);
       
       // 지도 초기화
       setTimeout(() => {
@@ -1602,6 +1611,9 @@ class RunCheerApp {
       // playerData 업데이트
       existingMarker.playerData = playerData;
     } else {
+      // 캐시된 주자 정보 가져오기 (사진 정보 포함)
+      const cachedRunner = this.cachedRunners ? this.cachedRunners[bib] : null;
+      
       // 이름 레이블만 표시 (그라데이션 스타일)
       const label = new naver.maps.Marker({
         position: pos,
@@ -1613,7 +1625,10 @@ class RunCheerApp {
       });
 
       // 클릭 시 정보창에 프로필 + 레디샷 표시
-      const createInfoContent = (readyPhoto, profilePhoto) => `
+      const readyPhoto = cachedRunner ? cachedRunner.photo_url : null;
+      const profilePhoto = cachedRunner ? cachedRunner.profile_image : null;
+      
+      const createInfoContent = () => `
         <div style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px">
           <div style="text-align:center;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;align-items:center">
             ${profilePhoto ? `
@@ -1638,21 +1653,11 @@ class RunCheerApp {
         </div>
       `;
       
-      // 초기 정보창 생성 (빈 프로필로 시작)
-      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent('/RunCheer.png', null) });
+      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent() });
       
-      naver.maps.Event.addListener(label, 'click', async () => {
-        // 사진 최신 정보 가져오기 (그룹 멤버에서)
-        try {
-          const runners = await this.groupManager.getGroupRunners(this.groupManager.currentGroup.code);
-          const runner = runners.find(r => r.bib === bib);
-          const readyPhoto = (runner && runner.photo_url) ? runner.photo_url : '/RunCheer.png';
-          const profilePhoto = (runner && runner.profile_image) ? runner.profile_image : null;
-          console.log(`마커 클릭 - 배번: ${bib}, 프로필: ${profilePhoto}, 레디샷: ${readyPhoto}`);
-          infoWindow.setContent(createInfoContent(readyPhoto, profilePhoto));
-        } catch (err) {
-          console.error('Failed to update photo:', err);
-        }
+      naver.maps.Event.addListener(label, 'click', () => {
+        // 캐시된 데이터 사용 (서버 통신 없음)
+        console.log(`마커 클릭 - 배번: ${bib}, 프로필: ${profilePhoto}, 레디샷: ${readyPhoto}`);
         
         if (infoWindow.getMap()) {
           infoWindow.close();
@@ -1661,7 +1666,7 @@ class RunCheerApp {
         }
       });
 
-      this.mapMarkers.push({ bib, label, infoWindow, playerData });
+      this.mapMarkers.push({ bib, label, infoWindow, playerData, cachedRunner });
     }
   }
 
