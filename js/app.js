@@ -1289,6 +1289,13 @@ class RunCheerApp {
     const user = this.authManager.getUser();
     const isLeader = group.creator_kakao_id === user.id;
     
+    console.log('=== handleLeaveGroup 시작 ===');
+    console.log('현재 그룹:', group);
+    console.log('현재 사용자:', user);
+    console.log('creator_kakao_id:', group.creator_kakao_id, typeof group.creator_kakao_id);
+    console.log('user.id:', user.id, typeof user.id);
+    console.log('isLeader:', isLeader);
+    
     if (isLeader) {
       // 그룹장: 그룹 삭제
       if (!confirm('👑 그룹장 권한으로 그룹을 삭제하시겠습니까?\n\n⚠️ 모든 멤버가 그룹에서 제외되며, 그룹 데이터가 완전히 삭제됩니다.')) {
