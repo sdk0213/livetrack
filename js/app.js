@@ -1443,17 +1443,6 @@ class RunCheerApp {
       // playerData 업데이트
       existingMarker.playerData = playerData;
     } else {
-      // 주자 사진 가져오기 (그룹 멤버에서)
-      let photoUrl = '/RunCheer.png'; // 기본 이미지
-      this.groupManager.getGroupRunners(this.groupManager.currentGroup.code)
-        .then(runners => {
-          const runner = runners.find(r => r.bib === bib);
-          if (runner && runner.photo_url) {
-            photoUrl = runner.photo_url;
-          }
-        })
-        .catch(err => console.error('Failed to get runner photo:', err));
-
       // 이름 레이블만 표시 (그라데이션 스타일)
       const label = new naver.maps.Marker({
         position: pos,
@@ -1490,16 +1479,18 @@ class RunCheerApp {
         </div>
       `;
       
-      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent(photoUrl, playerData.profile_image) });
+      // 초기 정보창 생성 (빈 프로필로 시작)
+      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent('/RunCheer.png', null) });
       
       naver.maps.Event.addListener(label, 'click', async () => {
-        // 사진 최신 정보 가져오기
+        // 사진 최신 정보 가져오기 (그룹 멤버에서)
         try {
           const runners = await this.groupManager.getGroupRunners(this.groupManager.currentGroup.code);
           const runner = runners.find(r => r.bib === bib);
-          const updatedPhoto = (runner && runner.photo_url) ? runner.photo_url : '/RunCheer.png';
-          const profilePhoto = playerData.profile_image || null;
-          infoWindow.setContent(createInfoContent(updatedPhoto, profilePhoto));
+          const readyPhoto = (runner && runner.photo_url) ? runner.photo_url : '/RunCheer.png';
+          const profilePhoto = (runner && runner.profile_image) ? runner.profile_image : null;
+          console.log(`마커 클릭 - 배번: ${bib}, 프로필: ${profilePhoto}, 레디샷: ${readyPhoto}`);
+          infoWindow.setContent(createInfoContent(readyPhoto, profilePhoto));
         } catch (err) {
           console.error('Failed to update photo:', err);
         }
