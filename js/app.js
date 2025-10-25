@@ -1411,6 +1411,9 @@ class RunCheerApp {
     const pos = Utils.getPositionOnRoute(this.gpxPoints, estimated.estimated);
     if (!pos) return;
 
+    // 테이블 업데이트
+    this.updatePlayerTable(bib, playerData, estimated);
+
     // 기존 마커가 있으면 위치 업데이트, 없으면 생성
     const existingMarker = this.mapMarkers.find(m => m.bib === bib);
     
@@ -1457,6 +1460,48 @@ class RunCheerApp {
 
       this.mapMarkers.push({ bib, marker, label, infoWindow, playerData });
     }
+  }
+
+  updatePlayerTable(bib, playerData, estimated) {
+    const tbody = document.getElementById('resultsBody');
+    if (!tbody) return;
+
+    // 기존 행 찾기
+    let row = tbody.querySelector(`tr[data-bib="${bib}"]`);
+    
+    if (!row) {
+      // 새 행 생성
+      row = document.createElement('tr');
+      row.setAttribute('data-bib', bib);
+      tbody.appendChild(row);
+    }
+
+    // 완주 여부에 따라 스타일 적용
+    if (estimated.status === '완주') {
+      row.classList.add('finished');
+    } else {
+      row.classList.remove('finished');
+    }
+
+    // 팀명 표시
+    const teamName = playerData.team_name ? `<br><span style="font-size:11px;color:#94a3b8">(${playerData.team_name})</span>` : '';
+
+    // 행 내용 업데이트
+    row.innerHTML = `
+      <td>
+        <div style="font-weight:700">${playerData.name}</div>
+        <div style="font-size:11px;color:#94a3b8">#${bib}</div>
+        ${teamName}
+      </td>
+      <td>
+        <span class="pill ${estimated.status === '완주' ? 'fin' : 'run'}">${estimated.status}</span>
+      </td>
+      <td>${estimated.d}km</td>
+      <td>
+        <div>${estimated.name}</div>
+        ${estimated.estimated > estimated.d ? `<div style="font-size:11px;color:#4285f4;margin-top:2px">예상: ${estimated.estimated.toFixed(2)}km</div>` : ''}
+      </td>
+    `;
   }
 
   estimateNow(playerData) {
