@@ -1287,7 +1287,8 @@ class RunCheerApp {
     if (!group) return;
     
     const user = this.authManager.getUser();
-    const isLeader = group.creator_kakao_id === user.id;
+    // 타입 불일치 방지: 둘 다 문자열로 변환하여 비교
+    const isLeader = String(group.creator_kakao_id) === String(user.id);
     
     console.log('=== handleLeaveGroup 시작 ===');
     console.log('현재 그룹:', group);
