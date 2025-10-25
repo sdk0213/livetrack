@@ -708,7 +708,14 @@ class RunCheerApp {
     
     // 사용자 정보 로드
     const user = this.authManager.getUser();
-    document.getElementById('profileName').value = user.properties.nickname;
+    console.log('onLoginSuccess - user:', user);
+    
+    const nickname = user.properties?.nickname 
+      || user.kakao_account?.profile?.nickname 
+      || user.name 
+      || '사용자';
+    
+    document.getElementById('profileName').value = nickname;
     
     // 그룹 정보 로드
     await this.loadUserGroup();
