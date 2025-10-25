@@ -302,28 +302,34 @@ export async function handleGroupRunners(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { groupId } = req.query;
+  const { code } = req.query;
 
-  if (!groupId) {
-    return res.status(400).json({ error: 'groupId is required' });
+  if (!code) {
+    console.error('Missing code parameter');
+    return res.status(400).json({ error: 'code is required' });
   }
 
-  const result = await sql`
-    SELECT 
-      u.kakao_id,
-      u.name,
-      u.profile_image,
-      ri.bib_number,
-      ri.image_url,
-      ri.uploaded_at
-    FROM group_members gm
-    INNER JOIN users u ON gm.kakao_id = u.kakao_id
-    LEFT JOIN runner_images ri ON u.kakao_id = ri.kakao_id
-    WHERE gm.group_id = ${groupId}
-    ORDER BY u.name
-  `;
+  try {
+    const result = await sql`
+      SELECT 
+        gm.kakao_id,
+        u.name,
+        u.profile_image,
+        gm.bib,
+        gm.photo_url,
+        gm.team_name,
+        gm.joined_at
+      FROM group_members gm
+      INNER JOIN users u ON gm.kakao_id = u.kakao_id
+      WHERE gm.group_code = ${code}
+      ORDER BY u.name
+    `;
 
-  return res.status(200).json(result.rows);
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Group runners query error:', error);
+    throw error;
+  }
 }
 
 export async function handleGroupByCode(req, res, code) {

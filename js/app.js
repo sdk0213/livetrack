@@ -157,6 +157,12 @@ class APIService {
     return this.request(`/groups/${code}`);
   }
 
+  static async deleteGroup(code) {
+    return this.request(`/groups/${code}`, {
+      method: 'DELETE'
+    });
+  }
+
   static async getUserGroup(kakaoId) {
     return this.request(`/users/group?kakaoId=${kakaoId}`);
   }
@@ -601,7 +607,7 @@ class UIManager {
       
       document.getElementById('groupName').textContent = group.name;
       document.getElementById('groupCode').textContent = `코드: ${group.code}`;
-      document.getElementById('groupEvent').textContent = this.getEventName(group.eventId);
+      document.getElementById('groupEvent').textContent = this.getEventName(group.event_id);
     } else {
       this.noGroupMessage.classList.remove('hidden');
       this.groupInfo.classList.add('hidden');
@@ -617,11 +623,11 @@ class UIManager {
       const card = document.createElement('div');
       card.className = 'runner-card';
       
-      const cachedImage = this.app.imageCache.get(runner.kakaoId);
-      const imageUrl = cachedImage || runner.photoUrl;
+      const cachedImage = this.app.imageCache.get(runner.kakao_id);
+      const imageUrl = cachedImage || runner.photo_url;
       
-      if (!cachedImage && runner.photoUrl) {
-        this.app.imageCache.set(runner.kakaoId, runner.photoUrl);
+      if (!cachedImage && runner.photo_url) {
+        this.app.imageCache.set(runner.kakao_id, runner.photo_url);
       }
       
       card.innerHTML = `
@@ -636,7 +642,7 @@ class UIManager {
     });
   }
 
-  updateMyGroupInfo(group) {
+  updateMyGroupInfo(group, isLeader) {
     const container = document.getElementById('myGroupInfo');
     if (group) {
       container.innerHTML = `
@@ -645,10 +651,22 @@ class UIManager {
             <div class="group-name">${group.name}</div>
             <div class="group-code">코드: ${group.code}</div>
           </div>
-          <div class="muted" style="font-size:12px">${this.getEventName(group.eventId)}</div>
+          <div class="muted" style="font-size:12px">${this.getEventName(group.event_id)}</div>
         </div>
       `;
+      
+      // 그룹장이면 "그룹 삭제" 버튼, 멤버면 "그룹 탈퇴" 버튼
+      this.leaveGroupBtn.textContent = isLeader ? '🗑️ 그룹 삭제' : '👋 그룹 탈퇴';
       this.leaveGroupBtn.classList.remove('hidden');
+      
+      // 버튼 스타일 변경 (그룹장은 danger)
+      if (isLeader) {
+        this.leaveGroupBtn.classList.add('danger');
+        this.leaveGroupBtn.classList.remove('secondary');
+      } else {
+        this.leaveGroupBtn.classList.add('secondary');
+        this.leaveGroupBtn.classList.remove('danger');
+      }
     } else {
       container.innerHTML = '<p class="muted text-center">가입된 그룹이 없습니다.</p>';
       this.leaveGroupBtn.classList.add('hidden');
@@ -656,11 +674,13 @@ class UIManager {
   }
 
   getEventName(eventId) {
+    // eventId를 정수로 변환
+    const id = parseInt(eventId, 10);
     const events = {
       133: '2025 JTBC 서울마라톤',
       132: '2025 춘천마라톤'
     };
-    return events[eventId] || '알 수 없는 대회';
+    return events[id] || '알 수 없는 대회';
   }
 }
 
@@ -807,8 +827,12 @@ class RunCheerApp {
       
       if (group) {
         this.groupManager.currentGroup = group;
+        
+        // 그룹장 여부 확인
+        const isLeader = group.creator_kakao_id === user.id;
+        
         this.ui.updateGroupInfo(group);
-        this.ui.updateMyGroupInfo(group);
+        this.ui.updateMyGroupInfo(group, isLeader);
         await this.loadGroupRunners();
       }
     } catch (error) {
@@ -816,12 +840,12 @@ class RunCheerApp {
       if (error.message.includes('404')) {
         console.log('No group joined yet');
         this.ui.updateGroupInfo(null);
-        this.ui.updateMyGroupInfo(null);
+        this.ui.updateMyGroupInfo(null, false);
       } else {
         // 다른 에러는 로그만 출력
         console.error('Failed to load group:', error);
         this.ui.updateGroupInfo(null);
-        this.ui.updateMyGroupInfo(null);
+        this.ui.updateMyGroupInfo(null, false);
       }
     }
   }
@@ -1016,18 +1040,41 @@ class RunCheerApp {
   }
 
   async handleLeaveGroup() {
-    if (!confirm('정말 그룹을 탈퇴하시겠습니까?')) return;
+    const group = this.groupManager.currentGroup;
+    if (!group) return;
     
-    try {
-      const user = this.authManager.getUser();
-      await this.groupManager.leaveGroup(user.id);
+    const user = this.authManager.getUser();
+    const isLeader = group.creator_kakao_id === user.id;
+    
+    if (isLeader) {
+      // 그룹장: 그룹 삭제
+      if (!confirm('정말 그룹을 삭제하시겠습니까? 모든 멤버가 그룹에서 제외됩니다.')) return;
       
-      Utils.showToast('그룹에서 탈퇴했습니다.', 'success');
-      this.ui.updateGroupInfo(null);
-      this.ui.updateMyGroupInfo(null);
-    } catch (error) {
-      console.error('Failed to leave group:', error);
-      Utils.showToast('그룹 탈퇴에 실패했습니다.', 'error');
+      try {
+        await APIService.deleteGroup(group.code);
+        
+        this.groupManager.currentGroup = null;
+        Utils.showToast('그룹이 삭제되었습니다.', 'success');
+        this.ui.updateGroupInfo(null);
+        this.ui.updateMyGroupInfo(null, false);
+      } catch (error) {
+        console.error('Failed to delete group:', error);
+        Utils.showToast('그룹 삭제에 실패했습니다.', 'error');
+      }
+    } else {
+      // 멤버: 그룹 탈퇴
+      if (!confirm('정말 그룹을 탈퇴하시겠습니까?')) return;
+      
+      try {
+        await this.groupManager.leaveGroup(user.id);
+        
+        Utils.showToast('그룹에서 탈퇴했습니다.', 'success');
+        this.ui.updateGroupInfo(null);
+        this.ui.updateMyGroupInfo(null, false);
+      } catch (error) {
+        console.error('Failed to leave group:', error);
+        Utils.showToast('그룹 탈퇴에 실패했습니다.', 'error');
+      }
     }
   }
 
