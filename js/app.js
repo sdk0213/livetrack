@@ -609,6 +609,14 @@ class UIManager {
         this.app.handleStartTracking();
       }
     });
+
+    // 이미지 뷰어 모달 닫기
+    const imageViewerModal = document.getElementById('imageViewerModal');
+    if (imageViewerModal) {
+      imageViewerModal.addEventListener('click', () => {
+        this.hideImageViewer();
+      });
+    }
   }
 
   showPage(pageId) {
@@ -694,15 +702,38 @@ class UIManager {
       }
       
       card.innerHTML = `
-        <img src="${imageUrl}" alt="${runner.name}" class="runner-photo" />
+        <img src="${imageUrl}" alt="${runner.name}" class="runner-photo" data-full-image="${imageUrl}" />
         <div class="runner-info">
           <div class="runner-name">${runner.name}</div>
           <div class="runner-bib">배번: ${runner.bib}${runner.team_name ? ` (${runner.team_name})` : ''}</div>
         </div>
       `;
       
+      // 이미지 클릭 이벤트
+      const img = card.querySelector('.runner-photo');
+      img.addEventListener('click', () => {
+        this.showImageViewer(imageUrl);
+      });
+      
       this.runnersList.appendChild(card);
     });
+  }
+
+  showImageViewer(imageUrl) {
+    const modal = document.getElementById('imageViewerModal');
+    const img = document.getElementById('imageViewerImg');
+    
+    if (modal && img) {
+      img.src = imageUrl;
+      modal.classList.add('active');
+    }
+  }
+
+  hideImageViewer() {
+    const modal = document.getElementById('imageViewerModal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
   }
 
   updateMyGroupInfo(group, isLeader) {
