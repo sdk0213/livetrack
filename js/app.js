@@ -896,12 +896,16 @@ class RunCheerApp {
       if (group) {
         this.groupManager.currentGroup = group;
         
-        // 그룹장 여부 확인
-        const isLeader = group.creator_kakao_id === user.id;
+        // 그룹장 여부 확인 (타입 변환 후 비교)
+        const userId = String(user.id);
+        const creatorId = String(group.creator_kakao_id);
+        const isLeader = userId === creatorId;
         
         console.log('=== 그룹장 판별 ===');
-        console.log('User ID:', user.id);
-        console.log('Creator Kakao ID:', group.creator_kakao_id);
+        console.log('User ID:', user.id, '(type:', typeof user.id, ')');
+        console.log('Creator Kakao ID:', group.creator_kakao_id, '(type:', typeof group.creator_kakao_id, ')');
+        console.log('User ID (String):', userId);
+        console.log('Creator ID (String):', creatorId);
         console.log('Is Leader:', isLeader);
         
         this.ui.updateGroupInfo(group);
