@@ -1172,12 +1172,11 @@ class RunCheerApp {
       return;
     }
 
-    // 응원 탭으로 이동
-    this.ui.switchTab('cheer');
-    
     // 지도 섹션 표시
     const mapSection = document.getElementById('mapSection');
+    const resultsSection = document.getElementById('resultsSection');
     mapSection.classList.remove('hidden');
+    resultsSection.classList.remove('hidden');
     
     // 주자 목록 가져오기
     try {
@@ -1190,8 +1189,14 @@ class RunCheerApp {
       
       Utils.showToast(`${runners.length}명의 주자 추적을 시작합니다.`, 'success');
       
-      // 지도 초기화 및 추적 시작
-      this.initializeMap(group.event_id, runners);
+      // index.html의 추적 시스템 사용
+      // 배번 목록을 전역 변수에 저장
+      window.trackingBibs = runners.map(r => r.bib_number);
+      window.trackingEventId = group.event_id;
+      
+      // 추적 로직은 index.html과 동일하게 구현 예정
+      // 현재는 기본 지도와 마커만 표시
+      this.initializeTrackingMap(group.event_id, runners);
       
     } catch (error) {
       console.error('Failed to start tracking:', error);
@@ -1199,15 +1204,20 @@ class RunCheerApp {
     }
   }
 
-  initializeMap(eventId, runners) {
-    // 지도 컨테이너 확인
+  initializeTrackingMap(eventId, runners) {
+    if (!window.naver || !window.naver.maps) {
+      console.error('Naver Maps API not loaded');
+      Utils.showToast('지도 API가 로드되지 않았습니다.', 'error');
+      return;
+    }
+
     const mapContainer = document.getElementById('map');
     if (!mapContainer) {
       console.error('Map container not found');
       return;
     }
 
-    // 대회별 중심점 설정
+    // 대회별 중심점
     const eventCenters = {
       133: { lat: 37.5665, lng: 126.9780 }, // JTBC 서울마라톤
       132: { lat: 37.8813, lng: 127.7299 }  // 춘천마라톤
@@ -1215,42 +1225,96 @@ class RunCheerApp {
 
     const center = eventCenters[eventId] || eventCenters[133];
 
-    // 네이버 지도 생성
-    const mapOptions = {
+    // 지도 생성
+    const map = new naver.maps.Map('map', {
       center: new naver.maps.LatLng(center.lat, center.lng),
       zoom: 13,
       mapTypeControl: true
-    };
+    });
 
-    const map = new naver.maps.Map('map', mapOptions);
-    
-    // 주자 마커 생성
+    // 코스 경로 로드 (GPX 파일)
+    this.loadGPXCourse(eventId, map);
+
+    // 주자 마커 생성 (임시)
     runners.forEach((runner, index) => {
       const marker = new naver.maps.Marker({
         position: new naver.maps.LatLng(center.lat + (Math.random() - 0.5) * 0.01, center.lng + (Math.random() - 0.5) * 0.01),
         map: map,
         title: `${runner.runner_name} (${runner.bib_number})`,
         icon: {
-          content: `<div style="background:${this.getRunnerColor(index)};color:white;padding:8px 12px;border-radius:20px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${runner.bib_number}</div>`,
-          anchor: new naver.maps.Point(20, 20)
+          content: `<div class="player-label">${runner.runner_name}</div>`,
+          anchor: new naver.maps.Point(0, 30)
         }
       });
 
-      // 마커 클릭 이벤트
       naver.maps.Event.addListener(marker, 'click', () => {
         const infoWindow = new naver.maps.InfoWindow({
-          content: `<div style="padding:10px;"><strong>${runner.runner_name}</strong><br>배번: ${runner.bib_number}</div>`
+          content: `<div style="padding:10px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px">
+            <div style="font-weight:700;margin-bottom:5px;color:#333">${runner.runner_name}</div>
+            <div style="font-size:12px;color:#666">배번: ${runner.bib_number}</div>
+            <div style="font-size:12px;color:#4285f4;font-weight:bold">📍 대회 당일 실시간 추적</div>
+          </div>`
         });
-        infoWindow.open(map, marker);
+        if (infoWindow.getMap()) {
+          infoWindow.close();
+        } else {
+          infoWindow.open(map, marker);
+        }
       });
     });
 
-    Utils.showToast('지도가 로드되었습니다. 실제 추적은 대회 당일에 시작됩니다.', 'info');
+    Utils.showToast('지도가 로드되었습니다. 대회 당일 실시간 추적이 시작됩니다.', 'info');
+    
+    // 상태 업데이트
+    const statusEl = document.getElementById('status');
+    if (statusEl) {
+      statusEl.textContent = `${runners.length}명의 주자 등록 완료. 대회 당일 자동으로 추적이 시작됩니다.`;
+    }
   }
 
-  getRunnerColor(index) {
-    const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
-    return colors[index % colors.length];
+  async loadGPXCourse(eventId, map) {
+    let gpxFile = null;
+    
+    if (eventId === 133) {
+      gpxFile = '/course-jtbc2025.gpx';
+    } else if (eventId === 132) {
+      gpxFile = '/course-chuncheon-2025.gpx';
+    }
+    
+    if (!gpxFile) return;
+    
+    try {
+      const response = await fetch(gpxFile);
+      const text = await response.text();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, 'text/xml');
+      const trkpts = xml.querySelectorAll('trkpt');
+      const path = [];
+      
+      trkpts.forEach(pt => {
+        const lat = parseFloat(pt.getAttribute('lat'));
+        const lon = parseFloat(pt.getAttribute('lon'));
+        if (lat && lon) path.push(new naver.maps.LatLng(lat, lon));
+      });
+      
+      if (path.length > 0) {
+        const coursePath = new naver.maps.Polyline({
+          path: path,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.6,
+          strokeWeight: 4,
+          map: map
+        });
+        
+        const bounds = new naver.maps.LatLngBounds();
+        path.forEach(p => bounds.extend(p));
+        map.fitBounds(bounds);
+        
+        console.log(`GPX 코스 로드 완료: ${path.length} 포인트`);
+      }
+    } catch (error) {
+      console.error('GPX 로드 실패:', error);
+    }
   }
 }
 
