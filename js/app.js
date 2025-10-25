@@ -608,6 +608,7 @@ class UIManager {
     if (group) {
       this.noGroupMessage.classList.add('hidden');
       this.groupInfo.classList.remove('hidden');
+      this.runnersSection.classList.remove('hidden');
       
       document.getElementById('groupName').textContent = group.name;
       document.getElementById('groupCode').textContent = `코드: ${group.code}`;
@@ -628,11 +629,10 @@ class UIManager {
     } else {
       this.noGroupMessage.classList.remove('hidden');
       this.groupInfo.classList.add('hidden');
+      this.runnersSection.classList.add('hidden');
       this.mapSection.classList.add('hidden');
       this.resultsSection.classList.add('hidden');
     }
-    // 그룹 여부와 관계없이 응원 탭은 항상 표시
-    this.runnersSection.classList.remove('hidden');
   }
 
   updateRunnersList(runners) {
