@@ -607,7 +607,11 @@ class UIManager {
       
       document.getElementById('groupName').textContent = group.name;
       document.getElementById('groupCode').textContent = `코드: ${group.code}`;
-      document.getElementById('groupEvent').textContent = this.getEventName(group.event_id);
+      
+      // 이벤트 이름과 그룹장 정보 표시
+      const eventInfo = this.getEventName(group.event_id);
+      const leaderInfo = group.creator_name ? ` • 그룹장: ${group.creator_name}` : '';
+      document.getElementById('groupEvent').textContent = eventInfo + leaderInfo;
     } else {
       this.noGroupMessage.classList.remove('hidden');
       this.groupInfo.classList.add('hidden');
@@ -645,13 +649,18 @@ class UIManager {
   updateMyGroupInfo(group, isLeader) {
     const container = document.getElementById('myGroupInfo');
     if (group) {
+      const leaderBadge = isLeader ? '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:8px;font-weight:600">👑 그룹장</span>' : '';
+      
       container.innerHTML = `
         <div class="group-card">
           <div class="group-header">
-            <div class="group-name">${group.name}</div>
+            <div class="group-name">${group.name}${leaderBadge}</div>
             <div class="group-code">코드: ${group.code}</div>
           </div>
-          <div class="muted" style="font-size:12px">${this.getEventName(group.event_id)}</div>
+          <div class="muted" style="font-size:12px">
+            ${this.getEventName(group.event_id)}
+            ${group.creator_name ? ` • 그룹장: ${group.creator_name}` : ''}
+          </div>
         </div>
       `;
       

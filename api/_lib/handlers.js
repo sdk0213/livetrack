@@ -145,9 +145,12 @@ export async function handleUserGroup(req, res) {
     const kakaoIdStr = String(kakaoId);
     
     const result = await sql`
-      SELECT g.* 
+      SELECT 
+        g.*,
+        u.name as creator_name
       FROM groups g
       INNER JOIN group_members gm ON g.code = gm.group_code
+      LEFT JOIN users u ON g.creator_kakao_id = u.kakao_id
       WHERE gm.kakao_id = ${kakaoIdStr}
       LIMIT 1
     `;
