@@ -201,93 +201,53 @@ class AuthManager {
   constructor() {
     this.user = null;
     this.initKakao();
-    this.setupKakaoLoginButton();
   }
 
   initKakao() {
     if (!Kakao.isInitialized()) {
       Kakao.init(CONFIG.KAKAO_JS_KEY);
-    }
-  }
-
-  setupKakaoLoginButton() {
-    // 카카오 로그인 버튼 생성
-    if (document.getElementById('kakao-login-btn')) {
-      Kakao.Auth.createLoginButton({
-        container: '#kakao-login-btn',
-        success: async (authObj) => {
-          console.log('Login success:', authObj);
-          try {
-            const userInfo = await this.getKakaoUserInfo();
-            this.user = userInfo;
-            
-            // 서버에 사용자 정보 저장
-            try {
-              await APIService.getUser(userInfo.id);
-            } catch (e) {
-              // 신규 사용자
-              await APIService.createUser({
-                kakaoId: userInfo.id,
-                name: userInfo.properties.nickname,
-                profileImage: userInfo.properties.profile_image
-              });
-            }
-            
-            localStorage.setItem('user', JSON.stringify(userInfo));
-            
-            // 로그인 성공 후 메인 화면으로
-            if (window.app) {
-              await window.app.onLoginSuccess();
-            }
-          } catch (error) {
-            console.error('Failed to get user info:', error);
-            Utils.showToast('사용자 정보를 가져올 수 없습니다.', 'error');
-          }
-        },
-        fail: (err) => {
-          console.error('Login failed:', err);
-          Utils.showToast('로그인에 실패했습니다.', 'error');
-        }
-      });
+      console.log('Kakao SDK initialized');
     }
   }
 
   async login() {
-    try {
-      if (!window.Kakao) {
-        throw new Error('Kakao SDK not loaded');
-      }
-
-      // 카카오 로그인 버튼 방식 사용
-      return new Promise((resolve, reject) => {
-        Kakao.Auth.authorize({
-          redirectUri: window.location.origin + '/auth/kakao/callback',
-        });
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async loginWithToken() {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       try {
-        const userInfo = await this.getKakaoUserInfo();
-        this.user = userInfo;
-        
-        // 서버에 사용자 정보 저장
-        try {
-          await APIService.getUser(userInfo.id);
-        } catch (e) {
-          // 신규 사용자
-          await APIService.createUser({
-            kakaoId: userInfo.id,
-            name: userInfo.properties.nickname,
-            profileImage: userInfo.properties.profile_image
-          });
+        if (!window.Kakao) {
+          reject(new Error('Kakao SDK not loaded'));
+          return;
         }
-        
-        resolve(userInfo);
+
+        // Kakao.API.request 방식으로 로그인
+        Kakao.Auth.login({
+          success: async (authObj) => {
+            console.log('Kakao login success:', authObj);
+            try {
+              const userInfo = await this.getKakaoUserInfo();
+              this.user = userInfo;
+              
+              // 서버에 사용자 정보 저장
+              try {
+                await APIService.getUser(userInfo.id);
+              } catch (e) {
+                // 신규 사용자
+                await APIService.createUser({
+                  kakaoId: userInfo.id,
+                  name: userInfo.properties.nickname,
+                  profileImage: userInfo.properties.profile_image
+                });
+              }
+              
+              resolve(userInfo);
+            } catch (error) {
+              reject(error);
+            }
+          },
+          fail: (err) => {
+            console.error('Kakao login failed:', err);
+            reject(err);
+          }
+        });
       } catch (error) {
         reject(error);
       }
@@ -484,7 +444,8 @@ class UIManager {
     this.cheerPage = document.getElementById('cheerPage');
     this.profilePage = document.getElementById('profilePage');
 
-    // Buttons (로그인 버튼 제거)
+    // Buttons
+    this.kakaoLoginBtn = document.getElementById('kakaoLoginBtn');
     this.createGroupBtn = document.getElementById('createGroupBtn');
     this.joinGroupBtn = document.getElementById('joinGroupBtn');
     this.startTrackingBtn = document.getElementById('startTrackingBtn');
@@ -504,7 +465,8 @@ class UIManager {
   }
 
   initEventListeners() {
-    // 로그인 - 카카오 버튼은 SDK가 자동 생성
+    // 로그인
+    this.kakaoLoginBtn.addEventListener('click', () => this.app.handleLogin());
     
     // 그룹
     this.createGroupBtn.addEventListener('click', () => this.showModal('createGroupModal'));
@@ -675,6 +637,21 @@ class RunCheerApp {
 
   showLoginPage() {
     this.ui.showPage('loginPage');
+  }
+
+  async handleLogin() {
+    const originalText = Utils.showLoading(this.ui.kakaoLoginBtn);
+    
+    try {
+      const user = await this.authManager.login();
+      localStorage.setItem('user', JSON.stringify(user));
+      await this.onLoginSuccess();
+    } catch (error) {
+      console.error('Login failed:', error);
+      Utils.showToast('로그인에 실패했습니다.', 'error');
+    } finally {
+      Utils.hideLoading(this.ui.kakaoLoginBtn, originalText);
+    }
   }
 
   async onLoginSuccess() {
