@@ -126,7 +126,10 @@ class Utils {
 // ============================================
 class APIService {
   static async request(endpoint, options = {}) {
-    const response = await fetch(`${CONFIG.API_BASE}${endpoint}`, {
+    const url = `${CONFIG.API_BASE}${endpoint}`;
+    console.log(`[API Request] ${options.method || 'GET'} ${url}`);
+    
+    const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -134,8 +137,12 @@ class APIService {
       }
     });
 
+    console.log(`[API Response] ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[API Error] ${response.status}:`, errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
 
     // 204 No Content는 JSON 파싱하지 않음
@@ -143,7 +150,9 @@ class APIService {
       return null;
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log('[API Data]:', data);
+    return data;
   }
 
   // 사용자 관련
@@ -1282,14 +1291,25 @@ class RunCheerApp {
     
     if (isLeader) {
       // 그룹장: 그룹 삭제
-      if (!confirm('👑 그룹장 권한으로 그룹을 삭제하시겠습니까?\n\n⚠️ 모든 멤버가 그룹에서 제외되며, 그룹 데이터가 완전히 삭제됩니다.')) return;
+      if (!confirm('👑 그룹장 권한으로 그룹을 삭제하시겠습니까?\n\n⚠️ 모든 멤버가 그룹에서 제외되며, 그룹 데이터가 완전히 삭제됩니다.')) {
+        console.log('그룹 삭제 취소됨');
+        return;
+      }
       
       try {
         console.log('=== 그룹 삭제 시작 ===');
-        console.log('그룹 코드:', group.code);
+        console.log('그룹 정보:', {
+          code: group.code,
+          name: group.name,
+          creator_kakao_id: group.creator_kakao_id,
+          user_id: user.id
+        });
+        console.log('API 호출 전...');
         
         const result = await APIService.deleteGroup(group.code);
-        console.log('그룹 삭제 결과:', result);
+        
+        console.log('=== 그룹 삭제 완료 ===');
+        console.log('삭제 결과:', result);
         
         this.groupManager.currentGroup = null;
         Utils.showToast('✅ 그룹이 삭제되었습니다.', 'success');
@@ -1298,12 +1318,16 @@ class RunCheerApp {
         this.ui.updateRunnersList([]); // 주자 목록 초기화
         
         // 페이지 새로고침으로 상태 완전 초기화
+        console.log('1초 후 페이지 새로고침...');
         setTimeout(() => {
           window.location.reload();
         }, 1000);
       } catch (error) {
-        console.error('Failed to delete group:', error);
-        Utils.showToast('❌ 그룹 삭제에 실패했습니다.', 'error');
+        console.error('=== 그룹 삭제 실패 ===');
+        console.error('에러 상세:', error);
+        console.error('에러 메시지:', error.message);
+        console.error('에러 스택:', error.stack);
+        Utils.showToast('❌ 그룹 삭제에 실패했습니다: ' + error.message, 'error');
       }
     } else {
       // 멤버: 그룹 탈퇴
