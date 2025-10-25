@@ -331,7 +331,12 @@ class AuthManager {
             console.log('User created successfully');
           } catch (createError) {
             console.error('Failed to create user:', createError);
-            throw new Error('사용자 생성에 실패했습니다. 다시 시도해주세요.');
+            // 중복 키 에러는 무시 (이미 존재하는 사용자)
+            if (createError.message && createError.message.includes('duplicate key')) {
+              console.log('User already exists, continuing...');
+            } else {
+              throw new Error('사용자 생성에 실패했습니다. 다시 시도해주세요.');
+            }
           }
         }
         
