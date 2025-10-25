@@ -315,11 +315,17 @@ class AuthManager {
         console.log('User info from Kakao:', userInfo);
         
         // 서버에 사용자 정보 저장/확인
+        let userExists = false;
         try {
           await APIService.getUser(userInfo.id);
           console.log('Existing user found');
+          userExists = true;
         } catch (e) {
-          // 신규 사용자 생성
+          console.log('User not found, creating new user');
+        }
+        
+        // 사용자가 없으면 생성
+        if (!userExists) {
           const userData = {
             kakaoId: userInfo.id,
             name: userInfo.properties?.nickname || userInfo.kakao_account?.profile?.nickname || '사용자',
@@ -331,9 +337,9 @@ class AuthManager {
             console.log('User created successfully');
           } catch (createError) {
             console.error('Failed to create user:', createError);
-            // 중복 키 에러는 무시 (이미 존재하는 사용자)
+            // 중복 키 에러는 무시 (이미 존재하는 사용자 - 동시 생성 시도 등)
             if (createError.message && createError.message.includes('duplicate key')) {
-              console.log('User already exists, continuing...');
+              console.log('User already exists (race condition), continuing...');
             } else {
               throw new Error('사용자 생성에 실패했습니다. 다시 시도해주세요.');
             }
@@ -1002,15 +1008,23 @@ class RunCheerApp {
         // 서버에서 사용자 존재 확인 (회원탈퇴 체크)
         try {
           await APIService.getUser(user.id);
+          console.log('User verified in server');
           await this.onLoginSuccess();
         } catch (error) {
-          // 사용자가 서버에 없음 (회원탈퇴됨)
-          console.warn('User not found in server, clearing local data');
-          localStorage.removeItem('user');
-          this.authManager.logout();
-          this.imageCache.clear();
-          Utils.showToast('다시 로그인해주세요.', 'info');
-          this.showLoginPage();
+          console.error('User verification failed:', error);
+          // 사용자가 서버에 없음 (회원탈퇴됨 또는 DB 오류)
+          // 500 에러인 경우 서버 문제일 수 있으므로 일단 진행
+          if (error.message && error.message.includes('500')) {
+            console.warn('Server error, but continuing with cached user');
+            await this.onLoginSuccess();
+          } else {
+            console.warn('User not found in server, clearing local data');
+            localStorage.removeItem('user');
+            this.authManager.logout();
+            this.imageCache.clear();
+            Utils.showToast('다시 로그인해주세요.', 'info');
+            this.showLoginPage();
+          }
         }
       } catch (e) {
         console.error('Invalid user data:', e);
