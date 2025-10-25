@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RunCheer - 크루 응원 🏃‍♂️💨</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🏃‍♂️</text></svg>" />
+  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=04ebpnqto6"></script>
+  <style>
+    :root{
+      --bg:#f5f7fa;
+      --card:#ffffff;
+      --muted:#64748b;
+      --fg:#1e293b;
+      --acc:#3b82f6;
+      --ok:#22c55e;
+      --err:#ef4444;
+      --warn:#f59e0b;
+      --finished:#dbeafe;
+      --kakao:#FEE500;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    html,body{
+      margin:0;
+      height:100%;
+      background:var(--bg);
+      color:var(--fg);
+      font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Helvetica,Arial,sans-serif;
+      scroll-behavior:smooth;
+    }
+    
+    .wrap{max-width:1100px;margin:22px auto;padding:0 16px;padding-bottom:80px}
+    
+    h1{margin:0 0 6px;font-size:20px}
+    h2{margin:0 0 12px;font-size:18px;font-weight:700}
+    h3{margin:0 0 10px;font-size:16px;font-weight:700}
+    
+    .muted{color:var(--muted)}
+    
+    .card{
+      background:var(--card);
+      border-radius:14px;
+      box-shadow:0 2px 8px rgba(0,0,0,.1);
+      padding:14px;
+      margin:12px 0;
+    }
+    
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .col{flex:1 1 240px}
+    
+    input,textarea,select,button{
+      width:100%;
+      box-sizing:border-box;
+      background:#f8fafc;
+      border:1px solid #cbd5e1;
+      color:var(--fg);
+      border-radius:10px;
+      padding:10px;
+      font-size:14px;
+    }
+    
+    button{
+      cursor:pointer;
+      background:linear-gradient(180deg,#3b82f6,#2563eb);
+      border:none;
+      color:#fff;
+      font-weight:600;
+      transition:opacity 0.2s;
+    }
+    
+    button:hover:not(:disabled){opacity:0.9}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    
+    button.secondary{background:#f8fafc;border:1px solid #cbd5e1;color:var(--fg)}
+    button.success{background:linear-gradient(180deg,#22c55e,#16a34a)}
+    button.danger{background:linear-gradient(180deg,#ef4444,#dc2626)}
+    button.kakao{background:var(--kakao);color:#000;font-weight:700}
+    
+    .btn-small{padding:6px 12px;font-size:12px;width:auto}
+    
+    /* 탭 네비게이션 */
+    .tab-nav{
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      background:#fff;
+      border-top:1px solid #e2e8f0;
+      display:flex;
+      z-index:100;
+      box-shadow:0 -2px 10px rgba(0,0,0,.1);
+    }
+    
+    .tab-btn{
+      flex:1;
+      padding:12px;
+      background:transparent;
+      border:none;
+      border-radius:0;
+      color:var(--muted);
+      font-size:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+    }
+    
+    .tab-btn.active{color:var(--acc);font-weight:700}
+    .tab-btn .icon{font-size:20px}
+    
+    /* 페이지 */
+    .page{display:none}
+    .page.active{display:block}
+    
+    /* 로그인 화면 */
+    .login-container{
+      min-height:80vh;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+    }
+    
+    .login-logo{font-size:64px;margin-bottom:16px}
+    .login-title{font-size:24px;font-weight:700;margin-bottom:8px}
+    .login-subtitle{color:var(--muted);margin-bottom:32px}
+    
+    /* 그룹 카드 */
+    .group-card{
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:12px;
+      margin:8px 0;
+    }
+    
+    .group-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .group-name{font-weight:700;font-size:16px}
+    .group-code{font-size:12px;color:var(--muted);font-family:monospace}
+    
+    /* 주자 리스트 */
+    .runner-list{display:flex;flex-direction:column;gap:10px}
+    
+    .runner-card{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:10px;
+    }
+    
+    .runner-photo{
+      width:60px;
+      height:60px;
+      border-radius:8px;
+      object-fit:cover;
+      background:#e2e8f0;
+    }
+    
+    .runner-info{flex:1}
+    .runner-name{font-weight:700;margin-bottom:4px}
+    .runner-bib{font-size:12px;color:var(--muted)}
+    
+    /* 모달 */
+    .modal{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,0.5);
+      z-index:200;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    
+    .modal.active{display:flex}
+    
+    .modal-content{
+      background:#fff;
+      border-radius:14px;
+      padding:20px;
+      max-width:500px;
+      width:100%;
+      max-height:80vh;
+      overflow-y:auto;
+    }
+    
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+    
+    .modal-close{
+      background:transparent;
+      border:none;
+      font-size:24px;
+      cursor:pointer;
+      padding:0;
+      width:auto;
+      color:var(--muted);
+    }
+    
+    /* 지도 */
+    #map{width:100%;height:400px;border-radius:10px;background:#e2e8f0}
+    
+    /* 테이블 */
+    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px}
+    th,td{text-align:left;padding:10px 12px;vertical-align:top}
+    th{font-size:11px;color:var(--muted);font-weight:600}
+    tbody tr{background:#f8fafc;border-radius:10px}
+    tbody tr.finished{background:var(--finished)}
+    
+    /* 이미지 업로드 */
+    .image-upload-area{
+      border:2px dashed #cbd5e1;
+      border-radius:10px;
+      padding:20px;
+      text-align:center;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    
+    .image-upload-area:hover{border-color:var(--acc);background:#f8fafc}
+    .image-upload-area.has-image{border-style:solid;border-color:var(--ok)}
+    
+    .image-preview{
+      max-width:200px;
+      max-height:200px;
+      border-radius:8px;
+      margin:10px auto;
+    }
+    
+    .loading{
+      display:inline-block;
+      width:14px;
+      height:14px;
+      border:2px solid #cbd5e1;
+      border-top-color:var(--acc);
+      border-radius:50%;
+      animation:spin 0.6s linear infinite;
+      vertical-align:middle;
+      margin-left:8px;
+    }
+    
+    @keyframes spin{to{transform:rotate(360deg)}}
+    
+    .hidden{display:none!important}
+    
+    .text-center{text-align:center}
+    .mt-2{margin-top:16px}
+    .mb-2{margin-bottom:16px}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 로그인 전 화면 -->
+    <div id="loginPage" class="page active">
+      <div class="wrap">
+        <div class="login-container">
+          <div class="login-logo">🏃‍♂️💨</div>
+          <h1 class="login-title">RunCheer</h1>
+          <p class="login-subtitle">함께 응원하는 마라톤 크루</p>
+          <button id="kakaoLoginBtn" class="kakao" style="max-width:300px">
+            <span style="font-size:18px">💬</span> 카카오톡으로 시작하기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 메인 앱 (로그인 후) -->
+    <div id="mainApp" class="page">
+      <!-- 응원 탭 -->
+      <div id="cheerPage" class="page active">
+        <div class="wrap">
+          <h1>🎉 크루 응원</h1>
+          
+          <!-- 그룹 정보 -->
+          <div class="card">
+            <div id="noGroupMessage">
+              <p class="text-center muted">가입된 그룹이 없습니다.</p>
+              <button id="createGroupBtn" class="success">➕ 새 그룹 만들기</button>
+              <button id="joinGroupBtn" class="secondary mt-2">🔗 그룹 코드로 참여하기</button>
+            </div>
+            
+            <div id="groupInfo" class="hidden">
+              <div class="group-header">
+                <div>
+                  <div class="group-name" id="groupName"></div>
+                  <div class="group-code" id="groupCode"></div>
+                </div>
+                <button id="startTrackingBtn" class="success btn-small">🎯 그룹 추적 시작</button>
+              </div>
+              <div class="muted" style="font-size:12px" id="groupEvent"></div>
+            </div>
+          </div>
+
+          <!-- 주자 목록 -->
+          <div class="card" id="runnersSection" class="hidden">
+            <h3>👥 우리 크루 주자</h3>
+            <div id="runnersList" class="runner-list"></div>
+          </div>
+
+          <!-- 지도 -->
+          <div class="card" id="mapSection" class="hidden">
+            <h3>📍 실시간 주자 위치 <span style="font-size:11px;color:#666;font-weight:normal">(15초 간격 위치 갱신)</span></h3>
+            <div style="color:var(--err);font-size:12px;margin-bottom:10px;font-weight:600">⚠️ 동작하지 않을 수 있습니다. 미동작 시 아래 테이블에서 마지막 위치를 직접 확인해주세요.</div>
+            <div style="color:#666;font-size:12px;margin-bottom:10px">
+              ℹ️ 주자의 예상 위치는 이전 구간의 페이스를 기준으로 산정됩니다<br>
+              ℹ️ 처음 출발시에는 6:30 페이스로 예측되어 산정됩니다
+            </div>
+            <div id="map"></div>
+          </div>
+
+          <!-- 결과 테이블 -->
+          <div class="card" id="resultsSection" class="hidden">
+            <div id="status" class="muted" style="font-size:12px"></div>
+            <table>
+              <thead>
+                <tr>
+                  <th>주자</th>
+                  <th>상태</th>
+                  <th>거리</th>
+                  <th>위치</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 프로필 탭 -->
+      <div id="profilePage" class="page">
+        <div class="wrap">
+          <h1>👤 프로필</h1>
+          
+          <div class="card">
+            <h3>내 정보</h3>
+            <div style="margin:12px 0">
+              <label class="muted" style="font-size:12px">이름</label>
+              <input type="text" id="profileName" placeholder="이름을 입력하세요" />
+            </div>
+            <button id="updateNameBtn" class="success">이름 변경</button>
+          </div>
+
+          <div class="card">
+            <h3>가입된 그룹</h3>
+            <div id="myGroupInfo">
+              <p class="muted text-center">가입된 그룹이 없습니다.</p>
+            </div>
+            <button id="leaveGroupBtn" class="danger mt-2 hidden">그룹 탈퇴</button>
+          </div>
+
+          <div class="card">
+            <button id="privacyBtn" class="secondary">📋 개인정보 처리방침</button>
+            <button id="deleteAccountBtn" class="danger mt-2">🗑️ 회원 탈퇴</button>
+            <button id="logoutBtn" class="secondary mt-2">🚪 로그아웃</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 탭 네비게이션 -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="cheer">
+          <span class="icon">🎉</span>
+          <span>응원</span>
+        </button>
+        <button class="tab-btn" data-tab="profile">
+          <span class="icon">👤</span>
+          <span>프로필</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- 그룹 생성 모달 -->
+  <div id="createGroupModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>새 그룹 만들기</h2>
+        <button class="modal-close" onclick="closeModal('createGroupModal')">×</button>
+      </div>
+      <div>
+        <label class="muted" style="font-size:12px">그룹 이름</label>
+        <input type="text" id="newGroupName" placeholder="예: 런티풀 춘천" maxlength="20" />
+      </div>
+      <div class="mt-2">
+        <label class="muted" style="font-size:12px">대회 선택</label>
+        <select id="newGroupEvent">
+          <option value="">대회를 선택하세요</option>
+          <option value="133">2025 JTBC 서울마라톤</option>
+          <option value="132">2025 춘천마라톤</option>
+        </select>
+      </div>
+      <button id="confirmCreateGroupBtn" class="success mt-2">그룹 생성</button>
+    </div>
+  </div>
+
+  <!-- 그룹 참여 모달 -->
+  <div id="joinGroupModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>그룹 참여하기</h2>
+        <button class="modal-close" onclick="closeModal('joinGroupModal')">×</button>
+      </div>
+      <div>
+        <label class="muted" style="font-size:12px">그룹 코드 (4자리)</label>
+        <input type="text" id="joinGroupCode" placeholder="예: A1B2" maxlength="4" style="text-transform:uppercase" />
+      </div>
+      <button id="confirmJoinGroupBtn" class="success mt-2">그룹 참여</button>
+    </div>
+  </div>
+
+  <!-- 주자 정보 등록 모달 -->
+  <div id="registerRunnerModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>주자 정보 등록</h2>
+        <button class="modal-close" onclick="closeModal('registerRunnerModal')">×</button>
+      </div>
+      <p class="muted" style="font-size:12px">그룹 참여를 위해 배번과 사진을 등록해주세요.</p>
+      
+      <div class="mt-2">
+        <label class="muted" style="font-size:12px">배번 (Bib Number)</label>
+        <input type="number" id="runnerBib" placeholder="예: 12345" />
+      </div>
+      
+      <div class="mt-2">
+        <label class="muted" style="font-size:12px">주자 사진</label>
+        <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('runnerPhoto').click()">
+          <div id="uploadPlaceholder">
+            <div style="font-size:32px">📷</div>
+            <div style="margin-top:8px">클릭하여 사진 업로드</div>
+          </div>
+          <img id="imagePreview" class="image-preview hidden" />
+          <input type="file" id="runnerPhoto" accept="image/*" class="hidden" onchange="handleImageSelect(event)" />
+        </div>
+      </div>
+      
+      <button id="confirmRegisterRunnerBtn" class="success mt-2">등록 완료</button>
+    </div>
+  </div>
+
+  <!-- 개인정보 처리방침 모달 -->
+  <div id="privacyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>개인정보 처리방침</h2>
+        <button class="modal-close" onclick="closeModal('privacyModal')">×</button>
+      </div>
+      <div style="font-size:13px;line-height:1.8;color:var(--fg)">
+        <h3>1. 수집하는 개인정보</h3>
+        <p>RunCheer는 다음의 개인정보를 수집합니다:</p>
+        <ul>
+          <li>카카오톡 계정 정보 (닉네임, 프로필 이미지)</li>
+          <li>사용자가 입력한 이름</li>
+          <li>배번 (Bib Number)</li>
+          <li>주자 사진</li>
+          <li>그룹 정보</li>
+        </ul>
+
+        <h3>2. 개인정보의 이용 목적</h3>
+        <ul>
+          <li>마라톤 응원 서비스 제공</li>
+          <li>그룹 관리 및 주자 추적</li>
+          <li>사용자 식별 및 인증</li>
+        </ul>
+
+        <h3>3. 개인정보 보유 및 이용기간</h3>
+        <p>수집된 개인정보는 <strong>대회 종료 후 30일 이내에 자동으로 폐기</strong>됩니다.</p>
+
+        <h3>4. 개인정보 제3자 제공</h3>
+        <p>회사는 이용자의 개인정보를 원칙적으로 외부에 제공하지 않습니다.</p>
+
+        <h3>5. 개인정보 삭제</h3>
+        <p>회원 탈퇴 시 모든 개인정보는 즉시 삭제됩니다.</p>
+
+        <p class="muted" style="margin-top:20px">최종 수정일: 2025년 10월 25일</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

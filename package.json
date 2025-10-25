@@ -1,0 +1,17 @@
+{
+  "name": "runcheer-livetrack",
+  "version": "1.0.0",
+  "description": "RunCheer - 마라톤 크루 응원 시스템",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.5.1",
+    "@vercel/blob": "^0.15.1"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}
