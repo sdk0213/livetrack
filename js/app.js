@@ -105,6 +105,11 @@ class APIService {
       throw new Error(`API Error: ${response.status}`);
     }
 
+    // 204 No Content는 JSON 파싱하지 않음
+    if (response.status === 204) {
+      return null;
+    }
+
     return response.json();
   }
 
@@ -939,14 +944,30 @@ class RunCheerApp {
     
     try {
       const user = this.authManager.getUser();
+      
+      // 카카오 로그아웃
+      if (window.Kakao && Kakao.Auth) {
+        try {
+          await Kakao.Auth.logout();
+        } catch (e) {
+          console.log('Kakao logout skipped:', e);
+        }
+      }
+      
+      // 서버에서 사용자 삭제
       await APIService.deleteUser(user.id);
       
-      this.authManager.logout();
-      localStorage.removeItem('user');
+      // 로컬 데이터 정리
+      this.authManager.user = null;
+      localStorage.clear();
       this.imageCache.clear();
       
       Utils.showToast('회원탈퇴가 완료되었습니다.', 'success');
-      this.showLoginPage();
+      
+      // 페이지 새로고침으로 완전히 초기화
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Failed to delete account:', error);
       Utils.showToast('회원탈퇴에 실패했습니다.', 'error');

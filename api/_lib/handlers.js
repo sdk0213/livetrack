@@ -141,11 +141,14 @@ export async function handleUserGroup(req, res) {
   }
 
   try {
+    // kakaoId를 문자열로 변환 (DB에 문자열로 저장됨)
+    const kakaoIdStr = String(kakaoId);
+    
     const result = await sql`
       SELECT g.* 
       FROM groups g
       INNER JOIN group_members gm ON g.id = gm.group_id
-      WHERE gm.kakao_id = ${kakaoId}
+      WHERE gm.kakao_id = ${kakaoIdStr}
       LIMIT 1
     `;
 
@@ -156,7 +159,7 @@ export async function handleUserGroup(req, res) {
     return res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error('handleUserGroup error:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message, stack: error.stack });
   }
 }
 
