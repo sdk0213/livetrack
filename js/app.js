@@ -769,10 +769,17 @@ class RunCheerApp {
         await this.loadGroupRunners();
       }
     } catch (error) {
-      console.error('Failed to load group:', error);
-      // 그룹이 없는 경우는 정상
-      this.ui.updateGroupInfo(null);
-      this.ui.updateMyGroupInfo(null);
+      // 404는 그룹이 없는 정상 상태
+      if (error.message.includes('404')) {
+        console.log('No group joined yet');
+        this.ui.updateGroupInfo(null);
+        this.ui.updateMyGroupInfo(null);
+      } else {
+        // 다른 에러는 로그만 출력
+        console.error('Failed to load group:', error);
+        this.ui.updateGroupInfo(null);
+        this.ui.updateMyGroupInfo(null);
+      }
     }
   }
 

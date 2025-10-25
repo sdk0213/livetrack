@@ -140,19 +140,24 @@ export async function handleUserGroup(req, res) {
     return res.status(400).json({ error: 'kakaoId is required' });
   }
 
-  const result = await sql`
-    SELECT g.* 
-    FROM groups g
-    INNER JOIN group_members gm ON g.id = gm.group_id
-    WHERE gm.kakao_id = ${kakaoId}
-    LIMIT 1
-  `;
+  try {
+    const result = await sql`
+      SELECT g.* 
+      FROM groups g
+      INNER JOIN group_members gm ON g.id = gm.group_id
+      WHERE gm.kakao_id = ${kakaoId}
+      LIMIT 1
+    `;
 
-  if (result.rows.length === 0) {
-    return res.status(404).json({ error: 'Group not found' });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    return res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error('handleUserGroup error:', error);
+    return res.status(500).json({ error: error.message });
   }
-
-  return res.status(200).json(result.rows[0]);
 }
 
 // ============================================
