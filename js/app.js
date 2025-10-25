@@ -1680,17 +1680,18 @@ class RunCheerApp {
   }
 
   updatePlayerMarker(bib, playerData) {
-    if (!this.currentMap || !this.gpxPoints || this.gpxPoints.length === 0) return;
-
     // 예상 위치 계산
     const estimated = this.estimateNow(playerData);
+    
+    // 테이블은 항상 업데이트 (records 없어도 '대기' 상태로 표시)
+    this.updatePlayerTable(bib, playerData, estimated);
+    
+    // 마커는 위치 정보가 있을 때만 업데이트
+    if (!this.currentMap || !this.gpxPoints || this.gpxPoints.length === 0) return;
     if (!estimated || estimated.estimated === 0) return;
 
     const pos = Utils.getPositionOnRoute(this.gpxPoints, estimated.estimated);
     if (!pos) return;
-
-    // 테이블 업데이트
-    this.updatePlayerTable(bib, playerData, estimated);
 
     // 기존 마커가 있으면 위치 업데이트, 없으면 생성
     const existingMarker = this.mapMarkers.find(m => m.bib === bib);
