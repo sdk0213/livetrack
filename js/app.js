@@ -1464,21 +1464,12 @@ class RunCheerApp {
         }
       });
 
-      // 클릭 시 정보창에 사진 포함
-      const createInfoContent = (readyPhoto, profilePhoto) => `
+      // 클릭 시 정보창에 레디샷만 표시
+      const createInfoContent = (readyPhoto) => `
         <div style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px">
-          <div style="text-align:center;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;align-items:center">
-            ${profilePhoto && profilePhoto !== '/RunCheer.png' ? `
-              <div>
-                <div style="font-size:11px;color:#666;margin-bottom:4px">프로필</div>
-                <img src="${profilePhoto}" alt="프로필" style="width:100px;height:100px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" onerror="this.style.display='none';" />
-              </div>
-            ` : ''}
+          <div style="text-align:center;margin-bottom:10px">
             ${readyPhoto && readyPhoto !== '/RunCheer.png' ? `
-              <div>
-                <div style="font-size:11px;color:#666;margin-bottom:4px">레디샷</div>
-                <img src="${readyPhoto}" alt="레디샷" style="width:100px;height:100px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" onerror="this.style.display='none';" />
-              </div>
+              <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" onerror="this.style.display='none';" />
             ` : ''}
           </div>
           <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px">${playerData.name}</div>
@@ -1490,7 +1481,7 @@ class RunCheerApp {
         </div>
       `;
       
-      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent(photoUrl, playerData.profile_image) });
+      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent(photoUrl) });
       
       naver.maps.Event.addListener(label, 'click', async () => {
         // 사진 최신 정보 가져오기
@@ -1498,8 +1489,7 @@ class RunCheerApp {
           const runners = await this.groupManager.getGroupRunners(this.groupManager.currentGroup.code);
           const runner = runners.find(r => r.bib === bib);
           const updatedPhoto = (runner && runner.photo_url) ? runner.photo_url : '/RunCheer.png';
-          const profilePhoto = playerData.profile_image || '/RunCheer.png';
-          infoWindow.setContent(createInfoContent(updatedPhoto, profilePhoto));
+          infoWindow.setContent(createInfoContent(updatedPhoto));
         } catch (err) {
           console.error('Failed to update photo:', err);
         }
