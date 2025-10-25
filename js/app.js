@@ -424,6 +424,10 @@ class GroupManager {
     return APIService.getGroupRunners(this.currentGroup.code);
   }
 
+  async getGroupRunners(groupCode) {
+    return APIService.getGroupRunners(groupCode);
+  }
+
   async leaveGroup(kakaoId) {
     if (!this.currentGroup) return;
     await APIService.leaveGroup({
