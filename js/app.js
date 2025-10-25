@@ -2130,8 +2130,12 @@ class RunCheerApp {
       });
       console.log('Map created:', this.currentMap);
       
-      // 코스 경로 로드
-      this.loadGPXCourse(eventId, this.currentMap);
+      // 지도 초기화 완료 후 코스 경로 로드 (한 번만 실행)
+      const onceIdleListener = naver.maps.Event.addListener(this.currentMap, 'idle', () => {
+        console.log('Map is ready (idle event) in initializeTrackingMap');
+        naver.maps.Event.removeListener(onceIdleListener); // 리스너 제거
+        this.loadGPXCourse(eventId, this.currentMap);
+      });
     } else {
       console.log('Using existing map');
     }
@@ -2300,8 +2304,12 @@ class RunCheerApp {
 
     console.log('Map created:', this.currentMap);
 
-    // 코스 경로 로드
-    this.loadGPXCourse(eventId, this.currentMap);
+    // 지도 초기화 완료 후 코스 경로 로드 (한 번만 실행)
+    const onceIdleListener = naver.maps.Event.addListener(this.currentMap, 'idle', () => {
+      console.log('Map is ready (idle event)');
+      naver.maps.Event.removeListener(onceIdleListener); // 리스너 제거
+      this.loadGPXCourse(eventId, this.currentMap);
+    });
 
     // 상태 업데이트
     const statusEl = document.getElementById('status');
