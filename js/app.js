@@ -616,9 +616,20 @@ class UIManager {
       const eventInfo = this.getEventName(group.event_id);
       const leaderInfo = group.creator_name ? ` • 그룹장: ${group.creator_name}` : '';
       document.getElementById('groupEvent').textContent = eventInfo + leaderInfo;
+      
+      // 지도와 결과 섹션 표시
+      this.mapSection.classList.remove('hidden');
+      this.resultsSection.classList.remove('hidden');
+      
+      // 지도 초기화 (그룹에 가입하면 자동으로 표시)
+      setTimeout(() => {
+        this.app.initializeMapForGroup(group.event_id);
+      }, 100);
     } else {
       this.noGroupMessage.classList.remove('hidden');
       this.groupInfo.classList.add('hidden');
+      this.mapSection.classList.add('hidden');
+      this.resultsSection.classList.add('hidden');
     }
     // 그룹 여부와 관계없이 응원 탭은 항상 표시
     this.runnersSection.classList.remove('hidden');
@@ -707,6 +718,8 @@ class RunCheerApp {
     this.imageCache = new ImageCache();
     this.ui = new UIManager(this);
     this.pendingGroup = null; // 주자 등록 대기 중인 그룹
+    this.currentMap = null; // 네이버 지도 인스턴스
+    this.mapMarkers = []; // 지도 마커 배열
     
     this.init();
   }
@@ -1234,23 +1247,29 @@ class RunCheerApp {
 
     const center = eventCenters[eventId] || eventCenters[133];
     
-    console.log('Creating map with center:', center);
+    // 기존 지도가 없으면 생성
+    if (!this.currentMap) {
+      console.log('Creating new map with center:', center);
+      this.currentMap = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(center.lat, center.lng),
+        zoom: 13,
+        mapTypeControl: true
+      });
+      console.log('Map created:', this.currentMap);
+      
+      // 코스 경로 로드
+      this.loadGPXCourse(eventId, this.currentMap);
+    } else {
+      console.log('Using existing map');
+    }
 
-    // 지도 생성
-    const map = new naver.maps.Map('map', {
-      center: new naver.maps.LatLng(center.lat, center.lng),
-      zoom: 13,
-      mapTypeControl: true
-    });
-
-    console.log('Map created:', map);
-
-    // 코스 경로 로드 (GPX 파일)
-    this.loadGPXCourse(eventId, map);
+    // 기존 마커 제거
+    this.mapMarkers.forEach(marker => marker.setMap(null));
+    this.mapMarkers = [];
 
     console.log('Creating markers for', runners.length, 'runners');
 
-    // 주자 마커 생성 (임시)
+    // 주자 마커 생성
     runners.forEach((runner, index) => {
       const markerLat = center.lat + (Math.random() - 0.5) * 0.01;
       const markerLng = center.lng + (Math.random() - 0.5) * 0.01;
@@ -1259,7 +1278,7 @@ class RunCheerApp {
       
       const marker = new naver.maps.Marker({
         position: new naver.maps.LatLng(markerLat, markerLng),
-        map: map,
+        map: this.currentMap,
         title: `${runner.runner_name} (${runner.bib_number})`,
         icon: {
           content: `<div class="player-label">${runner.runner_name}</div>`,
@@ -1280,14 +1299,16 @@ class RunCheerApp {
         if (infoWindow.getMap()) {
           infoWindow.close();
         } else {
-          infoWindow.open(map, marker);
+          infoWindow.open(this.currentMap, marker);
         }
       });
+      
+      this.mapMarkers.push(marker);
     });
 
     console.log('All markers created');
 
-    Utils.showToast('지도가 로드되었습니다. 대회 당일 실시간 추적이 시작됩니다.', 'info');
+    Utils.showToast(`${runners.length}명의 주자 위치를 표시했습니다.`, 'success');
     
     // 상태 업데이트
     const statusEl = document.getElementById('status');
@@ -1338,6 +1359,57 @@ class RunCheerApp {
       }
     } catch (error) {
       console.error('GPX 로드 실패:', error);
+    }
+  }
+
+  initializeMapForGroup(eventId) {
+    console.log('Initializing map for group, event:', eventId);
+    
+    if (!window.naver || !window.naver.maps) {
+      console.error('Naver Maps API not loaded');
+      return;
+    }
+
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+      console.error('Map container not found');
+      return;
+    }
+
+    // 기존 지도가 있으면 재사용, 없으면 새로 생성
+    if (this.currentMap) {
+      console.log('Map already exists, skipping creation');
+      return;
+    }
+
+    console.log('Map container found:', mapContainer);
+
+    // 대회별 중심점
+    const eventCenters = {
+      133: { lat: 37.5665, lng: 126.9780 }, // JTBC 서울마라톤
+      132: { lat: 37.8813, lng: 127.7299 }  // 춘천마라톤
+    };
+
+    const center = eventCenters[eventId] || eventCenters[133];
+    
+    console.log('Creating map with center:', center);
+
+    // 지도 생성
+    this.currentMap = new naver.maps.Map('map', {
+      center: new naver.maps.LatLng(center.lat, center.lng),
+      zoom: 13,
+      mapTypeControl: true
+    });
+
+    console.log('Map created:', this.currentMap);
+
+    // 코스 경로 로드
+    this.loadGPXCourse(eventId, this.currentMap);
+
+    // 상태 업데이트
+    const statusEl = document.getElementById('status');
+    if (statusEl) {
+      statusEl.textContent = '지도가 로드되었습니다. "그룹 추적 시작" 버튼을 눌러 주자를 추적하세요.';
     }
   }
 }
