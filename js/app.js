@@ -251,16 +251,20 @@ class AuthManager {
         const userInfo = data.user;
         this.user = userInfo;
         
+        console.log('User info from Kakao:', userInfo);
+        
         // 서버에 사용자 정보 저장
         try {
           await APIService.getUser(userInfo.id);
         } catch (e) {
           // 신규 사용자
-          await APIService.createUser({
+          const userData = {
             kakaoId: userInfo.id,
-            name: userInfo.properties.nickname,
-            profileImage: userInfo.properties.profile_image
-          });
+            name: userInfo.properties?.nickname || userInfo.kakao_account?.profile?.nickname || '사용자',
+            profileImage: userInfo.properties?.profile_image || userInfo.kakao_account?.profile?.profile_image_url || ''
+          };
+          console.log('Creating user with data:', userData);
+          await APIService.createUser(userData);
         }
         
         return userInfo;
