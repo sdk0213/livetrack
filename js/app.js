@@ -727,7 +727,10 @@ class UIManager {
       // 이벤트 이름과 그룹장 정보 표시
       const eventInfo = this.getEventName(group.event_id);
       const leaderInfo = group.creator_name ? ` • 그룹장: ${group.creator_name}` : '';
-      document.getElementById('groupEvent').textContent = eventInfo + leaderInfo;
+      const todayBadge = this.isEventToday(group.event_id) 
+        ? '<span style="color:#ef4444;font-weight:700;margin-left:8px;">🔴 대회 당일</span>' 
+        : '';
+      document.getElementById('groupEvent').innerHTML = eventInfo + leaderInfo + todayBadge;
       
       // 지도와 결과 섹션 표시
       this.mapSection.classList.remove('hidden');
@@ -910,6 +913,27 @@ class UIManager {
       132: '2025 춘천마라톤'
     };
     return events[id] || '알 수 없는 대회';
+  }
+
+  getEventDate(eventId) {
+    const id = parseInt(eventId, 10);
+    const eventDates = {
+      133: '2025-11-02',
+      132: '2025-10-26'
+    };
+    return eventDates[id] || null;
+  }
+
+  isEventToday(eventId) {
+    const eventDate = this.getEventDate(eventId);
+    if (!eventDate) return false;
+    
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + 
+                     String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                     String(today.getDate()).padStart(2, '0');
+    
+    return eventDate === todayStr;
   }
 }
 
