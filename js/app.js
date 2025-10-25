@@ -768,6 +768,10 @@ class RunCheerApp {
     this.gpxPoints = []; // GPX 경로 포인트
     this.coursePath = null; // 코스 경로 Polyline
     this.checkpointMarkers = []; // 체크포인트 마커 배열
+    this.trackingBibs = []; // 추적 중인 배번 목록
+    this.trackingEventId = null; // 추적 중인 이벤트 ID
+    this.trackingTimer = null; // 60초 갱신 타이머
+    this.mapUpdateTimer = null; // 15초 마커 업데이트 타이머
     
     this.init();
   }
@@ -1242,7 +1246,7 @@ class RunCheerApp {
   async handleStartTracking() {
     const group = this.groupManager.currentGroup;
     if (!group) {
-      Utils.showToast('그룹 정보를 불러올 수 없습니다.', 'error');
+      console.error('그룹 정보를 불러올 수 없습니다.');
       return;
     }
 
@@ -1262,21 +1266,207 @@ class RunCheerApp {
       console.log('Runners loaded:', runners);
       
       if (!runners || runners.length === 0) {
-        Utils.showToast('등록된 주자가 없습니다.', 'info');
+        console.log('등록된 주자가 없습니다.');
         return;
       }
       
-      Utils.showToast(`${runners.length}명의 주자 추적을 시작합니다.`, 'success');
+      console.log(`${runners.length}명의 주자 추적을 시작합니다.`);
       
-      // 지도 초기화를 약간 지연시켜 DOM이 완전히 렌더링되도록 함
+      // 주자 배번 목록 저장
+      this.trackingBibs = runners.map(r => r.bib_number);
+      this.trackingEventId = group.event_id;
+      
+      // 지도 초기화
       setTimeout(() => {
         this.initializeTrackingMap(group.event_id, runners);
+        // 첫 추적 시작
+        this.startLiveTracking();
       }, 100);
       
     } catch (error) {
       console.error('Failed to start tracking:', error);
-      Utils.showToast('추적 시작에 실패했습니다.', 'error');
     }
+  }
+
+  async startLiveTracking() {
+    if (!this.trackingEventId || !this.trackingBibs || this.trackingBibs.length === 0) {
+      console.error('추적 정보가 없습니다.');
+      return;
+    }
+
+    console.log('Starting live tracking for', this.trackingBibs.length, 'runners');
+
+    // 첫 데이터 로드
+    await this.updateTrackingData();
+
+    // 60초마다 갱신
+    if (this.trackingTimer) {
+      clearInterval(this.trackingTimer);
+    }
+    this.trackingTimer = setInterval(() => {
+      this.updateTrackingData();
+    }, 60000); // 60초
+
+    // 15초마다 마커 위치 업데이트 (예상 위치)
+    if (this.mapUpdateTimer) {
+      clearInterval(this.mapUpdateTimer);
+    }
+    this.mapUpdateTimer = setInterval(() => {
+      this.updateAllMarkers();
+    }, 15000); // 15초
+  }
+
+  async updateTrackingData() {
+    if (!this.trackingEventId || !this.trackingBibs) return;
+
+    console.log('Updating tracking data...');
+    const statusEl = document.getElementById('status');
+    if (statusEl) {
+      statusEl.textContent = `데이터 갱신 중... (${new Date().toLocaleTimeString('ko-KR')})`;
+    }
+
+    for (const bib of this.trackingBibs) {
+      try {
+        const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}`);
+        if (response.ok) {
+          const playerData = await response.json();
+          this.updatePlayerMarker(bib, playerData);
+          console.log(`Updated player ${bib}:`, playerData.name);
+        }
+      } catch (error) {
+        console.error(`Failed to fetch player ${bib}:`, error);
+      }
+    }
+
+    if (statusEl) {
+      statusEl.textContent = `마지막 업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
+    }
+  }
+
+  updatePlayerMarker(bib, playerData) {
+    if (!this.currentMap || !this.gpxPoints || this.gpxPoints.length === 0) return;
+
+    // 예상 위치 계산
+    const estimated = this.estimateNow(playerData);
+    if (!estimated || estimated.estimated === 0) return;
+
+    const pos = Utils.getPositionOnRoute(this.gpxPoints, estimated.estimated);
+    if (!pos) return;
+
+    // 기존 마커가 있으면 위치 업데이트, 없으면 생성
+    const existingMarker = this.mapMarkers.find(m => m.bib === bib);
+    
+    if (existingMarker) {
+      existingMarker.marker.setPosition(pos);
+      existingMarker.label.setPosition(pos);
+    } else {
+      // 새 마커 생성
+      const marker = new naver.maps.Marker({
+        position: pos,
+        map: this.currentMap,
+        icon: {
+          content: `<div style="width:12px;height:12px;background:#5cc8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+          anchor: new naver.maps.Point(9, 9)
+        }
+      });
+
+      const label = new naver.maps.Marker({
+        position: pos,
+        map: this.currentMap,
+        icon: {
+          content: `<div class="player-label">${playerData.name}</div>`,
+          anchor: new naver.maps.Point(0, 30)
+        }
+      });
+
+      const infoContent = `<div style="padding:10px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px">
+        <div style="font-weight:700;margin-bottom:5px;color:#333">${playerData.name}</div>
+        <div style="font-size:12px;color:#666">배번: ${bib}</div>
+        <div style="font-size:12px;color:#666">마지막 통과: ${estimated.name}</div>
+        <div style="font-size:12px;color:#666">통과 거리: ${estimated.d}km</div>
+        <div style="font-size:12px;color:#4285f4;font-weight:bold">📍 예상 위치: ${estimated.estimated.toFixed(2)}km</div>
+      </div>`;
+      
+      const infoWindow = new naver.maps.InfoWindow({ content: infoContent });
+      
+      naver.maps.Event.addListener(marker, 'click', () => {
+        if (infoWindow.getMap()) {
+          infoWindow.close();
+        } else {
+          infoWindow.open(this.currentMap, marker);
+        }
+      });
+
+      this.mapMarkers.push({ bib, marker, label, infoWindow, playerData });
+    }
+  }
+
+  estimateNow(playerData) {
+    const records = (playerData.records || []).sort((a, b) => a.point.distance - b.point.distance);
+    if (!records.length) return { status: '대기', d: 0, name: '', estimated: 0 };
+
+    const lastRec = records[records.length - 1];
+    const d = parseFloat(lastRec.point.distance);
+    const name = lastRec.point.name;
+    const time = lastRec.time_point;
+    const date = playerData.event?.date;
+    
+    if (!date || !time) return { status: '대기', d, name, estimated: d };
+
+    const lastTime = new Date(`${date}T${time}`);
+    const now = new Date();
+    const elapsedSec = (now - lastTime) / 1000;
+
+    let estimatedDist = d;
+    if (elapsedSec > 0 && !playerData.result_nettime) {
+      let paceSec = 390; // 기본 6:30 페이스
+      if (playerData.pace_nettime) {
+        const paceStr = playerData.pace_nettime.split('.')[0];
+        paceSec = this.timeToSeconds(paceStr);
+      }
+      if (paceSec > 0) {
+        const kmPerSec = 1 / paceSec;
+        const movedKm = kmPerSec * elapsedSec;
+        const courseDistance = parseFloat(playerData.course?.distance || '42.195');
+        estimatedDist = Math.min(d + movedKm, courseDistance);
+      }
+    }
+
+    return {
+      status: playerData.result_nettime ? '완주' : '주행',
+      d,
+      name,
+      estimated: estimatedDist
+    };
+  }
+
+  timeToSeconds(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return 0;
+  }
+
+  updateAllMarkers() {
+    // 저장된 플레이어 데이터로 마커 위치 업데이트
+    this.mapMarkers.forEach(({ bib, playerData }) => {
+      if (playerData) {
+        this.updatePlayerMarker(bib, playerData);
+      }
+    });
+  }
+  
+  stopTracking() {
+    if (this.trackingTimer) {
+      clearInterval(this.trackingTimer);
+      this.trackingTimer = null;
+    }
+    if (this.mapUpdateTimer) {
+      clearInterval(this.mapUpdateTimer);
+      this.mapUpdateTimer = null;
+    }
+    console.log('Tracking stopped');
   }
 
   initializeTrackingMap(eventId, runners) {
@@ -1320,57 +1510,19 @@ class RunCheerApp {
       console.log('Using existing map');
     }
 
-    // 기존 마커 제거
-    this.mapMarkers.forEach(marker => marker.setMap(null));
+    // 기존 마커 제거 (체크포인트 제외)
+    this.mapMarkers.forEach(({ marker, label }) => {
+      if (marker) marker.setMap(null);
+      if (label) label.setMap(null);
+    });
     this.mapMarkers = [];
 
-    console.log('Creating markers for', runners.length, 'runners');
-
-    // 주자 마커 생성
-    runners.forEach((runner, index) => {
-      const markerLat = center.lat + (Math.random() - 0.5) * 0.01;
-      const markerLng = center.lng + (Math.random() - 0.5) * 0.01;
-      
-      console.log(`Creating marker for ${runner.runner_name} at`, markerLat, markerLng);
-      
-      const marker = new naver.maps.Marker({
-        position: new naver.maps.LatLng(markerLat, markerLng),
-        map: this.currentMap,
-        title: `${runner.runner_name} (${runner.bib_number})`,
-        icon: {
-          content: `<div class="player-label">${runner.runner_name}</div>`,
-          anchor: new naver.maps.Point(0, 30)
-        }
-      });
-
-      console.log('Marker created:', marker);
-
-      naver.maps.Event.addListener(marker, 'click', () => {
-        const infoWindow = new naver.maps.InfoWindow({
-          content: `<div style="padding:10px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px">
-            <div style="font-weight:700;margin-bottom:5px;color:#333">${runner.runner_name}</div>
-            <div style="font-size:12px;color:#666">배번: ${runner.bib_number}</div>
-            <div style="font-size:12px;color:#4285f4;font-weight:bold">📍 대회 당일 실시간 추적</div>
-          </div>`
-        });
-        if (infoWindow.getMap()) {
-          infoWindow.close();
-        } else {
-          infoWindow.open(this.currentMap, marker);
-        }
-      });
-      
-      this.mapMarkers.push(marker);
-    });
-
-    console.log('All markers created');
-
-    Utils.showToast(`${runners.length}명의 주자 위치를 표시했습니다.`, 'success');
+    console.log('Map ready for tracking', runners.length, 'runners');
     
     // 상태 업데이트
     const statusEl = document.getElementById('status');
     if (statusEl) {
-      statusEl.textContent = `${runners.length}명의 주자 등록 완료. 대회 당일 자동으로 추적이 시작됩니다.`;
+      statusEl.textContent = `추적 준비 완료. ${runners.length}명의 주자 데이터를 불러오는 중...`;
     }
   }
 
