@@ -1761,11 +1761,21 @@ class RunCheerApp {
     // 모든 player-main 행 수집
     const rows = Array.from(tbody.querySelectorAll('tr.player-main'));
     
-    // 이름 순으로 정렬 (가나다순)
+    // 정렬: 미완주자 → 완주자, 그 안에서 가나다순
     rows.sort((a, b) => {
-      const aData = a.querySelector('td').textContent.split('\n')[0].trim();
-      const bData = b.querySelector('td').textContent.split('\n')[0].trim();
-      return aData.localeCompare(bData, 'ko');
+      // 완주 여부 확인 (✅ 아이콘으로 판단)
+      const aFinished = a.innerHTML.includes('✅ 완주');
+      const bFinished = b.innerHTML.includes('✅ 완주');
+      
+      // 미완주자가 먼저 오도록
+      if (aFinished !== bFinished) {
+        return aFinished ? 1 : -1; // a가 완주면 뒤로, b가 완주면 a를 앞으로
+      }
+      
+      // 같은 완주 상태면 이름순 (가나다순)
+      const aName = a.querySelector('td').textContent.split('\n')[0].trim().replace(/^\d+\.\s*/, '');
+      const bName = b.querySelector('td').textContent.split('\n')[0].trim().replace(/^\d+\.\s*/, '');
+      return aName.localeCompare(bName, 'ko');
     });
 
     // 순서대로 다시 추가
