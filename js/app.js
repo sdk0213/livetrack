@@ -599,8 +599,16 @@ class UIManager {
       });
     });
 
-    // 추적 시작
-    this.startTrackingBtn.addEventListener('click', () => this.app.handleStartTracking());
+    // 추적 시작/중지
+    this.startTrackingBtn.addEventListener('click', () => {
+      if (this.app.trackingTimer) {
+        // 추적 중지
+        this.app.stopTracking();
+      } else {
+        // 추적 시작
+        this.app.handleStartTracking();
+      }
+    });
   }
 
   showPage(pageId) {
@@ -772,6 +780,8 @@ class RunCheerApp {
     this.trackingEventId = null; // 추적 중인 이벤트 ID
     this.trackingTimer = null; // 60초 갱신 타이머
     this.mapUpdateTimer = null; // 15초 마커 업데이트 타이머
+    this.countdownTimer = null; // 카운트다운 타이머
+    this.remainingSeconds = 60; // 남은 시간(초)
     
     this.init();
   }
@@ -1296,6 +1306,16 @@ class RunCheerApp {
 
     console.log('Starting live tracking for', this.trackingBibs.length, 'runners');
 
+    // 버튼 업데이트
+    const btn = document.getElementById('startTrackingBtn');
+    if (btn) {
+      btn.textContent = '⏸️ 그룹 추적 중지';
+      btn.className = 'danger btn-small';
+    }
+
+    // 새로고침 인디케이터 표시
+    this.startCountdown();
+
     // 첫 데이터 로드
     await this.updateTrackingData();
 
@@ -1320,6 +1340,11 @@ class RunCheerApp {
     if (!this.trackingEventId || !this.trackingBibs) return;
 
     console.log('Updating tracking data...');
+    
+    // 카운트다운 리셋
+    this.remainingSeconds = 60;
+    this.updateCountdown();
+    
     const statusEl = document.getElementById('status');
     if (statusEl) {
       statusEl.textContent = `데이터 갱신 중... (${new Date().toLocaleTimeString('ko-KR')})`;
@@ -1466,7 +1491,71 @@ class RunCheerApp {
       clearInterval(this.mapUpdateTimer);
       this.mapUpdateTimer = null;
     }
+    
+    // 카운트다운 중지
+    this.stopCountdown();
+    
+    // 버튼 업데이트
+    const btn = document.getElementById('startTrackingBtn');
+    if (btn) {
+      btn.textContent = '🎯 그룹 추적 시작';
+      btn.className = 'success btn-small';
+    }
+    
+    // 상태 메시지 업데이트
+    const statusEl = document.getElementById('status');
+    if (statusEl) {
+      statusEl.textContent = '추적이 중지되었습니다.';
+    }
+    
     console.log('Tracking stopped');
+  }
+
+  startCountdown() {
+    this.remainingSeconds = 60;
+    const indicator = document.getElementById('refreshIndicator');
+    if (indicator) {
+      indicator.classList.add('active');
+    }
+    this.updateCountdown();
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+    }
+    this.countdownTimer = setInterval(() => this.updateCountdown(), 1000);
+  }
+
+  stopCountdown() {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+    const indicator = document.getElementById('refreshIndicator');
+    if (indicator) {
+      indicator.classList.remove('active');
+    }
+  }
+
+  updateCountdown() {
+    const circumference = 2 * Math.PI * 11;
+    const progressBar = document.getElementById('progressBar');
+    if (progressBar) {
+      progressBar.style.strokeDasharray = circumference;
+    }
+    
+    this.remainingSeconds--;
+    if (this.remainingSeconds < 0) {
+      this.remainingSeconds = 60;
+    }
+    
+    if (progressBar) {
+      const offset = circumference * (1 - this.remainingSeconds / 60);
+      progressBar.style.strokeDashoffset = offset;
+    }
+    
+    const countdown = document.getElementById('countdown');
+    if (countdown) {
+      countdown.textContent = `${this.remainingSeconds}초`;
+    }
   }
 
   initializeTrackingMap(eventId, runners) {
