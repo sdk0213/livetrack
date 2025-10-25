@@ -607,11 +607,13 @@ class UIManager {
     
     // 그룹
     this.createGroupBtn.addEventListener('click', () => {
-      // 관리자 권한 확인 (카카오 ID: 4510515635)
+      // 관리자 권한 확인 (카카오 ID: 4510515635, 4510578446)
       const currentUser = this.app.authManager.getUser();
+      const adminIds = ['4510515635', '4510578446'];
+      
       console.log('그룹 생성 버튼 클릭 - 사용자 ID:', currentUser?.id);
       
-      if (currentUser && currentUser.id === '4510515635') {
+      if (currentUser && adminIds.includes(currentUser.id)) {
         // 관리자는 그룹 생성 가능
         console.log('✅ 관리자 권한 확인 - 그룹 생성 허용');
         this.showModal('createGroupModal');
