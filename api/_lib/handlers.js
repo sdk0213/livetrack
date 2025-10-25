@@ -27,7 +27,7 @@ export async function handleAuthToken(req, res) {
   }
 
   // 카카오 토큰 요청 - 항상 고정된 URL 사용
-  const redirectUri = 'https://livetrack-theta.vercel.app/test_kakao.html';
+  const redirectUri = 'https://livetrack-theta.vercel.app/';
   
   console.log('Token request with redirect_uri:', redirectUri);
   
