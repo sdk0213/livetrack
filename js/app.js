@@ -745,27 +745,46 @@ class RunCheerApp {
     // 응원 탭을 기본으로 활성화
     this.ui.switchTab('cheer');
     
-    // 사용자 정보 로드
+    // DB에서 사용자 정보 로드 (최신 정보)
     const user = this.authManager.getUser();
     console.log('onLoginSuccess - user:', user);
     
-    const nickname = user.properties?.nickname 
-      || user.kakao_account?.profile?.nickname 
-      || user.name 
-      || '사용자';
-    
-    const profileImage = user.properties?.profile_image 
-      || user.kakao_account?.profile?.profile_image_url 
-      || user.profile_image
-      || '';
-    
-    document.getElementById('profileName').value = nickname;
-    
-    // 프로필 이미지 설정
-    const profileImageEl = document.getElementById('profileImage');
-    if (profileImageEl && profileImage) {
-      profileImageEl.src = profileImage;
-      profileImageEl.style.display = 'block';
+    try {
+      // DB에서 최신 사용자 정보 가져오기
+      const dbUser = await APIService.getUser(user.id);
+      
+      // DB에 저장된 이름 사용
+      const nickname = dbUser.name || '사용자';
+      const profileImage = dbUser.profile_image || '';
+      
+      document.getElementById('profileName').value = nickname;
+      
+      // 프로필 이미지 설정
+      const profileImageEl = document.getElementById('profileImage');
+      if (profileImageEl && profileImage) {
+        profileImageEl.src = profileImage;
+        profileImageEl.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Failed to load user info:', error);
+      // DB 조회 실패 시 카카오 정보 사용
+      const nickname = user.properties?.nickname 
+        || user.kakao_account?.profile?.nickname 
+        || user.name 
+        || '사용자';
+      
+      const profileImage = user.properties?.profile_image 
+        || user.kakao_account?.profile?.profile_image_url 
+        || user.profile_image
+        || '';
+      
+      document.getElementById('profileName').value = nickname;
+      
+      const profileImageEl = document.getElementById('profileImage');
+      if (profileImageEl && profileImage) {
+        profileImageEl.src = profileImage;
+        profileImageEl.style.display = 'block';
+      }
     }
     
     // 그룹 정보 로드
