@@ -644,7 +644,10 @@ class UIManager {
       this.runnersSection.classList.remove('hidden');
       
       document.getElementById('groupName').textContent = group.name;
-      document.getElementById('groupCode').textContent = `코드: ${group.code}`;
+      document.getElementById('groupCode').innerHTML = `
+        <div style="font-size:24px;font-weight:700;color:#3b82f6;font-family:monospace;letter-spacing:2px;margin:8px 0;">${group.code}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">이 코드를 주자들에게 공유해주세요</div>
+      `;
       
       // 이벤트 이름과 그룹장 정보 표시
       const eventInfo = this.getEventName(group.event_id);
@@ -707,9 +710,12 @@ class UIManager {
         <div class="group-card">
           <div class="group-header">
             <div class="group-name">${group.name}${leaderBadge}</div>
-            <div class="group-code">코드: ${group.code}</div>
           </div>
-          <div class="muted" style="font-size:12px">
+          <div style="text-align:center;margin:12px 0;">
+            <div style="font-size:28px;font-weight:700;color:#3b82f6;font-family:monospace;letter-spacing:3px;">${group.code}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:6px;">이 코드를 주자들에게 공유해주세요</div>
+          </div>
+          <div class="muted" style="font-size:12px;text-align:center;">
             ${this.getEventName(group.event_id)}
             ${group.creator_name ? ` • 그룹장: ${group.creator_name}` : ''}
           </div>
