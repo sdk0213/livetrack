@@ -26,10 +26,10 @@ export async function handleAuthToken(req, res) {
     return res.status(400).json({ error: 'Authorization code is required' });
   }
 
-  // 카카오 토큰 요청
-  const redirectUri = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}/test_kakao.html`
-    : 'https://livetrack-theta.vercel.app/test_kakao.html';
+  // 카카오 토큰 요청 - 항상 고정된 URL 사용
+  const redirectUri = 'https://livetrack-theta.vercel.app/test_kakao.html';
+  
+  console.log('Token request with redirect_uri:', redirectUri);
   
   const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
     method: 'POST',
