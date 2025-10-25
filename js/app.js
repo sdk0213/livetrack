@@ -611,7 +611,13 @@ class UIManager {
       const currentUser = this.app.authManager.getUser();
       const adminIds = ['4510515635', '4510578446', '4510305710'];
       
-      console.log('그룹 생성 버튼 클릭 - 사용자 ID:', currentUser?.id);
+      console.log('==================== 그룹 생성 권한 체크 ====================');
+      console.log('현재 사용자:', currentUser);
+      console.log('사용자 ID:', currentUser?.id);
+      console.log('사용자 ID 타입:', typeof currentUser?.id);
+      console.log('관리자 목록:', adminIds);
+      console.log('권한 체크 결과:', currentUser && adminIds.includes(currentUser.id));
+      console.log('========================================================');
       
       if (currentUser && adminIds.includes(currentUser.id)) {
         // 관리자는 그룹 생성 가능
