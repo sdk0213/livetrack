@@ -881,7 +881,7 @@ class RunCheerApp {
     
     // 주자 정보 등록 모달 표시
     this.ui.showModal('registerRunnerModal');
-    Utils.showToast('주자 정보를 입력하면 그룹이 생성됩니다.', 'info');
+    Utils.showToast('👑 그룹장의 주자 정보를 입력하면 그룹이 생성됩니다.', 'info');
   }
 
   async handleJoinGroup() {
@@ -1069,19 +1069,19 @@ class RunCheerApp {
     
     if (isLeader) {
       // 그룹장: 그룹 삭제
-      if (!confirm('정말 그룹을 삭제하시겠습니까? 모든 멤버가 그룹에서 제외됩니다.')) return;
+      if (!confirm('👑 그룹장 권한으로 그룹을 삭제하시겠습니까?\n\n⚠️ 모든 멤버가 그룹에서 제외되며, 그룹 데이터가 완전히 삭제됩니다.')) return;
       
       try {
         await APIService.deleteGroup(group.code);
         
         this.groupManager.currentGroup = null;
-        Utils.showToast('그룹이 삭제되었습니다.', 'success');
+        Utils.showToast('✅ 그룹이 삭제되었습니다.', 'success');
         this.ui.updateGroupInfo(null);
         this.ui.updateMyGroupInfo(null, false);
         this.ui.updateRunnersList([]); // 주자 목록 초기화
       } catch (error) {
         console.error('Failed to delete group:', error);
-        Utils.showToast('그룹 삭제에 실패했습니다.', 'error');
+        Utils.showToast('❌ 그룹 삭제에 실패했습니다.', 'error');
       }
     } else {
       // 멤버: 그룹 탈퇴
