@@ -2130,12 +2130,17 @@ class RunCheerApp {
       });
       console.log('Map created:', this.currentMap);
       
-      // 지도 초기화 완료 후 코스 경로 로드 (한 번만 실행)
-      const onceIdleListener = naver.maps.Event.addListener(this.currentMap, 'idle', () => {
-        console.log('Map is ready (idle event) in initializeTrackingMap');
-        naver.maps.Event.removeListener(onceIdleListener); // 리스너 제거
+      // 지도 초기화 대기 후 코스 경로 로드
+      setTimeout(() => {
+        console.log('Loading GPX course after delay in initializeTrackingMap');
         this.loadGPXCourse(eventId, this.currentMap);
-      });
+        // GPX 로드 후 지도 강제 리렌더링
+        setTimeout(() => {
+          if (this.currentMap) {
+            this.currentMap.panBy(0, 0); // 지도를 움직여서 강제 리렌더링
+          }
+        }, 500);
+      }, 500);
     } else {
       console.log('Using existing map');
     }
@@ -2304,12 +2309,17 @@ class RunCheerApp {
 
     console.log('Map created:', this.currentMap);
 
-    // 지도 초기화 완료 후 코스 경로 로드 (한 번만 실행)
-    const onceIdleListener = naver.maps.Event.addListener(this.currentMap, 'idle', () => {
-      console.log('Map is ready (idle event)');
-      naver.maps.Event.removeListener(onceIdleListener); // 리스너 제거
+    // 지도 초기화 대기 후 코스 경로 로드
+    setTimeout(() => {
+      console.log('Loading GPX course after delay');
       this.loadGPXCourse(eventId, this.currentMap);
-    });
+      // GPX 로드 후 지도 강제 리렌더링
+      setTimeout(() => {
+        if (this.currentMap) {
+          this.currentMap.panBy(0, 0); // 지도를 움직여서 강제 리렌더링
+        }
+      }, 500);
+    }, 500);
 
     // 상태 업데이트
     const statusEl = document.getElementById('status');
