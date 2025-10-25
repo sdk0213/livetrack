@@ -608,12 +608,16 @@ class UIManager {
     // 그룹
     this.createGroupBtn.addEventListener('click', () => {
       // 관리자 권한 확인 (카카오 ID: 4510515635)
-      const currentUser = this.app.currentUser;
-      if (currentUser && currentUser.kakao_id === '4510515635') {
+      const currentUser = this.app.authManager.getUser();
+      console.log('그룹 생성 버튼 클릭 - 사용자 ID:', currentUser?.id);
+      
+      if (currentUser && currentUser.id === '4510515635') {
         // 관리자는 그룹 생성 가능
+        console.log('✅ 관리자 권한 확인 - 그룹 생성 허용');
         this.showModal('createGroupModal');
       } else {
         // 일반 사용자는 베타 서비스로 제한
+        console.log('❌ 일반 사용자 - 그룹 생성 제한');
         Utils.showToast('현재 베타 서비스로 사용자 임의 생성이 불가능합니다.', 'error');
       }
     });
