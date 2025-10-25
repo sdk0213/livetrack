@@ -242,10 +242,23 @@ export async function handleGroupCreateWithMember(req, res) {
     return res.status(201).json(group);
   } catch (error) {
     console.error('Group creation with member error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      stack: error.stack
+    });
     if (error.code === '23505') { // 중복 제약
       return res.status(409).json({ error: 'Duplicate entry' });
     }
-    throw error;
+    if (error.code === '42703') { // 컬럼이 존재하지 않음
+      return res.status(500).json({ error: 'Database schema error: role column missing. Please run migration.' });
+    }
+    return res.status(500).json({ 
+      error: error.message || 'Internal server error',
+      code: error.code,
+      detail: error.detail
+    });
   }
 }
 
@@ -345,6 +358,7 @@ export async function handleGroupRunners(req, res) {
         gm.kakao_id,
         u.name,
         u.profile_image,
+        gm.role,
         gm.bib,
         gm.photo_url,
         gm.team_name,
@@ -352,7 +366,7 @@ export async function handleGroupRunners(req, res) {
       FROM group_members gm
       INNER JOIN users u ON gm.kakao_id = u.kakao_id
       WHERE gm.group_code = ${code}
-      ORDER BY u.name
+      ORDER BY gm.role DESC, u.name
     `;
 
     return res.status(200).json(result.rows);
