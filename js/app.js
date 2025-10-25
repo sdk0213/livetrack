@@ -595,13 +595,12 @@ class UIManager {
       document.getElementById('groupName').textContent = group.name;
       document.getElementById('groupCode').textContent = `코드: ${group.code}`;
       document.getElementById('groupEvent').textContent = this.getEventName(group.eventId);
-      
-      this.runnersSection.classList.remove('hidden');
     } else {
       this.noGroupMessage.classList.remove('hidden');
       this.groupInfo.classList.add('hidden');
-      this.runnersSection.classList.add('hidden');
     }
+    // 그룹 여부와 관계없이 응원 탭은 항상 표시
+    this.runnersSection.classList.remove('hidden');
   }
 
   updateRunnersList(runners) {
@@ -673,6 +672,14 @@ class RunCheerApp {
 
   async init() {
     // 페이지 로드 시 인가 코드 처리
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    // redirect로 돌아온 경우 로딩 페이지 표시
+    if (code) {
+      this.ui.showPage('loadingPage');
+    }
+    
     const user = await this.authManager.handleRedirect();
     if (user) {
       localStorage.setItem('user', JSON.stringify(user));
@@ -719,16 +726,17 @@ class RunCheerApp {
   }
 
   async handleLogin() {
-    const originalText = Utils.showLoading(this.ui.kakaoLoginBtn);
-    
     try {
-      // authorize는 페이지를 리다이렉트하므로 여기는 실행되지 않음
+      // 로딩 페이지 표시
+      this.ui.showPage('loadingPage');
+      
+      // authorize는 페이지를 리다이렉트하므로 아래 코드는 실행되지 않음
       await this.authManager.login();
     } catch (error) {
       console.error('Login failed:', error);
       Utils.showToast('로그인에 실패했습니다.', 'error');
-    } finally {
-      Utils.hideLoading(this.ui.kakaoLoginBtn, originalText);
+      // 에러 시 다시 로그인 페이지로
+      this.showLoginPage();
     }
   }
 
