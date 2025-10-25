@@ -30,8 +30,10 @@
 1. 좌측 메뉴 "카카오 로그인" 클릭
 2. "카카오 로그인 활성화" ON
 3. Redirect URI 등록:
-   - `http://localhost:3000`
-   - `https://your-domain.vercel.app`
+   - 개발: `http://localhost:3000/`
+   - 배포: `https://livetrack-theta.vercel.app/`
+   
+   **⚠️ 중요: 끝에 슬래시(/)를 반드시 포함해야 합니다!**
 
 ### 4. 동의 항목 설정
 1. "동의 항목" 메뉴 클릭
@@ -127,12 +129,14 @@ const CONFIG = {
 ```bash
 vercel dev
 ```
-브라우저에서 `http://localhost:3000/test_kakao.html` 접속
+브라우저에서 `http://localhost:3000/` 접속
 
 ### 배포
 ```bash
 vercel --prod
 ```
+
+배포 후 `https://livetrack-theta.vercel.app/`에서 접속 가능
 
 ---
 
@@ -160,18 +164,30 @@ vercel --prod
 
 ```
 livetrack/
-├── test_kakao.html          # 메인 HTML
+├── index.html                # 메인 HTML (카카오 로그인)
+├── test.html                 # 배번 직접 입력 테스트 버전
+├── test_mock.html            # 목업 버전
 ├── js/
 │   └── app.js                # 메인 JavaScript (객체지향)
 ├── api/
+│   ├── _lib/
+│   │   └── handlers.js       # API 핸들러 모음
 │   ├── users/
-│   │   └── [kakaoId].js      # 사용자 API
+│   │   ├── [kakaoId].js      # 사용자 CRUD
+│   │   └── group.js          # 사용자 그룹 조회
 │   ├── groups/
-│   │   ├── index.js          # 그룹 생성 API
-│   │   └── [code].js         # 그룹 조회 API
-│   └── images/
-│       └── upload.js         # 이미지 업로드 API (TODO)
+│   │   ├── index.js          # 그룹 생성
+│   │   ├── [code].js         # 그룹 조회/삭제
+│   │   ├── create-with-member.js  # 그룹+멤버 동시 생성
+│   │   ├── join.js           # 그룹 참여
+│   │   ├── leave.js          # 그룹 탈퇴
+│   │   └── runners.js        # 그룹 멤버 목록
+│   ├── images/
+│   │   └── upload.js         # 이미지 업로드 (Vercel Blob)
+│   └── proxy.js              # 마라톤 데이터 프록시
 ├── schema.sql                # 데이터베이스 스키마
+├── migration_add_role.sql    # 역할 추가 마이그레이션
+├── privacy.html              # 개인정보 처리방침
 └── README_KAKAO_SETUP.md     # 이 파일
 ```
 
@@ -186,13 +202,45 @@ livetrack/
 
 ---
 
-## 🚀 다음 단계
+## 🚀 완료된 기능
 
-아직 구현되지 않은 기능:
-- [ ] 이미지 업로드 API (`/api/images/upload.js`)
-- [ ] 그룹 참여 API (`/api/groups/[code]/join.js`)
-- [ ] 그룹 탈퇴 API (`/api/groups/[code]/leave.js`)
-- [ ] 그룹 주자 목록 API (`/api/groups/[code]/runners.js`)
-- [ ] 실시간 추적 기능 통합
+✅ 구현 완료:
+- ✅ 카카오 로그인/로그아웃
+- ✅ 사용자 관리 (생성/조회/수정/삭제)
+- ✅ 그룹 생성/참여/탈퇴/삭제
+- ✅ 주자/응원자 역할 구분
+- ✅ 이미지 업로드 (Vercel Blob Storage)
+- ✅ 실시간 위치 추적 (60초 간격)
+- ✅ 지도 마커 예상 위치 갱신 (15초 간격)
+- ✅ 그룹 멤버 목록 (주자/응원자 구분)
+- ✅ 완주자 자동 스킵 (API 최적화)
+- ✅ 주자 정보 캐싱 (성능 최적화)
+- ✅ 개인정보 처리방침
 
-계속 구현하시겠습니까?
+🎯 프로덕션 배포 준비 완료!
+
+## 📊 주요 기능
+
+### 1. 카카오 로그인 연동
+- OAuth 2.0 인증
+- 자동 사용자 생성
+- 프로필 정보 동기화
+
+### 2. 그룹 관리
+- 4자리 랜덤 코드 생성
+- 그룹장/멤버 권한 구분
+- 그룹 삭제 시 CASCADE로 자동 정리
+
+### 3. 역할 시스템
+- **주자**: 배번 + 레디샷 필수
+- **응원자**: 정보 불필요
+
+### 4. 실시간 추적
+- 60초마다 서버에서 실제 데이터 갱신
+- 15초마다 페이스 기반 예상 위치로 마커 이동
+- 완주자 자동 스킵으로 API 호출 최소화
+
+### 5. 성능 최적화
+- 주자 정보 캐싱 (마커 클릭 시 API 호출 없음)
+- 이미지 자동 압축 (품질 80%, 최대 5MB)
+- 완주자 API 조회 건너뛰기

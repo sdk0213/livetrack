@@ -357,7 +357,7 @@ class AuthManager {
       // 공식 문서에 따른 정확한 방식: Kakao.Auth.authorize()
       // 리다이렉트 방식이므로 Promise가 아닌 페이지 이동 발생
       Kakao.Auth.authorize({
-        redirectUri: 'https://livetrack-theta.vercel.app/test_kakao.html'
+        redirectUri: 'https://livetrack-theta.vercel.app/'
       });
       
       // authorize는 페이지를 리다이렉트하므로 여기 코드는 실행되지 않음
