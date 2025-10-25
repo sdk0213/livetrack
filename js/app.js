@@ -1196,6 +1196,13 @@ class RunCheerApp {
       } else {
         // 기존 그룹에 멤버 등록
         if (role === 'runner') {
+          // 주자인 경우 이미지 업로드
+          const file = photoInput.files[0];
+          const compressedBlob = await Utils.compressImage(file);
+          const groupCode = this.pendingGroup.code;
+          const imageResult = await APIService.uploadImage(compressedBlob, groupCode, user.id);
+          photoUrl = imageResult.url;
+          
           await this.groupManager.registerRunner(user.id, bib, null, photoUrl);
         } else {
           await this.groupManager.registerSupporter(user.id);
