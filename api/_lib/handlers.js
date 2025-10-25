@@ -388,14 +388,21 @@ export async function handleGroupByCode(req, res, code) {
   }
 
   if (req.method === 'DELETE') {
+    console.log('=== GROUP DELETE REQUEST ===');
+    console.log('Code:', code);
+    
     // 그룹 삭제 (CASCADE로 group_members도 자동 삭제됨)
     const result = await sql`DELETE FROM groups WHERE code = ${code} RETURNING *`;
 
+    console.log('Delete result:', result.rows);
+
     if (result.rows.length === 0) {
+      console.log('Group not found for deletion:', code);
       return res.status(404).json({ error: 'Group not found' });
     }
 
-    return res.status(200).json({ message: 'Group deleted successfully' });
+    console.log('Group deleted successfully:', code);
+    return res.status(200).json({ message: 'Group deleted successfully', group: result.rows[0] });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

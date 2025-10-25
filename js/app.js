@@ -1285,13 +1285,22 @@ class RunCheerApp {
       if (!confirm('👑 그룹장 권한으로 그룹을 삭제하시겠습니까?\n\n⚠️ 모든 멤버가 그룹에서 제외되며, 그룹 데이터가 완전히 삭제됩니다.')) return;
       
       try {
-        await APIService.deleteGroup(group.code);
+        console.log('=== 그룹 삭제 시작 ===');
+        console.log('그룹 코드:', group.code);
+        
+        const result = await APIService.deleteGroup(group.code);
+        console.log('그룹 삭제 결과:', result);
         
         this.groupManager.currentGroup = null;
         Utils.showToast('✅ 그룹이 삭제되었습니다.', 'success');
         this.ui.updateGroupInfo(null);
         this.ui.updateMyGroupInfo(null, false);
         this.ui.updateRunnersList([]); // 주자 목록 초기화
+        
+        // 페이지 새로고침으로 상태 완전 초기화
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } catch (error) {
         console.error('Failed to delete group:', error);
         Utils.showToast('❌ 그룹 삭제에 실패했습니다.', 'error');
