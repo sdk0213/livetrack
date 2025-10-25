@@ -873,6 +873,12 @@ class RunCheerApp {
     
     this.ui.hideModal('createGroupModal');
     
+    // 주자 정보 등록 모달의 설명 텍스트 변경
+    const descriptionEl = document.getElementById('registerRunnerDescription');
+    if (descriptionEl) {
+      descriptionEl.textContent = '👑 그룹장의 주자 정보를 입력해주세요. (배번과 사진)';
+    }
+    
     // 주자 정보 등록 모달 표시
     this.ui.showModal('registerRunnerModal');
     Utils.showToast('주자 정보를 입력하면 그룹이 생성됩니다.', 'info');
@@ -894,6 +900,12 @@ class RunCheerApp {
       
       Utils.showToast('그룹에 참여했습니다!', 'success');
       this.ui.hideModal('joinGroupModal');
+      
+      // 주자 정보 등록 모달의 설명 텍스트 변경
+      const descriptionEl = document.getElementById('registerRunnerDescription');
+      if (descriptionEl) {
+        descriptionEl.textContent = '그룹 참여를 위해 배번과 사진을 등록해주세요.';
+      }
       
       // 주자 정보 등록 모달 표시
       this.ui.showModal('registerRunnerModal');
@@ -1066,6 +1078,7 @@ class RunCheerApp {
         Utils.showToast('그룹이 삭제되었습니다.', 'success');
         this.ui.updateGroupInfo(null);
         this.ui.updateMyGroupInfo(null, false);
+        this.ui.updateRunnersList([]); // 주자 목록 초기화
       } catch (error) {
         console.error('Failed to delete group:', error);
         Utils.showToast('그룹 삭제에 실패했습니다.', 'error');
@@ -1080,6 +1093,7 @@ class RunCheerApp {
         Utils.showToast('그룹에서 탈퇴했습니다.', 'success');
         this.ui.updateGroupInfo(null);
         this.ui.updateMyGroupInfo(null, false);
+        this.ui.updateRunnersList([]); // 주자 목록 초기화
       } catch (error) {
         console.error('Failed to leave group:', error);
         Utils.showToast('그룹 탈퇴에 실패했습니다.', 'error');
