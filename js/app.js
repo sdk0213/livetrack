@@ -1429,47 +1429,67 @@ class RunCheerApp {
     const existingMarker = this.mapMarkers.find(m => m.bib === bib);
     
     if (existingMarker) {
-      existingMarker.marker.setPosition(pos);
       existingMarker.label.setPosition(pos);
+      // playerData 업데이트
+      existingMarker.playerData = playerData;
     } else {
-      // 새 마커 생성
-      const marker = new naver.maps.Marker({
-        position: pos,
-        map: this.currentMap,
-        icon: {
-          content: `<div style="width:12px;height:12px;background:#5cc8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-          anchor: new naver.maps.Point(9, 9)
-        }
-      });
+      // 주자 사진 가져오기 (그룹 멤버에서)
+      let photoUrl = '/RunCheer.png'; // 기본 이미지
+      this.groupManager.getGroupRunners(this.groupManager.currentGroup.code)
+        .then(runners => {
+          const runner = runners.find(r => r.bib === bib);
+          if (runner && runner.photo_url) {
+            photoUrl = runner.photo_url;
+          }
+        })
+        .catch(err => console.error('Failed to get runner photo:', err));
 
+      // 이름 레이블만 표시 (파란 점 제거)
       const label = new naver.maps.Marker({
         position: pos,
         map: this.currentMap,
         icon: {
-          content: `<div class="player-label">${playerData.name}</div>`,
+          content: `<div class="player-label" style="background:rgba(66,133,244,0.95);">${playerData.name}</div>`,
           anchor: new naver.maps.Point(0, 30)
         }
       });
 
-      const infoContent = `<div style="padding:10px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px">
-        <div style="font-weight:700;margin-bottom:5px;color:#333">${playerData.name}</div>
-        <div style="font-size:12px;color:#666">배번: ${bib}</div>
-        <div style="font-size:12px;color:#666">마지막 통과: ${estimated.name}</div>
-        <div style="font-size:12px;color:#666">통과 거리: ${estimated.d}km</div>
-        <div style="font-size:12px;color:#4285f4;font-weight:bold">📍 예상 위치: ${estimated.estimated.toFixed(2)}km</div>
-      </div>`;
+      // 클릭 시 정보창에 사진 포함
+      const createInfoContent = (photo) => `
+        <div style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px">
+          <div style="text-align:center;margin-bottom:10px">
+            <img src="${photo}" alt="${playerData.name}" style="width:100%;max-width:200px;height:auto;border-radius:8px;object-fit:cover;" onerror="this.src='/RunCheer.png';" />
+          </div>
+          <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px">${playerData.name}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:3px">배번: ${bib}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:3px">마지막 통과: ${estimated.name}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:3px">통과 거리: ${estimated.d}km</div>
+          <div style="font-size:12px;color:#4285f4;font-weight:bold;margin-top:6px">📍 예상 위치: ${estimated.estimated.toFixed(2)}km${estimated.estimated > estimated.d ? ` (+${(estimated.estimated - estimated.d).toFixed(2)}km)` : ''}</div>
+          ${playerData.result_nettime ? `<div style="font-size:12px;color:#22c55e;font-weight:bold;margin-top:3px">✅ 완주: ${this.cleanTime(playerData.result_nettime)}</div>` : ''}
+        </div>
+      `;
       
-      const infoWindow = new naver.maps.InfoWindow({ content: infoContent });
+      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent(photoUrl) });
       
-      naver.maps.Event.addListener(marker, 'click', () => {
+      naver.maps.Event.addListener(label, 'click', async () => {
+        // 사진 최신 정보 가져오기
+        try {
+          const runners = await this.groupManager.getGroupRunners(this.groupManager.currentGroup.code);
+          const runner = runners.find(r => r.bib === bib);
+          const updatedPhoto = (runner && runner.photo_url) ? runner.photo_url : '/RunCheer.png';
+          infoWindow.setContent(createInfoContent(updatedPhoto));
+        } catch (err) {
+          console.error('Failed to update photo:', err);
+        }
+        
         if (infoWindow.getMap()) {
           infoWindow.close();
         } else {
-          infoWindow.open(this.currentMap, marker);
+          infoWindow.open(this.currentMap, label);
         }
       });
 
-      this.mapMarkers.push({ bib, marker, label, infoWindow, playerData });
+      this.mapMarkers.push({ bib, label, infoWindow, playerData });
     }
   }
 

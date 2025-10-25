@@ -338,6 +338,22 @@
     
     @keyframes spin{to{transform:rotate(360deg)}}
     
+    /* 개발자 정보 */
+    .dev-info{
+      position:fixed;
+      top:10px;
+      right:16px;
+      text-align:right;
+      font-size:11px;
+      z-index:1000;
+      background:rgba(255,255,255,0.95);
+      padding:8px 12px;
+      border-radius:8px;
+      border:1px solid #cbd5e1;
+      box-shadow:0 2px 4px rgba(0,0,0,.1);
+    }
+    .dev-info .dev{color:var(--muted)}
+    
     /* 이미지 뷰어 모달 */
     .image-viewer-modal{
       display:none;
@@ -372,6 +388,11 @@
   </style>
 </head>
 <body>
+  <!-- 개발자 정보 -->
+  <div class="dev-info">
+    <div class="dev">개발자: 성대경</div>
+  </div>
+
   <!-- 이미지 뷰어 모달 -->
   <div id="imageViewerModal" class="image-viewer-modal">
     <img id="imageViewerImg" src="" alt="주자 사진" />
