@@ -1382,6 +1382,12 @@ class RunCheerApp {
     if (statusEl) {
       statusEl.textContent = `데이터 갱신 중... (${new Date().toLocaleTimeString('ko-KR')})`;
     }
+    
+    // 정렬 정보 숨기기
+    const sortInfoEl = document.getElementById('sortInfo');
+    if (sortInfoEl) {
+      sortInfoEl.style.display = 'none';
+    }
 
     for (const bib of this.trackingBibs) {
       try {
@@ -1398,6 +1404,11 @@ class RunCheerApp {
 
     if (statusEl) {
       statusEl.textContent = `마지막 업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
+    }
+    
+    // 정렬 정보 표시
+    if (sortInfoEl) {
+      sortInfoEl.style.display = 'block';
     }
   }
 
@@ -1466,42 +1477,115 @@ class RunCheerApp {
     const tbody = document.getElementById('resultsBody');
     if (!tbody) return;
 
-    // 기존 행 찾기
-    let row = tbody.querySelector(`tr[data-bib="${bib}"]`);
+    // 기존 행 찾기 (main과 splits 2개)
+    let trMain = tbody.querySelector(`tr.player-main[data-bib="${bib}"]`);
+    let trSplits = trMain ? trMain.nextElementSibling : null;
     
-    if (!row) {
+    if (!trMain) {
       // 새 행 생성
-      row = document.createElement('tr');
-      row.setAttribute('data-bib', bib);
-      tbody.appendChild(row);
+      trMain = document.createElement('tr');
+      trMain.className = 'player-main';
+      trMain.setAttribute('data-bib', bib);
+      
+      trSplits = document.createElement('tr');
+      trSplits.className = 'player-splits';
+      
+      tbody.appendChild(trMain);
+      tbody.appendChild(trSplits);
     }
 
     // 완주 여부에 따라 스타일 적용
     if (estimated.status === '완주') {
-      row.classList.add('finished');
+      trMain.classList.add('finished');
     } else {
-      row.classList.remove('finished');
+      trMain.classList.remove('finished');
     }
 
     // 팀명 표시
-    const teamName = playerData.team_name ? `<br><span style="font-size:11px;color:#94a3b8">(${playerData.team_name})</span>` : '';
+    const teamName = playerData.team_name ? `<br>(${playerData.team_name})` : '';
 
-    // 행 내용 업데이트
-    row.innerHTML = `
-      <td>
-        <div style="font-weight:700">${playerData.name}</div>
-        <div style="font-size:11px;color:#94a3b8">#${bib}</div>
-        ${teamName}
-      </td>
-      <td>
-        <span class="pill ${estimated.status === '완주' ? 'fin' : 'run'}">${estimated.status}</span>
-      </td>
-      <td>${estimated.d}km</td>
-      <td>
-        <div>${estimated.name}</div>
-        ${estimated.estimated > estimated.d ? `<div style="font-size:11px;color:#4285f4;margin-top:2px">예상: ${estimated.estimated.toFixed(2)}km</div>` : ''}
-      </td>
+    // Main 행 내용 업데이트
+    trMain.innerHTML = `
+      <td>${playerData.name}<br>(#${bib})${teamName}</td>
+      <td>${estimated.status}</td>
+      <td>${estimated.d}</td>
+      <td>${estimated.name}</td>
     `;
+
+    // Splits 행 내용 업데이트
+    trSplits.innerHTML = `<td colspan="4" style="padding:8px 12px">${this.renderSplits(playerData)}</td>`;
+    
+    // 정렬 (가나다순)
+    this.sortPlayerTable();
+  }
+
+  renderSplits(playerData) {
+    const records = (playerData.records || []).sort((a, b) => a.point.distance - b.point.distance);
+    const netTime = this.cleanTime(playerData.result_nettime);
+    const pace = this.cleanTime(playerData.pace_nettime);
+    const netPaceStr = netTime && pace ? `${netTime} (${pace})` : netTime || pace || '';
+    
+    let splitsHTML = records.map((r, i) => {
+      let paceStr = '';
+      if (i > 0) {
+        const prevDist = records[i - 1].point.distance;
+        const dist = r.point.distance - prevDist;
+        const prevSec = this.timeToSeconds(records[i - 1].time_point);
+        const sec = this.timeToSeconds(r.time_point) - prevSec;
+        paceStr = ` (${this.calcPace(dist, sec)})`;
+      }
+      return `<div>${r.point.name || ''} ${r.point.distance}km ${this.cleanTime(r.time_point)}${paceStr}</div>`;
+    }).join('');
+    
+    if (netPaceStr) {
+      splitsHTML += `<div style="margin-top:8px;font-weight:700;color:#4285f4">최종기록: ${netPaceStr}</div>`;
+    }
+    
+    return `<div class="splits">${splitsHTML}</div>`;
+  }
+
+  cleanTime(timeStr) {
+    if (!timeStr) return '';
+    return timeStr.split('.')[0];
+  }
+
+  calcPace(distKm, sec) {
+    if (!distKm || distKm <= 0) return '';
+    const minPerKm = sec / 60 / distKm;
+    const m = Math.floor(minPerKm);
+    const s = Math.round((minPerKm - m) * 60);
+    return `${m}'${s.toString().padStart(2, '0')}"`;
+  }
+
+  sortPlayerTable() {
+    const tbody = document.getElementById('resultsBody');
+    if (!tbody) return;
+
+    // 모든 player-main 행 수집
+    const rows = Array.from(tbody.querySelectorAll('tr.player-main'));
+    
+    // 이름 순으로 정렬 (가나다순)
+    rows.sort((a, b) => {
+      const aData = a.querySelector('td').textContent.split('\n')[0].trim();
+      const bData = b.querySelector('td').textContent.split('\n')[0].trim();
+      return aData.localeCompare(bData, 'ko');
+    });
+
+    // 순서대로 다시 추가
+    rows.forEach((row, idx) => {
+      const splits = row.nextElementSibling;
+      
+      // 순번 추가
+      const firstCell = row.querySelector('td');
+      const originalContent = firstCell.innerHTML;
+      const contentWithoutNumber = originalContent.replace(/^\d+\.\s*/, '');
+      firstCell.innerHTML = `${idx + 1}. ${contentWithoutNumber}`;
+      
+      tbody.appendChild(row);
+      if (splits && splits.classList.contains('player-splits')) {
+        tbody.appendChild(splits);
+      }
+    });
   }
 
   estimateNow(playerData) {

@@ -274,11 +274,24 @@
     }
     
     /* 테이블 */
-    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px}
-    th,td{text-align:left;padding:10px 12px;vertical-align:top}
-    th{font-size:11px;color:var(--muted);font-weight:600}
-    tbody tr{background:#f8fafc;border-radius:10px}
-    tbody tr.finished{background:var(--finished)}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px;table-layout:fixed}
+    th,td{text-align:left;padding:10px 12px;vertical-align:top;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    th{font-size:11px;line-height:1.3;white-space:normal;color:var(--muted);font-weight:600}
+    tbody tr{background:#f8fafc}
+    tbody tr.finished{background:var(--finished)!important}
+    tbody tr.player-main td:first-child{border-radius:10px 0 0 0;white-space:normal}
+    tbody tr.player-main td:last-child{border-radius:0 10px 0 0}
+    tbody tr.player-splits td{border-top:1px solid #e2e8f0;border-radius:0 0 10px 10px;padding-top:8px;white-space:normal}
+    
+    /* Splits 정보 */
+    .splits{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      font-size:12px;
+      color:var(--muted);
+      padding:5px 0;
+    }
     
     /* 상태 배지 */
     .pill{
@@ -467,13 +480,16 @@
           <!-- 결과 테이블 -->
           <div class="card" id="resultsSection" class="hidden">
             <div id="status" class="muted" style="font-size:12px"></div>
+            <div id="sortInfo" class="muted" style="font-size:12px;margin-top:8px;display:none">
+              <strong>정렬기준:</strong> 가→나→다
+            </div>
             <table>
               <thead>
                 <tr>
-                  <th>주자</th>
+                  <th>이름<br>(배번)<br>(그룹)</th>
                   <th>상태</th>
-                  <th>거리</th>
-                  <th>위치</th>
+                  <th>달린<br>거리</th>
+                  <th>마지막<br>위치</th>
                 </tr>
               </thead>
               <tbody id="resultsBody"></tbody>
