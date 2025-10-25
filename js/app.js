@@ -1480,6 +1480,9 @@ class RunCheerApp {
         return acc;
       }, {});
       
+      // 이미지 프리로드 (브라우저 캐시에 미리 저장)
+      this.preloadImages(runners);
+      
       // 주자 배번 목록 저장 (DB 필드명은 bib)
       this.trackingBibs = runners.map(r => r.bib).filter(b => b); // undefined 제거
       this.trackingEventId = group.event_id;
@@ -1935,6 +1938,37 @@ class RunCheerApp {
     }
     
     console.log('Tracking stopped');
+  }
+
+  preloadImages(runners) {
+    // 이미지를 미리 로드해서 브라우저 캐시에 저장
+    let loadedCount = 0;
+    let totalImages = 0;
+    
+    runners.forEach(runner => {
+      const images = [runner.profile_image, runner.photo_url].filter(url => 
+        url && url !== '/RunCheer.png'
+      );
+      
+      totalImages += images.length;
+      
+      images.forEach(url => {
+        const img = new Image();
+        img.onload = () => {
+          loadedCount++;
+          console.log(`✅ 이미지 캐시됨 (${loadedCount}/${totalImages}): ${url.substring(0, 50)}...`);
+        };
+        img.onerror = () => {
+          loadedCount++;
+          console.log(`❌ 이미지 로드 실패 (${loadedCount}/${totalImages}): ${url.substring(0, 50)}...`);
+        };
+        img.src = url;
+      });
+    });
+    
+    if (totalImages > 0) {
+      console.log(`🖼️ ${totalImages}개의 이미지를 프리로드합니다...`);
+    }
   }
 
   startCountdown() {
