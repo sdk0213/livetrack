@@ -156,7 +156,7 @@ class APIService {
   }
 
   // 사용자 관련
-  static async ㅇgetUser(kakaoId) {
+  static async getUser(kakaoId) {
     return this.request(`/users/${kakaoId}`);
   }
 
