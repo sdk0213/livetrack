@@ -21,14 +21,12 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  // Vercel의 catch-all route에서 path 파라미터 가져오기
+  const { path } = req.query;
+  const parts = Array.isArray(path) ? path : [path || ''];
+  const resource = parts[0] || '';
   
   try {
-    // /api 제거
-    const path = pathname.replace(/^\/api\/?/, '');
-    const parts = path.split('/');
-    const resource = parts[0];
-
     // 라우팅
     switch (resource) {
       case 'ping':
@@ -47,7 +45,7 @@ export default async function handler(req, res) {
         return handleImages(req, res, parts);
       
       default:
-        return res.status(404).json({ error: 'Not found' });
+        return res.status(404).json({ error: 'Not found', path: parts });
     }
   } catch (error) {
     console.error('API Error:', error);
