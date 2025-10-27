@@ -621,10 +621,10 @@ class UIManager {
     // 그룹
     this.createGroupBtn.addEventListener('click', async () => {
       try {
-        // 관리자 권한 확인 (카카오 ID: 4510515635, 4510578446, 4510305710)
+        // 관리자 권한 확인 (카카오 ID: 4510515635, 4510578446, 4510305710, 4510043030)
         const user = this.app.authManager.getUser();
         const dbUser = await APIService.getUser(user.id);
-        const adminIds = ['4510515635', '4510578446', '4510305710'];
+        const adminIds = ['4510515635', '4510578446', '4510305710', '4510043030'];
         
         console.log('==================== 그룹 생성 권한 체크 ====================');
         console.log('현재 사용자 (authManager):', user);
