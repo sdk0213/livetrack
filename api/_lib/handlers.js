@@ -298,7 +298,16 @@ export async function handleGroupJoin(req, res) {
     `;
 
     if (memberCheck.rows.length > 0) {
-      return res.status(400).json({ error: 'Already a member' });
+      // 이미 멤버인 경우, 레디샷 사진 업데이트 (다른 대회 참여 시)
+      if (role === 'runner' && photoUrl) {
+        await sql`
+          UPDATE group_members 
+          SET photo_url = ${photoUrl}, bib = ${bib}
+          WHERE group_code = ${code} AND kakao_id = ${kakaoId}
+        `;
+        console.log('Updated runner photo for existing member:', { code, kakaoId, photoUrl });
+      }
+      return res.status(200).json(group);
     }
 
     // 멤버 추가 (role에 따라 다르게)
