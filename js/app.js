@@ -984,10 +984,10 @@ class RunCheerApp {
     this.checkpointMarkers = []; // 체크포인트 마커 배열
     this.trackingBibs = []; // 추적 중인 배번 목록
     this.trackingEventId = null; // 추적 중인 이벤트 ID
-    this.trackingTimer = null; // 90초 갱신 타이머
+    this.trackingTimer = null; // 180초 갱신 타이머
     this.mapUpdateTimer = null; // 15초 마커 업데이트 타이머
     this.countdownTimer = null; // 카운트다운 타이머
-    this.remainingSeconds = 90; // 남은 시간(초)
+    this.remainingSeconds = 180; // 남은 시간(초)
     
     this.init();
   }
@@ -1638,13 +1638,13 @@ class RunCheerApp {
     // 첫 데이터 로드
     await this.updateTrackingData();
 
-    // 90초마다 갱신 (Function 비용 절감)
+    // 180초마다 갱신 (Function 비용 절감)
     if (this.trackingTimer) {
       clearInterval(this.trackingTimer);
     }
     this.trackingTimer = setInterval(() => {
       this.updateTrackingData();
-    }, 90000); // 90초
+    }, 180000); // 180초
 
     // 15초마다 마커 위치 업데이트 (예상 위치, 클라이언트 작업만 - 비용 무관)
     if (this.mapUpdateTimer) {
@@ -1660,8 +1660,8 @@ class RunCheerApp {
 
     console.log('Updating tracking data...');
     
-    // 카운트다운 리셋 (90초)
-    this.remainingSeconds = 90;
+    // 카운트다운 리셋 (180초)
+    this.remainingSeconds = 180;
     this.updateCountdown();
     
     const statusEl = document.getElementById('status');
@@ -1811,7 +1811,7 @@ class RunCheerApp {
       }
       
       const createInfoContent = () => `
-        <div style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px">
+        <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px;cursor:pointer">
           <div style="text-align:center;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;align-items:center">
             ${profilePhoto ? `
               <div>
@@ -1843,8 +1843,11 @@ class RunCheerApp {
         
         if (infoWindow.getMap()) {
           infoWindow.close();
+          window.currentInfoWindow = null;
         } else {
+          if (window.currentInfoWindow) window.currentInfoWindow.close();
           infoWindow.open(this.currentMap, label);
+          window.currentInfoWindow = infoWindow;
         }
       });
 
@@ -2094,7 +2097,7 @@ class RunCheerApp {
   }
 
   startCountdown() {
-    this.remainingSeconds = 90;
+    this.remainingSeconds = 180;
     const indicator = document.getElementById('refreshIndicator');
     if (indicator) {
       indicator.classList.add('active');
@@ -2126,11 +2129,11 @@ class RunCheerApp {
     
     this.remainingSeconds--;
     if (this.remainingSeconds < 0) {
-      this.remainingSeconds = 90;
+      this.remainingSeconds = 180;
     }
     
     if (progressBar) {
-      const offset = circumference * (1 - this.remainingSeconds / 90);
+      const offset = circumference * (1 - this.remainingSeconds / 180);
       progressBar.style.strokeDashoffset = offset;
     }
     
