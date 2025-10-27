@@ -29,10 +29,10 @@ CREATE TABLE IF NOT EXISTS group_members (
   kakao_id VARCHAR(50) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'runner', -- 'runner' 또는 'supporter'
   bib VARCHAR(10), -- runner인 경우에만 필수
-  photo_url TEXT, -- runner인 경우에만 필수
+  photo_url TEXT, -- runner인 경우에만 필수 (그룹별로 다른 사진 가능)
   team_name VARCHAR(50),
   joined_at TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT unique_member UNIQUE (kakao_id),
+  CONSTRAINT unique_member_per_group UNIQUE (group_code, kakao_id), -- 같은 그룹 내에서만 중복 방지
   CONSTRAINT unique_bib_in_group UNIQUE (group_code, bib),
   CONSTRAINT fk_group FOREIGN KEY (group_code) REFERENCES groups(code) ON DELETE CASCADE,
   CONSTRAINT fk_user FOREIGN KEY (kakao_id) REFERENCES users(kakao_id) ON DELETE CASCADE,
