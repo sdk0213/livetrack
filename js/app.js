@@ -2007,7 +2007,21 @@ class RunCheerApp {
         const kmPerSec = 1 / paceSec;
         const movedKm = kmPerSec * elapsedSec;
         const courseDistance = parseFloat(playerData.course?.distance || '42.195');
-        estimatedDist = Math.min(d + movedKm, courseDistance);
+        
+        // 다음 체크포인트 찾기
+        let nextCheckpointDistance = courseDistance;
+        if (playerData.course?.points) {
+          const checkpoints = playerData.course.points.sort((a, b) => a.distance - b.distance);
+          for (const checkpoint of checkpoints) {
+            if (parseFloat(checkpoint.distance) > d) {
+              nextCheckpointDistance = parseFloat(checkpoint.distance);
+              break;
+            }
+          }
+        }
+        
+        // 예상 위치 계산 - 다음 체크포인트를 넘지 않도록 제한
+        estimatedDist = Math.min(d + movedKm, nextCheckpointDistance, courseDistance);
       }
     }
 
