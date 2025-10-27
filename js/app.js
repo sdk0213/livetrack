@@ -1854,8 +1854,8 @@ class RunCheerApp {
             position: centerPos,
             map: this.currentMap,
             icon: {
-              content: `<div style="width:8px;height:8px;background:#4285f4;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
-              anchor: new naver.maps.Point(6, 6)
+              content: `<div style="width:12px;height:12px;background:#4285f4;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>`,
+              anchor: new naver.maps.Point(9, 9)
             },
             zIndex: 1000
           });
