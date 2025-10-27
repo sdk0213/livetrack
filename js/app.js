@@ -787,12 +787,12 @@ class UIManager {
         // 프로필 이미지 (카카오)
         const profileImage = runner.profile_image || '/RunCheer.png';
         
-        // 레디샷 이미지
-        const cachedImage = this.app.imageCache.get(runner.kakao_id);
-        const readyShotImage = cachedImage || runner.photo_url || '/RunCheer.png';
-        
-        if (!cachedImage && runner.photo_url) {
-          this.app.imageCache.set(runner.kakao_id, runner.photo_url);
+        // 레디샷 이미지 (캐시 무효화를 위해 타임스탬프 추가)
+        let readyShotImage = runner.photo_url || '/RunCheer.png';
+        if (runner.photo_url && runner.photo_url !== '/RunCheer.png') {
+          // URL에 타임스탬프 쿼리 파라미터 추가하여 브라우저 캐시 우회
+          const separator = runner.photo_url.includes('?') ? '&' : '?';
+          readyShotImage = `${runner.photo_url}${separator}t=${Date.now()}`;
         }
         
         card.innerHTML = `
@@ -1763,9 +1763,15 @@ class RunCheerApp {
         }
       });
 
-      // 클릭 시 정보창에 프로필 + 레디샷 표시
-      const readyPhoto = cachedRunner ? cachedRunner.photo_url : null;
+      // 클릭 시 정보창에 프로필 + 레디샷 표시 (캐시 무효화)
+      let readyPhoto = cachedRunner ? cachedRunner.photo_url : null;
       const profilePhoto = cachedRunner ? cachedRunner.profile_image : null;
+      
+      // 레디샷 URL에 타임스탬프 추가하여 캐시 무효화
+      if (readyPhoto && readyPhoto !== '/RunCheer.png') {
+        const separator = readyPhoto.includes('?') ? '&' : '?';
+        readyPhoto = `${readyPhoto}${separator}t=${Date.now()}`;
+      }
       
       const createInfoContent = () => `
         <div style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px">
