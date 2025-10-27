@@ -1812,7 +1812,6 @@ class RunCheerApp {
   // 모든 마커를 겹침 감지하여 재배치
   updateAllMarkersWithOffset() {
     const OVERLAP_THRESHOLD = 0.05; // 50m 이내를 겹침으로 판단 (km 단위)
-    const LABEL_DISTANCE = 10; // 레이블까지의 거리 (픽셀)
     
     // 위치별로 그룹화
     const positionGroups = [];
@@ -1854,8 +1853,8 @@ class RunCheerApp {
             position: centerPos,
             map: this.currentMap,
             icon: {
-              content: `<div style="width:12px;height:12px;background:#4285f4;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>`,
-              anchor: new naver.maps.Point(9, 9)
+              content: `<div style="width:24px;height:24px;background:#4285f4;border:4px solid #fff;border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.5);"></div>`,
+              anchor: new naver.maps.Point(14, 14)
             },
             zIndex: 1000
           });
@@ -1875,14 +1874,18 @@ class RunCheerApp {
         
         const angleRad = (angle * Math.PI) / 180;
         
-        // 픽셀 오프셋을 위경도 오프셋으로 변환 (대략적)
-        const projection = this.currentMap.getProjection();
-        const centerPoint = projection.fromCoordToOffset(centerPos);
-        const labelPoint = new naver.maps.Point(
-          centerPoint.x + Math.cos(angleRad) * LABEL_DISTANCE,
-          centerPoint.y + Math.sin(angleRad) * LABEL_DISTANCE
+        // 미터 단위로 오프셋 계산 (줌 레벨과 무관하게 고정 거리)
+        const LABEL_DISTANCE_METERS = 0.05; // 50m를 km로 변환
+        const R = 6371; // 지구 반경 (km)
+        
+        // 위도/경도로 오프셋 계산
+        const offsetLat = (LABEL_DISTANCE_METERS / R) * (180 / Math.PI) * Math.sin(angleRad);
+        const offsetLng = (LABEL_DISTANCE_METERS / R) * (180 / Math.PI) * Math.cos(angleRad) / Math.cos(centerPos.lat() * Math.PI / 180);
+        
+        const labelPos = new naver.maps.LatLng(
+          centerPos.lat() + offsetLat,
+          centerPos.lng() + offsetLng
         );
-        const labelPos = projection.fromOffsetToCoord(labelPoint);
         
         // 3. 선 그리기
         marker.line = new naver.maps.Polyline({
