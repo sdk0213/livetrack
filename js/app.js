@@ -1129,6 +1129,9 @@ class RunCheerApp {
     
     // 그룹 정보 로드
     await this.loadUserGroup();
+    
+    // 그룹 개수 업데이트
+    await this.updateGroupCount();
   }
 
   async loadUserGroup() {
@@ -1167,6 +1170,21 @@ class RunCheerApp {
         this.ui.updateGroupInfo(null);
         this.ui.updateMyGroupInfo(null, false);
       }
+    }
+    
+    // 그룹 개수 업데이트
+    await this.updateGroupCount();
+  }
+
+  async updateGroupCount() {
+    try {
+      const count = await APIService.getGroupCount();
+      const displayEl = document.getElementById('groupCountDisplay');
+      if (displayEl) {
+        displayEl.textContent = count;
+      }
+    } catch (error) {
+      console.error('Failed to load group count:', error);
     }
   }
 
@@ -1339,6 +1357,9 @@ class RunCheerApp {
       // UI 업데이트
       await this.loadUserGroup();
       
+      // 그룹 개수 업데이트
+      await this.updateGroupCount();
+      
     } catch (error) {
       console.error('Failed to register runner:', error);
       Utils.showToast(error.message || '등록에 실패했습니다.', 'error');
@@ -1472,6 +1493,9 @@ class RunCheerApp {
         this.ui.updateGroupInfo(null);
         this.ui.updateMyGroupInfo(null, false);
         this.ui.updateRunnersList([]); // 주자 목록 초기화
+        
+        // 그룹 개수 업데이트
+        await this.updateGroupCount();
       } catch (error) {
         console.error('Failed to leave group:', error);
         Utils.showToast('그룹 탈퇴에 실패했습니다.', 'error');
