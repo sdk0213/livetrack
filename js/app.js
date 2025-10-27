@@ -795,6 +795,10 @@ class UIManager {
     const runnerList = runners.filter(r => r.role === 'runner');
     const supporterList = runners.filter(r => r.role === 'supporter');
     
+    // 현재 그룹의 event_id 가져오기
+    const currentGroup = this.app.groupManager.currentGroup;
+    const eventId = currentGroup ? currentGroup.event_id : 133; // 기본값 JTBC
+    
     // 주자 목록
     if (runnerList.length > 0) {
       const runnerHeader = document.createElement('div');
@@ -809,12 +813,12 @@ class UIManager {
         // 프로필 이미지 (카카오)
         const profileImage = runner.profile_image || '/RunCheer.png';
         
-        // 레디샷 이미지 (캐시 무효화를 위해 타임스탬프 추가)
+        // 레디샷 이미지 (대회 번호로 버전 관리)
         let readyShotImage = runner.photo_url || '/RunCheer.png';
         if (runner.photo_url && runner.photo_url !== '/RunCheer.png') {
-          // URL에 타임스탬프 쿼리 파라미터 추가하여 브라우저 캐시 우회
+          // URL에 event_id를 쿼리 파라미터로 추가하여 대회별 캐싱
           const separator = runner.photo_url.includes('?') ? '&' : '?';
-          readyShotImage = `${runner.photo_url}${separator}t=${Date.now()}`;
+          readyShotImage = `${runner.photo_url}${separator}v=${eventId}`;
         }
         
         card.innerHTML = `
@@ -1809,14 +1813,14 @@ class RunCheerApp {
         }
       });
 
-      // 클릭 시 정보창에 프로필 + 레디샷 표시 (캐시 무효화)
+      // 클릭 시 정보창에 프로필 + 레디샷 표시 (대회 번호로 버전 관리)
       let readyPhoto = cachedRunner ? cachedRunner.photo_url : null;
       const profilePhoto = cachedRunner ? cachedRunner.profile_image : null;
       
-      // 레디샷 URL에 타임스탬프 추가하여 캐시 무효화
+      // 레디샷 URL에 event_id 추가하여 대회별 캐싱
       if (readyPhoto && readyPhoto !== '/RunCheer.png') {
         const separator = readyPhoto.includes('?') ? '&' : '?';
-        readyPhoto = `${readyPhoto}${separator}t=${Date.now()}`;
+        readyPhoto = `${readyPhoto}${separator}v=${this.trackingEventId}`;
       }
       
       const createInfoContent = () => `
