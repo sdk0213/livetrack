@@ -229,6 +229,12 @@ class APIService {
     return this.request(`/groups/runners?code=${code}`);
   }
 
+  // 그룹 개수 확인
+  static async getGroupCount() {
+    const result = await this.request('/groups');
+    return result.count || 0;
+  }
+
   // 이미지 업로드
   static async uploadImage(blob, groupCode, kakaoId) {
     // Blob을 base64로 변환
@@ -621,10 +627,10 @@ class UIManager {
     // 그룹
     this.createGroupBtn.addEventListener('click', async () => {
       try {
-        // 관리자 권한 확인 (카카오 ID: 4510515635, 4510578446, 4510305710, 4510043030)
+        // 관리자 권한 확인 (카카오 ID: 4510043030만)
         const user = this.app.authManager.getUser();
         const dbUser = await APIService.getUser(user.id);
-        const adminIds = ['4510515635', '4510578446', '4510305710', '4510043030'];
+        const adminIds = ['4510043030'];
         
         console.log('==================== 그룹 생성 권한 체크 ====================');
         console.log('현재 사용자 (authManager):', user);
@@ -638,11 +644,19 @@ class UIManager {
         if (adminIds.includes(dbUser.kakao_id)) {
           // 관리자는 그룹 생성 가능
           console.log('✅ 관리자 권한 확인 - 그룹 생성 허용');
+          
+          // 그룹 개수 확인 (200개 제한)
+          const groupCount = await APIService.getGroupCount();
+          if (groupCount >= 200) {
+            Utils.showToast('그룹 생성 한도(200개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
+            return;
+          }
+          
           this.showModal('createGroupModal');
         } else {
-          // 일반 사용자는 베타 서비스로 제한
+          // 일반 사용자는 그룹 생성 불가
           console.log('❌ 일반 사용자 - 그룹 생성 제한');
-          Utils.showToast('현재 베타 서비스로 사용자 임의 생성이 불가능합니다.', 'error');
+          Utils.showToast('그룹 생성은 관리자만 가능합니다.', 'error');
         }
       } catch (error) {
         console.error('권한 체크 오류:', error);
@@ -2391,10 +2405,52 @@ function handleRoleChange() {
 }
 
 // ============================================
+// 경고 팝업 관리
+// ============================================
+window.showWarningPopup = function() {
+  const warningModal = document.getElementById('warningModal');
+  const dismissed = localStorage.getItem('warningDismissedUntil');
+  
+  // 하루 동안 보지 않기 체크
+  if (dismissed) {
+    const dismissedTime = parseInt(dismissed);
+    if (Date.now() < dismissedTime) {
+      return; // 아직 안 보기 기간
+    }
+  }
+  
+  // 그룹이 있거나 참여한 사용자는 표시 안 함
+  if (window.app && window.app.groupManager.currentGroup) {
+    return;
+  }
+  
+  warningModal.classList.add('active');
+};
+
+window.closeWarning = function() {
+  const warningModal = document.getElementById('warningModal');
+  warningModal.classList.remove('active');
+};
+
+window.dismissWarningForDay = function() {
+  // 24시간 후 시간 저장
+  const dismissUntil = Date.now() + (24 * 60 * 60 * 1000);
+  localStorage.setItem('warningDismissedUntil', dismissUntil.toString());
+  window.closeWarning();
+};
+
+// ============================================
 // 앱 초기화
 // ============================================
 let app;
 document.addEventListener('DOMContentLoaded', () => {
   app = new RunCheerApp();
   window.app = app; // 전역 접근 가능하도록
+  
+  // 로그인 후 팝업 표시 (약간의 딜레이)
+  setTimeout(() => {
+    if (app.authManager.getUser()) {
+      window.showWarningPopup();
+    }
+  }, 1000);
 });
