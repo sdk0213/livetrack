@@ -1923,27 +1923,16 @@ class RunCheerApp {
         }
         
         const createInfoContent = () => `
-          <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px;cursor:pointer">
-            <div style="text-align:center;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;align-items:center">
+          <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px;max-width:200px;cursor:pointer">
+            <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px;text-align:center">${playerData.name}(${bib}) - ${estimated.name}</div>
+            <div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">
               ${profilePhoto ? `
-                <div>
-                  <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">프로필 사진</div>
-                  <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
-                </div>
+                <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
               ` : ''}
               ${readyPhoto && readyPhoto !== '/RunCheer.png' ? `
-                <div>
-                  <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">레디샷</div>
-                  <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
-                </div>
+                <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
               ` : ''}
             </div>
-            <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px">${playerData.name}</div>
-            <div style="font-size:12px;color:#666;margin-bottom:3px">배번: ${bib}</div>
-            <div style="font-size:12px;color:#666;margin-bottom:3px">마지막 통과: ${estimated.name}</div>
-            <div style="font-size:12px;color:#666;margin-bottom:3px">통과 거리: ${estimated.d}km</div>
-            <div style="font-size:12px;color:#4285f4;font-weight:bold;margin-top:6px">📍 예상 위치: ${estimated.estimated.toFixed(2)}km${estimated.estimated > estimated.d ? ` (+${(estimated.estimated - estimated.d).toFixed(2)}km)` : ''}</div>
-            ${playerData.result_nettime ? `<div style="font-size:12px;color:#22c55e;font-weight:bold;margin-top:3px">✅ 완주: ${this.cleanTime(playerData.result_nettime)}</div>` : ''}
           </div>
         `;
         
