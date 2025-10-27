@@ -7,9 +7,9 @@ const CONFIG = {
   KAKAO_JS_KEY: '1c986b10c0401ffb6c00df1ccddef006', // 카카오 개발자 콘솔에서 발급받은 JavaScript 키
   API_BASE: '/api',
   IMAGE_MAX_SIZE: 5 * 1024 * 1024, // 5MB
-  IMAGE_QUALITY: 0.5, // 이미지 압축률 (0.5 = 50% 품질, 비용 최적화)
-  IMAGE_MAX_WIDTH: 600, // 최대 가로 크기 (작게 조정)
-  IMAGE_MAX_HEIGHT: 600, // 최대 세로 크기 (작게 조정)
+  IMAGE_QUALITY: 0.4, // 이미지 압축률 (0.4 = 40% 품질, 극한 비용 최적화)
+  IMAGE_MAX_WIDTH: 400, // 최대 가로 크기 (모바일 최적화)
+  IMAGE_MAX_HEIGHT: 400, // 최대 세로 크기 (모바일 최적화)
   CACHE_DURATION: 3 * 60 * 60 * 1000 // 3시간
 };
 
