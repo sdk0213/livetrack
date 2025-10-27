@@ -310,6 +310,22 @@ export async function handleGroupJoin(req, res) {
       return res.status(200).json(group);
     }
 
+    // 주자 수 제한 확인 (주자로 참여하려는 경우)
+    if (role === 'runner') {
+      const runnerCount = await sql`
+        SELECT COUNT(*) as count 
+        FROM group_members 
+        WHERE group_code = ${code} AND role = 'runner'
+      `;
+      
+      if (runnerCount.rows[0].count >= 50) {
+        return res.status(400).json({ 
+          error: 'RUNNER_LIMIT_EXCEEDED',
+          message: '이 그룹은 이미 주자가 50명 등록되어 있습니다.' 
+        });
+      }
+    }
+
     // 멤버 추가 (role에 따라 다르게)
     if (role === 'runner') {
       await sql`

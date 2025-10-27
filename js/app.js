@@ -212,10 +212,18 @@ class APIService {
   }
 
   static async joinGroup(groupData) {
-    return this.request('/groups/join', {
-      method: 'POST',
-      body: JSON.stringify(groupData)
-    });
+    try {
+      return await this.request('/groups/join', {
+        method: 'POST',
+        body: JSON.stringify(groupData)
+      });
+    } catch (error) {
+      // 주자 수 제한 에러 처리
+      if (error.error === 'RUNNER_LIMIT_EXCEEDED') {
+        throw new Error('이 그룹은 이미 주자가 50명 등록되어 있습니다.');
+      }
+      throw error;
+    }
   }
 
   static async leaveGroup(leaveData) {
