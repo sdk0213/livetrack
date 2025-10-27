@@ -1763,6 +1763,9 @@ class RunCheerApp {
     if (sortInfoEl) {
       sortInfoEl.style.display = 'block';
     }
+    
+    // 모든 마커를 겹침 감지하여 재배치
+    this.updateAllMarkersWithOffset();
   }
 
   updatePlayerMarker(bib, playerData) {
@@ -1783,76 +1786,181 @@ class RunCheerApp {
     const existingMarker = this.mapMarkers.find(m => m.bib === bib);
     
     if (existingMarker) {
-      existingMarker.label.setPosition(pos);
-      // playerData 업데이트
+      // 위치만 업데이트
+      existingMarker.position = pos;
       existingMarker.playerData = playerData;
+      existingMarker.estimated = estimated;
+      // 실제 마커 배치는 updateAllMarkersWithOffset에서 일괄 처리
     } else {
       // 캐시된 주자 정보 가져오기 (사진 정보 포함)
       const cachedRunner = this.cachedRunners ? this.cachedRunners[bib] : null;
       
-      // 이름 레이블만 표시 (그라데이션 스타일)
-      const label = new naver.maps.Marker({
+      this.mapMarkers.push({ 
+        bib, 
         position: pos,
-        map: this.currentMap,
-        icon: {
-          content: `<div class="player-label">${playerData.name}</div>`,
-          anchor: new naver.maps.Point(0, 30)
-        }
+        playerData, 
+        cachedRunner,
+        estimated,
+        dotMarker: null,
+        labelMarker: null,
+        line: null,
+        infoWindow: null
       });
-
-      // 클릭 시 정보창에 프로필 + 레디샷 표시 (대회 번호로 버전 관리)
-      let readyPhoto = cachedRunner ? cachedRunner.photo_url : null;
-      const profilePhoto = cachedRunner ? cachedRunner.profile_image : null;
-      
-      // 레디샷 URL에 event_id 추가하여 대회별 캐싱
-      if (readyPhoto && readyPhoto !== '/RunCheer.png') {
-        const separator = readyPhoto.includes('?') ? '&' : '?';
-        readyPhoto = `${readyPhoto}${separator}v=${this.trackingEventId}`;
-      }
-      
-      const createInfoContent = () => `
-        <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px;cursor:pointer">
-          <div style="text-align:center;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;align-items:center">
-            ${profilePhoto ? `
-              <div>
-                <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">프로필 사진</div>
-                <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
-              </div>
-            ` : ''}
-            ${readyPhoto && readyPhoto !== '/RunCheer.png' ? `
-              <div>
-                <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">레디샷</div>
-                <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
-              </div>
-            ` : ''}
-          </div>
-          <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px">${playerData.name}</div>
-          <div style="font-size:12px;color:#666;margin-bottom:3px">배번: ${bib}</div>
-          <div style="font-size:12px;color:#666;margin-bottom:3px">마지막 통과: ${estimated.name}</div>
-          <div style="font-size:12px;color:#666;margin-bottom:3px">통과 거리: ${estimated.d}km</div>
-          <div style="font-size:12px;color:#4285f4;font-weight:bold;margin-top:6px">📍 예상 위치: ${estimated.estimated.toFixed(2)}km${estimated.estimated > estimated.d ? ` (+${(estimated.estimated - estimated.d).toFixed(2)}km)` : ''}</div>
-          ${playerData.result_nettime ? `<div style="font-size:12px;color:#22c55e;font-weight:bold;margin-top:3px">✅ 완주: ${this.cleanTime(playerData.result_nettime)}</div>` : ''}
-        </div>
-      `;
-      
-      const infoWindow = new naver.maps.InfoWindow({ content: createInfoContent() });
-      
-      naver.maps.Event.addListener(label, 'click', () => {
-        // 캐시된 데이터 사용 (서버 통신 없음)
-        console.log(`마커 클릭 - 배번: ${bib}, 프로필: ${profilePhoto}, 레디샷: ${readyPhoto}`);
-        
-        if (infoWindow.getMap()) {
-          infoWindow.close();
-          window.currentInfoWindow = null;
-        } else {
-          if (window.currentInfoWindow) window.currentInfoWindow.close();
-          infoWindow.open(this.currentMap, label);
-          window.currentInfoWindow = infoWindow;
-        }
-      });
-
-      this.mapMarkers.push({ bib, label, infoWindow, playerData, cachedRunner });
     }
+  }
+
+  // 모든 마커를 겹침 감지하여 재배치
+  updateAllMarkersWithOffset() {
+    const OVERLAP_THRESHOLD = 0.05; // 50m 이내를 겹침으로 판단 (km 단위)
+    const LABEL_DISTANCE = 80; // 레이블까지의 거리 (픽셀)
+    
+    // 위치별로 그룹화
+    const positionGroups = [];
+    
+    this.mapMarkers.forEach(marker => {
+      if (!marker.position) return;
+      
+      // 기존 그룹에 속하는지 확인
+      let foundGroup = positionGroups.find(group => {
+        const groupPos = group[0].position;
+        const distance = Utils.calcDistance(
+          groupPos.lat(), groupPos.lng(),
+          marker.position.lat(), marker.position.lng()
+        );
+        return distance < OVERLAP_THRESHOLD;
+      });
+      
+      if (foundGroup) {
+        foundGroup.push(marker);
+      } else {
+        positionGroups.push([marker]);
+      }
+    });
+    
+    // 각 그룹별로 마커 배치
+    positionGroups.forEach(group => {
+      const centerPos = group[0].position;
+      const count = group.length;
+      
+      group.forEach((marker, index) => {
+        // 기존 마커/선 제거
+        if (marker.dotMarker) marker.dotMarker.setMap(null);
+        if (marker.labelMarker) marker.labelMarker.setMap(null);
+        if (marker.line) marker.line.setMap(null);
+        
+        // 1. 중심점에 작은 점 마커 생성
+        if (index === 0) { // 첫 번째만 점 마커 생성
+          marker.dotMarker = new naver.maps.Marker({
+            position: centerPos,
+            map: this.currentMap,
+            icon: {
+              content: `<div style="width:8px;height:8px;background:#4285f4;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
+              anchor: new naver.maps.Point(6, 6)
+            },
+            zIndex: 1000
+          });
+        }
+        
+        // 2. 레이블 위치 계산 (부채꼴 배치)
+        let angle;
+        if (count === 1) {
+          angle = -90; // 위쪽
+        } else {
+          // 여러 명이면 부채꼴로 펼침 (-135도 ~ -45도 범위)
+          const startAngle = -135;
+          const endAngle = -45;
+          const angleStep = (endAngle - startAngle) / (count - 1);
+          angle = startAngle + (angleStep * index);
+        }
+        
+        const angleRad = (angle * Math.PI) / 180;
+        
+        // 픽셀 오프셋을 위경도 오프셋으로 변환 (대략적)
+        const projection = this.currentMap.getProjection();
+        const centerPoint = projection.fromCoordToOffset(centerPos);
+        const labelPoint = new naver.maps.Point(
+          centerPoint.x + Math.cos(angleRad) * LABEL_DISTANCE,
+          centerPoint.y + Math.sin(angleRad) * LABEL_DISTANCE
+        );
+        const labelPos = projection.fromOffsetToCoord(labelPoint);
+        
+        // 3. 선 그리기
+        marker.line = new naver.maps.Polyline({
+          map: this.currentMap,
+          path: [centerPos, labelPos],
+          strokeColor: '#4285f4',
+          strokeOpacity: 0.6,
+          strokeWeight: 1,
+          zIndex: 999
+        });
+        
+        // 4. 레이블 마커 생성
+        const cachedRunner = marker.cachedRunner;
+        const estimated = marker.estimated;
+        const playerData = marker.playerData;
+        const bib = marker.bib;
+        
+        marker.labelMarker = new naver.maps.Marker({
+          position: labelPos,
+          map: this.currentMap,
+          icon: {
+            content: `<div class="player-label" style="white-space:nowrap">${playerData.name}</div>`,
+            anchor: new naver.maps.Point(50, 15) // 중앙 정렬
+          },
+          zIndex: 1001
+        });
+        
+        // 5. InfoWindow 생성
+        let readyPhoto = cachedRunner ? cachedRunner.photo_url : null;
+        const profilePhoto = cachedRunner ? cachedRunner.profile_image : null;
+        
+        if (readyPhoto && readyPhoto !== '/RunCheer.png') {
+          const separator = readyPhoto.includes('?') ? '&' : '?';
+          readyPhoto = `${readyPhoto}${separator}v=${this.trackingEventId}`;
+        }
+        
+        const createInfoContent = () => `
+          <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:180px;max-width:250px;cursor:pointer">
+            <div style="text-align:center;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;align-items:center">
+              ${profilePhoto ? `
+                <div>
+                  <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">프로필 사진</div>
+                  <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
+                </div>
+              ` : ''}
+              ${readyPhoto && readyPhoto !== '/RunCheer.png' ? `
+                <div>
+                  <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">레디샷</div>
+                  <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
+                </div>
+              ` : ''}
+            </div>
+            <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px">${playerData.name}</div>
+            <div style="font-size:12px;color:#666;margin-bottom:3px">배번: ${bib}</div>
+            <div style="font-size:12px;color:#666;margin-bottom:3px">마지막 통과: ${estimated.name}</div>
+            <div style="font-size:12px;color:#666;margin-bottom:3px">통과 거리: ${estimated.d}km</div>
+            <div style="font-size:12px;color:#4285f4;font-weight:bold;margin-top:6px">📍 예상 위치: ${estimated.estimated.toFixed(2)}km${estimated.estimated > estimated.d ? ` (+${(estimated.estimated - estimated.d).toFixed(2)}km)` : ''}</div>
+            ${playerData.result_nettime ? `<div style="font-size:12px;color:#22c55e;font-weight:bold;margin-top:3px">✅ 완주: ${this.cleanTime(playerData.result_nettime)}</div>` : ''}
+          </div>
+        `;
+        
+        marker.infoWindow = new naver.maps.InfoWindow({ content: createInfoContent() });
+        
+        // 레이블 클릭 이벤트
+        naver.maps.Event.addListener(marker.labelMarker, 'click', () => {
+          console.log(`마커 클릭 - 배번: ${bib}, 프로필: ${profilePhoto}, 레디샷: ${readyPhoto}`);
+          
+          if (marker.infoWindow.getMap()) {
+            marker.infoWindow.close();
+            window.currentInfoWindow = null;
+          } else {
+            if (window.currentInfoWindow) window.currentInfoWindow.close();
+            marker.infoWindow.open(this.currentMap, marker.labelMarker);
+            window.currentInfoWindow = marker.infoWindow;
+          }
+        });
+      });
+    });
   }
 
   updatePlayerTable(bib, playerData, estimated) {
@@ -2048,6 +2156,9 @@ class RunCheerApp {
         this.updatePlayerMarker(bib, playerData);
       }
     });
+    
+    // 모든 마커를 겹침 감지하여 재배치
+    this.updateAllMarkersWithOffset();
   }
   
   stopTracking() {
@@ -2208,9 +2319,10 @@ class RunCheerApp {
     }
 
     // 기존 마커 제거 (체크포인트 제외)
-    this.mapMarkers.forEach(({ marker, label }) => {
-      if (marker) marker.setMap(null);
-      if (label) label.setMap(null);
+    this.mapMarkers.forEach((markerObj) => {
+      if (markerObj.dotMarker) markerObj.dotMarker.setMap(null);
+      if (markerObj.labelMarker) markerObj.labelMarker.setMap(null);
+      if (markerObj.line) markerObj.line.setMap(null);
     });
     this.mapMarkers = [];
 
