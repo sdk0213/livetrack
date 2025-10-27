@@ -7,7 +7,9 @@ const CONFIG = {
   KAKAO_JS_KEY: '1c986b10c0401ffb6c00df1ccddef006', // 카카오 개발자 콘솔에서 발급받은 JavaScript 키
   API_BASE: '/api',
   IMAGE_MAX_SIZE: 5 * 1024 * 1024, // 5MB
-  IMAGE_QUALITY: 0.6, // 이미지 압축률 (0.6 = 60% 품질, CDN 캐싱 효과 극대화)
+  IMAGE_QUALITY: 0.5, // 이미지 압축률 (0.5 = 50% 품질, 비용 최적화)
+  IMAGE_MAX_WIDTH: 600, // 최대 가로 크기 (작게 조정)
+  IMAGE_MAX_HEIGHT: 600, // 최대 세로 크기 (작게 조정)
   CACHE_DURATION: 3 * 60 * 60 * 1000 // 3시간
 };
 
@@ -25,9 +27,9 @@ class Utils {
           let width = img.width;
           let height = img.height;
           
-          // 최대 크기 제한
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
+          // 최대 크기 제한 (비용 절감을 위해 작게)
+          const MAX_WIDTH = CONFIG.IMAGE_MAX_WIDTH;
+          const MAX_HEIGHT = CONFIG.IMAGE_MAX_HEIGHT;
           
           if (width > height) {
             if (width > MAX_WIDTH) {
