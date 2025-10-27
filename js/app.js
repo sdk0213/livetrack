@@ -638,34 +638,21 @@ class UIManager {
         // 관리자 권한 확인 (카카오 ID: 4510043030만)
         const user = this.app.authManager.getUser();
         const dbUser = await APIService.getUser(user.id);
-        const adminIds = ['4510043030'];
         
         console.log('==================== 그룹 생성 권한 체크 ====================');
         console.log('현재 사용자 (authManager):', user);
         console.log('DB 사용자:', dbUser);
-        console.log('DB kakao_id:', dbUser.kakao_id);
-        console.log('kakao_id 타입:', typeof dbUser.kakao_id);
-        console.log('관리자 목록:', adminIds);
-        console.log('권한 체크 결과:', adminIds.includes(dbUser.kakao_id));
         console.log('========================================================');
         
-        if (adminIds.includes(dbUser.kakao_id)) {
-          // 관리자는 그룹 생성 가능
-          console.log('✅ 관리자 권한 확인 - 그룹 생성 허용');
-          
-          // 그룹 개수 확인 (300개 제한)
-          const groupCount = await APIService.getGroupCount();
-          if (groupCount >= 300) {
-            Utils.showToast('그룹 생성 한도(300개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
-            return;
-          }
-          
-          this.showModal('createGroupModal');
-        } else {
-          // 일반 사용자는 그룹 생성 불가
-          console.log('❌ 일반 사용자 - 그룹 생성 제한');
-          Utils.showToast('그룹 생성은 관리자만 가능합니다.', 'error');
+        // 그룹 개수 확인 (300개 제한)
+        const groupCount = await APIService.getGroupCount();
+        if (groupCount >= 300) {
+          Utils.showToast('그룹 생성 한도(300개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
+          return;
         }
+        
+        // 모든 사용자 그룹 생성 가능
+        this.showModal('createGroupModal');
       } catch (error) {
         console.error('권한 체크 오류:', error);
         Utils.showToast('권한 확인 중 오류가 발생했습니다.', 'error');
