@@ -7,7 +7,7 @@ const CONFIG = {
   KAKAO_JS_KEY: '1c986b10c0401ffb6c00df1ccddef006', // 카카오 개발자 콘솔에서 발급받은 JavaScript 키
   API_BASE: '/api',
   IMAGE_MAX_SIZE: 5 * 1024 * 1024, // 5MB
-  IMAGE_QUALITY: 0.8,
+  IMAGE_QUALITY: 0.6, // 이미지 압축률 (0.6 = 60% 품질, CDN 캐싱 효과 극대화)
   CACHE_DURATION: 3 * 60 * 60 * 1000 // 3시간
 };
 
@@ -795,8 +795,8 @@ class UIManager {
         
         card.innerHTML = `
           <div style="display:flex;gap:8px;align-items:center;">
-            <img src="${profileImage}" alt="${runner.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" />
-            <img src="${readyShotImage}" alt="${runner.name} 레디샷" class="runner-photo" data-full-image="${readyShotImage}" style="cursor:pointer;" />
+            <img src="${profileImage}" alt="${runner.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" loading="lazy" />
+            <img src="${readyShotImage}" alt="${runner.name} 레디샷" class="runner-photo" data-full-image="${readyShotImage}" style="cursor:pointer;" loading="lazy" />
           </div>
           <div class="runner-info">
             <div class="runner-name">${runner.name}</div>
@@ -834,7 +834,7 @@ class UIManager {
         
         card.innerHTML = `
           <div style="display:flex;gap:8px;align-items:center;">
-            <img src="${profileImage}" alt="${supporter.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" />
+            <img src="${profileImage}" alt="${supporter.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" loading="lazy" />
           </div>
           <div class="runner-info">
             <div class="runner-name">${supporter.name}</div>
@@ -1771,13 +1771,13 @@ class RunCheerApp {
             ${profilePhoto ? `
               <div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">프로필 사진</div>
-                <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" onerror="this.style.display='none';" />
+                <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
               </div>
             ` : ''}
             ${readyPhoto && readyPhoto !== '/RunCheer.png' ? `
               <div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;font-weight:600">레디샷</div>
-                <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" onerror="this.style.display='none';" />
+                <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
               </div>
             ` : ''}
           </div>
