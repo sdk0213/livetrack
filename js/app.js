@@ -653,10 +653,10 @@ class UIManager {
           // 관리자는 그룹 생성 가능
           console.log('✅ 관리자 권한 확인 - 그룹 생성 허용');
           
-          // 그룹 개수 확인 (200개 제한)
+          // 그룹 개수 확인 (300개 제한)
           const groupCount = await APIService.getGroupCount();
-          if (groupCount >= 200) {
-            Utils.showToast('그룹 생성 한도(200개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
+          if (groupCount >= 300) {
+            Utils.showToast('그룹 생성 한도(300개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
             return;
           }
           
