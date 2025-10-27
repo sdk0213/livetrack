@@ -1812,7 +1812,7 @@ class RunCheerApp {
   // 모든 마커를 겹침 감지하여 재배치
   updateAllMarkersWithOffset() {
     const OVERLAP_THRESHOLD = 0.05; // 50m 이내를 겹침으로 판단 (km 단위)
-    const LABEL_DISTANCE = 80; // 레이블까지의 거리 (픽셀)
+    const LABEL_DISTANCE = 40; // 레이블까지의 거리 (픽셀) - 80에서 40으로 줄임
     
     // 위치별로 그룹화
     const positionGroups = [];
@@ -1889,8 +1889,8 @@ class RunCheerApp {
           map: this.currentMap,
           path: [centerPos, labelPos],
           strokeColor: '#4285f4',
-          strokeOpacity: 0.6,
-          strokeWeight: 1,
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
           zIndex: 999
         });
         
