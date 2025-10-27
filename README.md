@@ -1,6 +1,6 @@
 # 🏃 RunCheer - 실시간 마라톤 응원 플랫폼
 
-> **Claude Sonnet 4로 바이브코딩된 프로젝트**  
+> **Claude Sonnet 4.5로 바이브코딩된 프로젝트**  
 > 러닝크루와 응원자들을 위한 실시간 마라톤 트래킹 및 응원 서비스
 
 ![RunCheer Logo](RunCheer.png)
@@ -332,6 +332,6 @@ vercel dev
 
 ---
 
-**Made with ❤️ by Claude Sonnet 4 & 성대경**
+**Made with ❤️ by Claude Sonnet 4.5 & 성대경**
 
 *이 프로젝트는 러닝크루와 마라톤 응원자들을 위한 사랑과 열정으로 만들어졌습니다.*
