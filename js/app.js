@@ -808,6 +808,10 @@ class UIManager {
           readyShotImage = `${runner.photo_url}${separator}v=${eventId}`;
         }
         
+        // 현재 로그인한 사용자인지 확인
+        const currentUser = this.app.authManager.getUser();
+        const isMyRunner = currentUser && runner.kakao_id === currentUser.id;
+        
         card.innerHTML = `
           <div style="display:flex;gap:8px;align-items:center;">
             <img src="${profileImage}" alt="${runner.name} 프로필" class="runner-photo" data-full-image="${profileImage}" style="cursor:pointer;" loading="lazy" />
@@ -817,7 +821,7 @@ class UIManager {
             <div class="runner-name">${runner.name}</div>
             <div class="runner-bib">배번: ${runner.bib}${runner.team_name ? ` (${runner.team_name})` : ''}</div>
             <div style="font-size:10px;color:#94a3b8;margin-top:2px;">프로필 / 레디샷</div>
-            <button class="btn-small secondary" style="margin-top:8px;padding:4px 8px;font-size:11px;" data-bib="${runner.bib}">📸 레디샷 변경</button>
+            ${isMyRunner ? `<button class="btn-small secondary" style="margin-top:8px;padding:4px 8px;font-size:11px;" data-bib="${runner.bib}">📸 레디샷 변경</button>` : ''}
           </div>
         `;
         
@@ -829,12 +833,14 @@ class UIManager {
           });
         });
         
-        // 레디샷 변경 버튼 클릭 이벤트
-        const changePhotoBtn = card.querySelector('button[data-bib]');
-        changePhotoBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.app.handleChangeReadyShot(runner.bib);
-        });
+        // 레디샷 변경 버튼 클릭 이벤트 (본인인 경우만 버튼이 있음)
+        if (isMyRunner) {
+          const changePhotoBtn = card.querySelector('button[data-bib]');
+          changePhotoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.app.handleChangeReadyShot(runner.bib);
+          });
+        }
         
         this.runnersList.appendChild(card);
       });
