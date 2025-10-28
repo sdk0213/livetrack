@@ -800,9 +800,16 @@ class UIManager {
       const leaderInfo = group.creator_name ? ` • 그룹장: ${group.creator_name}` : '';
       let eventInfoHTML = eventInfo + leaderInfo;
       
-      // 대회 당일이면 아래에 빨간색 문구 추가
-      if (this.isEventToday(group.event_id)) {
-        eventInfoHTML += '<br><span style="color:#ef4444;font-weight:700;font-size:13px;margin-top:4px;display:inline-block;">🔴 대회 당일입니다</span>';
+      // D-Day 표시
+      const dday = this.getDDay(group.event_id);
+      if (dday !== null) {
+        if (dday === 0) {
+          eventInfoHTML += '<br><span style="color:#ef4444;font-weight:700;font-size:13px;margin-top:4px;display:inline-block;">🔴 대회 당일입니다</span>';
+        } else if (dday > 0) {
+          eventInfoHTML += `<br><span style="color:#3b82f6;font-weight:700;font-size:13px;margin-top:4px;display:inline-block;">📅 D-${dday}</span>`;
+        } else if (dday < 0) {
+          eventInfoHTML += `<br><span style="color:#94a3b8;font-weight:700;font-size:13px;margin-top:4px;display:inline-block;">🏁 대회 종료 (D+${Math.abs(dday)})</span>`;
+        }
       }
       
       document.getElementById('groupEvent').innerHTML = eventInfoHTML;
@@ -1092,6 +1099,23 @@ class UIManager {
                      String(today.getDate()).padStart(2, '0');
     
     return eventDate === todayStr;
+  }
+
+  getDDay(eventId) {
+    const eventDate = this.getEventDate(eventId);
+    if (!eventDate) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const [year, month, day] = eventDate.split('-').map(Number);
+    const event = new Date(year, month - 1, day);
+    event.setHours(0, 0, 0, 0);
+    
+    const diffTime = event - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
   }
 }
 
