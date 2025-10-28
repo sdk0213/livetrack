@@ -181,15 +181,29 @@ export default async function handler(req, res) {
     const isFinished = distanceKm >= 42.195;
     const netTime = isFinished ? formatTime(cumulativeSeconds) : null;
     
-    // 페이스 계산 - 완주한 경우에만 페이스 표시
+    // 페이스 계산 - 마지막 구간 페이스 표시
     let pace = null;
-    if (isFinished && cumulativeSeconds > 0 && records.length > 1) {
-      // 완주 시의 평균 페이스 계산
-      const totalDistance = 42.195;
-      const avgPaceSeconds = cumulativeSeconds / totalDistance;
-      const paceMin = Math.floor(avgPaceSeconds / 60);
-      const paceSec = Math.floor(avgPaceSeconds % 60);
-      pace = `${paceMin}'${String(paceSec).padStart(2, '0')}"`;
+    if (records.length > 1) {
+      // 마지막 구간의 페이스 계산
+      const lastRecord = records[records.length - 1];
+      const lastSectionTime = lastRecord.time_section;
+      
+      if (lastSectionTime) {
+        // time_section 형식: "0:28:23" -> 초로 변환
+        const [h, m, s] = lastSectionTime.split(':').map(Number);
+        const sectionSeconds = h * 3600 + m * 60 + s;
+        
+        // 마지막 구간의 거리
+        const lastCheckpoint = checkpoints[records.length - 1];
+        const prevCheckpoint = checkpoints[records.length - 2];
+        const sectionDistance = lastCheckpoint.distance - prevCheckpoint.distance;
+        
+        // 페이스 = 구간시간 / 구간거리
+        const paceSeconds = sectionSeconds / sectionDistance;
+        const paceMin = Math.floor(paceSeconds / 60);
+        const paceSec = Math.floor(paceSeconds % 60);
+        pace = `${paceMin}'${String(paceSec).padStart(2, '0')}"`;
+      }
     }
     
     // 테스트 데이터

@@ -2186,36 +2186,32 @@ class RunCheerApp {
         let readyPhoto = cachedRunner ? cachedRunner.photo_url : null;
         const profilePhoto = cachedRunner ? cachedRunner.profile_image : null;
         
-        marker.infoWindow = new naver.maps.InfoWindow({ content: '' });
+        if (readyPhoto && readyPhoto !== '/RunCheer.png') {
+          const separator = readyPhoto.includes('?') ? '&' : '?';
+          readyPhoto = `${readyPhoto}${separator}v=${this.trackingEventId}`;
+        }
+        
+        const createInfoContent = () => `
+          <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px;max-width:200px;cursor:pointer">
+            <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px;text-align:center">${playerData.name}(${bib})</div>
+            <div style="font-size:12px;color:#666;margin-bottom:4px;">마지막위치: ${estimated.name}</div>
+            <div style="font-size:12px;color:#666;margin-bottom:8px;">페이스: ${playerData.pace_nettime ? playerData.pace_nettime.split('.')[0] : '-'}</div>
+            <div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">
+              ${profilePhoto ? `
+                <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
+              ` : ''}
+              ${readyPhoto && readyPhoto !== '/RunCheer.png' ? `
+                <img src="${readyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
+              ` : ''}
+            </div>
+          </div>
+        `;
+        
+        marker.infoWindow = new naver.maps.InfoWindow({ content: createInfoContent() });
         
         // 레이블 클릭 이벤트
         naver.maps.Event.addListener(marker.labelMarker, 'click', () => {
-          // 클릭 시점의 최신 데이터로 InfoWindow 내용 업데이트
-          const currentPlayerData = marker.playerData;
-          const currentEstimated = marker.estimated;
-          const currentReadyPhoto = cachedRunner && cachedRunner.photo_url && cachedRunner.photo_url !== '/RunCheer.png' 
-            ? `${cachedRunner.photo_url}${cachedRunner.photo_url.includes('?') ? '&' : '?'}v=${this.trackingEventId}`
-            : null;
-          
-          const updatedContent = `
-            <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px;max-width:200px;cursor:pointer">
-              <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px;text-align:center">${currentPlayerData.name}(${bib})</div>
-              <div style="font-size:12px;color:#666;margin-bottom:4px;">마지막위치: ${currentEstimated.name}</div>
-              <div style="font-size:12px;color:#666;margin-bottom:8px;">페이스: ${currentPlayerData.pace_nettime || '-'}</div>
-              <div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">
-                ${profilePhoto ? `
-                  <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
-                ` : ''}
-                ${currentReadyPhoto ? `
-                  <img src="${currentReadyPhoto}" alt="레디샷" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
-                ` : ''}
-              </div>
-            </div>
-          `;
-          
-          marker.infoWindow.setContent(updatedContent);
-          
-          console.log(`마커 클릭 - 배번: ${bib}, 페이스: ${currentPlayerData.pace_nettime}, 프로필: ${profilePhoto}, 레디샷: ${currentReadyPhoto}`);
+          console.log(`마커 클릭 - 배번: ${bib}, 프로필: ${profilePhoto}, 레디샷: ${readyPhoto}`);
           
           if (marker.infoWindow.getMap()) {
             marker.infoWindow.close();
