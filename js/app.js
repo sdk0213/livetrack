@@ -1991,14 +1991,15 @@ class RunCheerApp {
         );
         
         // 3. 선 그리기 (화살표 포함)
+        // 선의 방향을 반대로 하여 화살표가 중심을 향하도록
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
-          path: [centerPos, labelPos],
+          path: [labelPos, centerPos], // 순서 반대로
           strokeColor: '#4285f4',
           strokeOpacity: 0.8,
           strokeWeight: 2,
-          startIcon: naver.maps.PointingIcon.OPEN_ARROW, // 시작점(중심점)에 화살표
-          startIconSize: 15,
+          endIcon: naver.maps.PointingIcon.OPEN_ARROW, // 끝(중심점)에 화살표
+          endIconSize: 15,
           zIndex: 999
         });
         
