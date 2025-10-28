@@ -2144,11 +2144,15 @@ class RunCheerApp {
           centerPos.lng() + offsetLng
         );
         
+        // 완주 여부 확인
+        const isFinished = marker.estimated && marker.estimated.status === '완주';
+        const lineColor = isFinished ? '#ef4444' : '#4285f4'; // 완주: 빨강, 진행중: 파랑
+        
         // 3. 선 그리기
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
           path: [centerPos, labelPos],
-          strokeColor: '#4285f4',
+          strokeColor: lineColor,
           strokeOpacity: 0.8,
           strokeWeight: 2,
           zIndex: 999
@@ -2160,12 +2164,16 @@ class RunCheerApp {
         const playerData = marker.playerData;
         const bib = marker.bib;
         
+        // 레이블 배경색
+        const labelBgColor = isFinished ? 'rgba(239,68,68,0.95)' : 'rgba(59,130,246,0.95)';
+        const labelHoverColor = isFinished ? 'rgba(220,38,38,1)' : 'rgba(37,99,235,1)';
+        
         // 레이블의 중앙이 labelPos에 오도록 transform 사용
         marker.labelMarker = new naver.maps.Marker({
           position: labelPos,
           map: this.currentMap,
           icon: {
-            content: `<div class="player-label" style="white-space:nowrap;transform:translate(-50%, -50%)">${playerData.name}</div>`,
+            content: `<div class="player-label" style="white-space:nowrap;transform:translate(-50%, -50%);background:${labelBgColor}">${playerData.name}</div>`,
             anchor: new naver.maps.Point(0, 0)
           },
           zIndex: 1001
