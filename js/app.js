@@ -1265,10 +1265,11 @@ class RunCheerApp {
   async handleRegisterRunner() {
     const role = document.querySelector('input[name="memberRole"]:checked').value;
     const bib = document.getElementById('runnerBib').value.trim();
-    const photoInput = document.getElementById('runnerPhoto');
+    const imagePreview = document.getElementById('imagePreview');
     
-    // 주자인 경우 배번과 사진 필수
-    if (role === 'runner' && (!bib || !photoInput.files.length)) {
+    // 주자인 경우 배번과 사진 필수 - 전역 변수에 저장된 파일 또는 미리보기 확인
+    const hasImage = selectedPhotoFile !== null || !imagePreview.classList.contains('hidden');
+    if (role === 'runner' && (!bib || !hasImage)) {
       Utils.showToast('배번과 사진을 모두 입력해주세요.', 'error');
       return;
     }
@@ -1304,7 +1305,7 @@ class RunCheerApp {
         
         // 주자인 경우에만 이미지 업로드
         if (role === 'runner') {
-          const file = photoInput.files[0];
+          const file = selectedPhotoFile; // 전역 변수에서 가져오기
           const compressedBlob = await Utils.compressImage(file);
           const imageResult = await APIService.uploadImage(compressedBlob, code, user.id);
           photoUrl = imageResult.url;
@@ -1332,7 +1333,7 @@ class RunCheerApp {
         
         if (role === 'runner') {
           // 주자인 경우 이미지 업로드
-          const file = photoInput.files[0];
+          const file = selectedPhotoFile; // 전역 변수에서 가져오기
           const compressedBlob = await Utils.compressImage(file);
           const imageResult = await APIService.uploadImage(compressedBlob, groupCode, user.id);
           photoUrl = imageResult.url;
@@ -1359,6 +1360,19 @@ class RunCheerApp {
       document.getElementById('runnerBib').value = '';
       document.getElementById('runnerPhoto').value = '';
       document.getElementById('runnerRole').checked = true;
+      
+      // 이미지 미리보기 초기화
+      const preview = document.getElementById('imagePreview');
+      const placeholder = document.getElementById('uploadPlaceholder');
+      const uploadArea = document.getElementById('imageUploadArea');
+      preview.src = '';
+      preview.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+      uploadArea.classList.remove('has-image');
+      
+      // 전역 파일 변수 초기화
+      selectedPhotoFile = null;
+      
       handleRoleChange();
       
       // UI 업데이트
@@ -2596,15 +2610,24 @@ function closeModal(modalId) {
   }
 }
 
+// 전역 변수로 선택된 파일 저장
+let selectedPhotoFile = null;
+
 function handleImageSelect(event) {
   const file = event.target.files[0];
-  if (!file) return;
+  if (!file) {
+    // 파일 선택 취소 시 - 기존 미리보기 및 파일 유지
+    return;
+  }
   
   if (file.size > CONFIG.IMAGE_MAX_SIZE) {
     alert('이미지 크기는 5MB를 초과할 수 없습니다.');
     event.target.value = '';
     return;
   }
+  
+  // 파일을 전역 변수에 저장
+  selectedPhotoFile = file;
   
   const reader = new FileReader();
   reader.onload = (e) => {
