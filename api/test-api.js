@@ -197,11 +197,13 @@ export default async function handler(req, res) {
         const prevCheckpoint = checkpoints[records.length - 2];
         const sectionDistance = lastCheckpoint.distance - prevCheckpoint.distance;
         
-        // 페이스 = 구간시간 / 구간거리
+        // 페이스 = 구간시간 / 구간거리 (초 단위로 변환)
         const paceSeconds = sectionSeconds / sectionDistance;
         const paceMin = Math.floor(paceSeconds / 60);
         const paceSec = Math.floor(paceSeconds % 60);
-        pace = `${paceMin}'${String(paceSec).padStart(2, '0')}"`;
+        
+        // H:MM:SS 형식으로 저장 (estimateNow에서 사용)
+        pace = `0:${String(paceMin).padStart(2, '0')}:${String(paceSec).padStart(2, '0')}`;
       }
     }
     
