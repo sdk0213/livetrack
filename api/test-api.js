@@ -20,9 +20,9 @@ export default async function handler(req, res) {
     const bib = bibMatch ? bibMatch[1] : '1080';
 
     // 현재 시간 (한국 시간으로 변환)
-    const now = new Date();
-    const eventDate = '2025-10-25'; // 춘천 마라톤 날짜
-    const startTime = new Date(eventDate + 'T09:30:00+09:00'); // 한국 시간 09:30
+    const now = new Date('2025-10-28T13:30:00+09:00'); // 테스트용 고정 시간
+    const eventDate = '2025-11-02'; // JTBC 마라톤 날짜
+    const startTime = new Date(eventDate + 'T07:30:00+09:00'); // 한국 시간 07:30
     
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
@@ -61,22 +61,21 @@ export default async function handler(req, res) {
     const runner = runners[bib] || runners['1080'];
     
     // 주행 거리 계산
-    const distanceKm = Math.min(42.20, elapsedSeconds / runner.pace);
+    const distanceKm = Math.min(42.195, elapsedSeconds / runner.pace);
     
-    // 체크포인트 (춘천 마라톤 기준)
+    // 체크포인트 (JTBC 마라톤 기준)
     const checkpoints = [
-      { code: 'P0', name: '출발', distance: 0.00, lat: 37.874123, lng: 127.734567 },
-      { code: 'P1', name: '반환점', distance: 4.00, lat: 37.880456, lng: 127.738901 },
-      { code: 'P2', name: '5K', distance: 5.00, lat: 37.879020, lng: 127.723578 },
-      { code: 'P3', name: '10K', distance: 10.00, lat: 37.883234, lng: 127.729876 },
-      { code: 'P4', name: '15K', distance: 15.00, lat: 37.878456, lng: 127.715432 },
-      { code: 'P5', name: '20K', distance: 20.00, lat: 37.881234, lng: 127.721098 },
-      { code: 'P6', name: 'Half', distance: 21.10, lat: 37.876543, lng: 127.718765 },
-      { code: 'P7', name: '25K', distance: 25.00, lat: 37.884321, lng: 127.725432 },
-      { code: 'P8', name: '30K', distance: 30.00, lat: 37.877654, lng: 127.712345 },
-      { code: 'P9', name: '35K', distance: 35.00, lat: 37.882345, lng: 127.727654 },
-      { code: 'P10', name: '40K', distance: 40.00, lat: 37.875432, lng: 127.719876 },
-      { code: 'P11', name: '도착', distance: 42.20, lat: 37.874123, lng: 127.734567 }
+      { code: 'P0', name: '출발', distance: 0.00, lat: 37.523456, lng: 127.045678 },
+      { code: 'P1', name: '5K', distance: 5.00, lat: 37.528901, lng: 127.051234 },
+      { code: 'P2', name: '10K', distance: 10.00, lat: 37.534567, lng: 127.057890 },
+      { code: 'P3', name: '15K', distance: 15.00, lat: 37.540123, lng: 127.063456 },
+      { code: 'P4', name: '20K', distance: 20.00, lat: 37.546789, lng: 127.069012 },
+      { code: 'P5', name: 'Half', distance: 21.10, lat: 37.549234, lng: 127.071567 },
+      { code: 'P6', name: '25K', distance: 25.00, lat: 37.553890, lng: 127.075123 },
+      { code: 'P7', name: '30K', distance: 30.00, lat: 37.559456, lng: 127.080789 },
+      { code: 'P8', name: '35K', distance: 35.00, lat: 37.565012, lng: 127.086345 },
+      { code: 'P9', name: '40K', distance: 40.00, lat: 37.570678, lng: 127.091901 },
+      { code: 'P10', name: '도착', distance: 42.195, lat: 37.523456, lng: 127.045678 }
     ];
     
     const records = [];
@@ -90,12 +89,12 @@ export default async function handler(req, res) {
     
     // 출발점(P0)은 무조건 추가
     records.push({
-      event_id: 132,
+      event_id: 133,
       course_cd: 'Full',
       point_cd: 'P0',
       lap: 1,
       player_num: bib,
-      created_at: new Date(eventDate + 'T09:30:00+09:00').toISOString(),
+      created_at: new Date(eventDate + 'T07:30:00+09:00').toISOString(),
       updated_at: null,
       time_section: null,
       time_sum: "0:00:00",
@@ -107,18 +106,18 @@ export default async function handler(req, res) {
         second: '2-digit'
       }).replace(/:/g, ':') + '.00',
       point: {
-        event_id: 132,
+        event_id: 133,
         course_cd: 'Full',
         point_cd: 'P0',
         lap: 1,
-          created_at: new Date(eventDate + 'T09:30:00+09:00').toISOString(),
+          created_at: new Date(eventDate + 'T07:30:00+09:00').toISOString(),
         updated_at: null,
         name: '출발',
         distance: "0.00",
         checkpoint: true,
         before_record: true,
-        lat: 37.874123,
-        lng: 127.734567
+        lat: 37.523456,
+        lng: 127.045678
       }
     });
     
@@ -151,7 +150,7 @@ export default async function handler(req, res) {
       }).replace(/:/g, ':') + '.' + String(Math.floor(seededRandom(seed + 1000) * 100)).padStart(2, '0');
       
       records.push({
-        event_id: 132,
+        event_id: 133,
         course_cd: 'Full',
         point_cd: cp.code,
         lap: 1,
@@ -162,7 +161,7 @@ export default async function handler(req, res) {
         time_sum: formatTime(cumulativeSeconds),
         time_point: timePoint,
         point: {
-          event_id: 132,
+          event_id: 133,
           course_cd: 'Full',
           point_cd: cp.code,
           lap: 1,
@@ -179,14 +178,14 @@ export default async function handler(req, res) {
     }
     
     // 완주 여부 확인
-    const isFinished = distanceKm >= 42.20;
+    const isFinished = distanceKm >= 42.195;
     const netTime = isFinished ? formatTime(cumulativeSeconds) : null;
     
     // 페이스 계산 - 완주한 경우에만 페이스 표시
     let pace = null;
     if (isFinished && cumulativeSeconds > 0 && records.length > 1) {
       // 완주 시의 평균 페이스 계산
-      const totalDistance = 42.20;
+      const totalDistance = 42.195;
       const avgPaceSeconds = cumulativeSeconds / totalDistance;
       const paceMin = Math.floor(avgPaceSeconds / 60);
       const paceSec = Math.floor(avgPaceSeconds % 60);
@@ -200,18 +199,18 @@ export default async function handler(req, res) {
       name: runner.name,
       team_name: runner.team_name,
       event: {
-        id: 132,
-        name: '2025 춘천마라톤',
+        id: 133,
+        name: '2025 JTBC 서울마라톤',
         date: eventDate
       },
       course: {
-        distance: '42.20'
+        distance: '42.195'
       },
       records: records,
       result_nettime: netTime,
       pace_nettime: pace,
       _debug: {
-        deployedAt: '2025-10-22T15:55:00-KST',
+        deployedAt: '2025-10-28T16:00:00-KST',
         nowUTC: now.toISOString(),
         startTimeUTC: startTime.toISOString(),
         elapsedSeconds: elapsedSeconds,
