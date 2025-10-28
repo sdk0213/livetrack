@@ -540,7 +540,9 @@
   <!-- 개발자 정보 -->
   <div class="dev-info" onclick="window.open('https://www.instagram.com/bigkyoung_/', '_blank')">
     <div class="dev">개발자 성대경</div>
-    <div class="dev">(문의하기)</div>
+  </div>
+  <div class="dev-info" onclick="showModal('faqModal')">
+    <div class="dev">Q&A</div>
   </div>
 
   <!-- 경고 팝업 -->
@@ -846,7 +848,7 @@
             <p style="font-weight:700;margin-bottom:6px;">Q. 그룹 참가 버튼이 활성화되지 않아요</p>
             <p style="font-size:12px;color:var(--muted);">A. 다음 조건을 모두 충족해야 합니다:</p>
             <ul style="font-size:12px;color:var(--muted);margin-top:4px;padding-left:20px;">
-              <li>참가코드 6자리 입력</li>
+              <li>참가코드 4자리 입력</li>
               <li>역할 선택 (주자 또는 응원)</li>
               <li><strong>주자인 경우:</strong> 배번 입력 + 레디샷 사진 첨부 필수</li>
             </ul>
@@ -854,7 +856,7 @@
 
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
             <p style="font-weight:700;margin-bottom:6px;">Q. 참가코드는 어디서 얻나요?</p>
-            <p style="font-size:12px;color:var(--muted);">A. 그룹장이 생성한 6자리 참가코드를 받아 입력하세요. 그룹장은 프로필 탭에서 코드를 확인하고 공유 버튼으로 전달할 수 있습니다.</p>
+            <p style="font-size:12px;color:var(--muted);">A. 그룹장이 생성한 4자리 참가코드를 받아 입력하세요. 그룹장은 프로필 탭에서 코드를 확인하고 공유 버튼으로 전달할 수 있습니다.</p>
           </div>
 
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
@@ -885,11 +887,6 @@
           <h3 style="color:var(--acc);margin-bottom:8px;">🎯 추적 시작</h3>
           
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
-            <p style="font-weight:700;margin-bottom:6px;">Q. 추적 시작 버튼이 비활성화되어 있어요</p>
-            <p style="font-size:12px;color:var(--muted);">A. 추적 시작은 <strong style="color:var(--err);">그룹 코드가 L5E9인 그룹만 가능</strong>합니다. (현재 테스트 기간)</p>
-          </div>
-
-          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
             <p style="font-weight:700;margin-bottom:6px;">Q. 실시간 추적은 어떻게 되나요?</p>
             <p style="font-size:12px;color:var(--muted);">A. 대회 공식 데이터를 3분(180초)마다 자동으로 갱신합니다. 마커는 15초마다 예상 위치로 부드럽게 이동합니다. GPS를 사용하지 않으므로 주자의 위치 정보를 수집하지 않습니다.</p>
           </div>
@@ -900,7 +897,7 @@
           
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
             <p style="font-weight:700;margin-bottom:6px;">Q. 그룹을 만들고 싶어요</p>
-            <p style="font-size:12px;color:var(--muted);">A. 참가 탭 하단의 "새 그룹 만들기" 버튼을 클릭하세요. 대회를 선택하면 6자리 참가코드가 생성됩니다.</p>
+            <p style="font-size:12px;color:var(--muted);">A. 참가 탭 하단의 "새 그룹 만들기" 버튼을 클릭하세요. 대회를 선택하면 4자리 참가코드가 생성됩니다.</p>
           </div>
 
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
@@ -933,7 +930,7 @@
           
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
             <p style="font-weight:700;margin-bottom:6px;">Q. 앱이 안 돌아가요 / 버그가 있어요</p>
-            <p style="font-size:12px;color:var(--muted);">A. GitHub Issues에 문의해주세요: <a href="https://github.com/sdk0213/livetrack/issues" target="_blank" style="color:var(--acc);">https://github.com/sdk0213/livetrack/issues</a></p>
+            <p style="font-size:12px;color:var(--muted);">A. 인스타그램 DM으로 문의해주세요: <a href="https://www.instagram.com/bigkyoung_/" target="_blank" style="color:var(--acc);">@bigkyoung_</a></p>
           </div>
 
           <div style="background:rgba(245,158,11,0.1);padding:12px;border-radius:8px;border:1px solid rgba(245,158,11,0.3);">
