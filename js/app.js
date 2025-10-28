@@ -2370,10 +2370,18 @@ class RunCheerApp {
     let estimatedDist = d;
     if (elapsedSec > 0 && !playerData.result_nettime) {
       let paceSec = 390; // 기본 6:30 페이스
-      if (playerData.pace_nettime) {
-        const paceStr = playerData.pace_nettime.split('.')[0];
-        paceSec = this.timeToSeconds(paceStr);
+      
+      // 스플릿 마지막 구간 페이스 계산 (마커와 동일)
+      if (records.length > 1) {
+        const prevRec = records[records.length - 2];
+        const dist = lastRec.point.distance - prevRec.point.distance;
+        const prevSec = this.timeToSeconds(prevRec.time_point);
+        const sec = this.timeToSeconds(lastRec.time_point) - prevSec;
+        if (dist > 0 && sec > 0) {
+          paceSec = sec / dist; // 마지막 구간 페이스
+        }
       }
+      
       if (paceSec > 0) {
         const kmPerSec = 1 / paceSec;
         const movedKm = kmPerSec * elapsedSec;

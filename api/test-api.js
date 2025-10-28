@@ -181,26 +181,22 @@ export default async function handler(req, res) {
     const isFinished = distanceKm >= 42.195;
     const netTime = isFinished ? formatTime(cumulativeSeconds) : null;
     
-    // 페이스 계산 - 마지막으로 통과한 포인트의 구간 페이스
+    // 평균 페이스 계산 (예상위치 계산용)
     let pace = null;
     if (records.length > 1) {
       const lastRecord = records[records.length - 1];
-      const lastSectionTime = lastRecord.time_section;
+      const lastDistance = parseFloat(lastRecord.point.distance);
+      const lastTimeSum = lastRecord.time_sum;
       
-      if (lastSectionTime) {
-        // time_section 형식: "0:28:23" -> 초로 변환
-        const [h, m, s] = lastSectionTime.split(':').map(Number);
-        const sectionSeconds = h * 3600 + m * 60 + s;
+      if (lastTimeSum && lastDistance > 0) {
+        // time_sum을 초로 변환
+        const [h, m, s] = lastTimeSum.split(':').map(Number);
+        const totalSeconds = h * 3600 + m * 60 + s;
         
-        // 마지막 구간의 거리
-        const lastCheckpoint = checkpoints[records.length - 1];
-        const prevCheckpoint = checkpoints[records.length - 2];
-        const sectionDistance = lastCheckpoint.distance - prevCheckpoint.distance;
-        
-        // 페이스 = 구간시간 / 구간거리 (초 단위로 변환)
-        const paceSeconds = sectionSeconds / sectionDistance;
-        const paceMin = Math.floor(paceSeconds / 60);
-        const paceSec = Math.floor(paceSeconds % 60);
+        // 평균 페이스 = 총 시간 / 총 거리
+        const avgPaceSeconds = totalSeconds / lastDistance;
+        const paceMin = Math.floor(avgPaceSeconds / 60);
+        const paceSec = Math.floor(avgPaceSeconds % 60);
         
         // H:MM:SS 형식으로 저장 (estimateNow에서 사용)
         pace = `0:${String(paceMin).padStart(2, '0')}:${String(paceSec).padStart(2, '0')}`;
