@@ -1991,7 +1991,7 @@ class RunCheerApp {
           centerPos.lng() + offsetLng
         );
         
-        // 3. 선 그리기 (화살표 포함)
+        // 3. 선 그리기
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
           path: [centerPos, labelPos],
@@ -2001,18 +2001,13 @@ class RunCheerApp {
           zIndex: 999
         });
         
-        // 화살표 마커 추가 (레이블 쪽 끝에)
-        const arrowAngle = Math.atan2(
-          labelPos.lat() - centerPos.lat(),
-          labelPos.lng() - centerPos.lng()
-        ) * 180 / Math.PI;
-        
+        // 레이블 쪽에 작은 원점 추가 (화살표 대신)
         marker.arrowMarker = new naver.maps.Marker({
           position: labelPos,
           map: this.currentMap,
           icon: {
-            content: `<div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:12px solid #4285f4;transform:translate(-50%, -50%) rotate(${arrowAngle + 90}deg);"></div>`,
-            anchor: new naver.maps.Point(0, 0)
+            content: `<div style="width:8px;height:8px;background:#4285f4;border:2px solid #fff;border-radius:50%;"></div>`,
+            anchor: new naver.maps.Point(6, 6)
           },
           zIndex: 998
         });
