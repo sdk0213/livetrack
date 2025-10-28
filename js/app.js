@@ -810,7 +810,9 @@ class UIManager {
         
         // 현재 로그인한 사용자인지 확인
         const currentUser = this.app.authManager.getUser();
-        const isMyRunner = currentUser && runner.kakao_id === currentUser.id;
+        console.log('Runner object:', runner);
+        console.log('Current user ID:', currentUser?.id);
+        const isMyRunner = currentUser && String(runner.kakao_id) === String(currentUser.id);
         
         card.innerHTML = `
           <div style="display:flex;gap:8px;align-items:center;">
@@ -1648,6 +1650,12 @@ class RunCheerApp {
     const group = this.groupManager.currentGroup;
     if (!group) {
       console.error('그룹 정보를 불러올 수 없습니다.');
+      return;
+    }
+
+    // L5E9 그룹이 아닌 경우 대회 시작 여부 확인
+    if (group.code !== 'L5E9') {
+      alert('아직 대회가 시작되지 않았습니다.');
       return;
     }
 
