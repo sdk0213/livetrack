@@ -1935,6 +1935,13 @@ class RunCheerApp {
 
         const playerData = result.data;
         
+        // 10km 코스 주자는 추적 제외
+        if (playerData.course && playerData.course.distance === '10km') {
+          console.log(`⏭️ 10km 코스 주자 추적 제외: ${result.bib} (${playerData.name})`);
+          this.trackingBibs = this.trackingBibs.filter(b => b !== result.bib);
+          continue;
+        }
+        
         // 완주 여부 확인
         const estimated = this.estimateNow(playerData);
         if (estimated.status === '완주') {
@@ -1954,6 +1961,13 @@ class RunCheerApp {
           const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}`);
           if (response.ok) {
             const playerData = await response.json();
+            
+            // 10km 코스 주자는 추적 제외
+            if (playerData.course && playerData.course.distance === '10km') {
+              console.log(`⏭️ 10km 코스 주자 추적 제외: ${bib} (${playerData.name})`);
+              this.trackingBibs = this.trackingBibs.filter(b => b !== bib);
+              continue;
+            }
             
             const estimated = this.estimateNow(playerData);
             if (estimated.status === '완주') {
