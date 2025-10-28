@@ -2195,7 +2195,7 @@ class RunCheerApp {
           <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px;max-width:200px;cursor:pointer">
             <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px;text-align:center">${playerData.name}(${bib})</div>
             <div style="font-size:12px;color:#666;margin-bottom:4px;">마지막위치: ${estimated.name}</div>
-            <div style="font-size:12px;color:#666;margin-bottom:8px;">예상페이스: ${estimated.pace || '-'}</div>
+            <div style="font-size:12px;color:#666;margin-bottom:8px;">페이스: ${playerData.pace_nettime || '-'}</div>
             <div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">
               ${profilePhoto ? `
                 <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
