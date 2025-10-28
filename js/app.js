@@ -2006,10 +2006,10 @@ class RunCheerApp {
           position: labelPos,
           map: this.currentMap,
           icon: {
-            content: `<div style="width:8px;height:8px;background:#4285f4;border:2px solid #fff;border-radius:50%;"></div>`,
+            content: `<div style="width:8px;height:8px;background:#4285f4;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
             anchor: new naver.maps.Point(6, 6)
           },
-          zIndex: 998
+          zIndex: 1002 // 레이블보다 위에 표시
         });
         
         // 4. 레이블 마커 생성
