@@ -817,6 +817,7 @@ class UIManager {
             <div class="runner-name">${runner.name}</div>
             <div class="runner-bib">배번: ${runner.bib}${runner.team_name ? ` (${runner.team_name})` : ''}</div>
             <div style="font-size:10px;color:#94a3b8;margin-top:2px;">프로필 / 레디샷</div>
+            <button class="btn-small secondary" style="margin-top:8px;padding:4px 8px;font-size:11px;" data-bib="${runner.bib}">📸 레디샷 변경</button>
           </div>
         `;
         
@@ -826,6 +827,13 @@ class UIManager {
           img.addEventListener('click', () => {
             this.showImageViewer(img.dataset.fullImage);
           });
+        });
+        
+        // 레디샷 변경 버튼 클릭 이벤트
+        const changePhotoBtn = card.querySelector('button[data-bib]');
+        changePhotoBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.app.handleChangeReadyShot(runner.bib);
         });
         
         this.runnersList.appendChild(card);
@@ -1500,6 +1508,78 @@ class RunCheerApp {
     this.authManager.logout();
     localStorage.removeItem('user');
     this.showLoginPage();
+  }
+
+  async handleChangeReadyShot(bib) {
+    // 파일 선택 input 생성
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      // 파일 크기 체크 (5MB)
+      if (file.size > CONFIG.IMAGE_MAX_SIZE) {
+        Utils.showToast('이미지 크기는 5MB 이하여야 합니다.', 'error');
+        return;
+      }
+      
+      try {
+        // 로딩 표시
+        const statusEl = document.getElementById('status');
+        if (statusEl) {
+          statusEl.textContent = '레디샷 업로드 중...';
+        }
+        
+        // 이미지 압축
+        const compressedBlob = await Utils.compressImage(file);
+        
+        // Supabase Storage에 업로드
+        const group = this.groupManager.currentGroup;
+        if (!group) {
+          throw new Error('그룹 정보를 찾을 수 없습니다.');
+        }
+        
+        const fileName = `${group.code}_${bib}_${Date.now()}.jpg`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('ready-shots')
+          .upload(fileName, compressedBlob, {
+            contentType: 'image/jpeg',
+            upsert: false
+          });
+        
+        if (uploadError) throw uploadError;
+        
+        // Public URL 생성
+        const { data: urlData } = supabase.storage
+          .from('ready-shots')
+          .getPublicUrl(fileName);
+        
+        const photoUrl = urlData.publicUrl;
+        
+        // DB 업데이트
+        const { error: updateError } = await supabase
+          .from('group_members')
+          .update({ photo_url: photoUrl })
+          .eq('group_code', group.code)
+          .eq('bib', bib);
+        
+        if (updateError) throw updateError;
+        
+        Utils.showToast('레디샷이 변경되었습니다!', 'success');
+        
+        // 주자 목록 새로고침
+        await this.loadUserGroup();
+        
+      } catch (error) {
+        console.error('Failed to change ready shot:', error);
+        Utils.showToast('레디샷 변경에 실패했습니다.', 'error');
+      }
+    };
+    
+    input.click();
   }
 
   async handleDeleteAccount() {
