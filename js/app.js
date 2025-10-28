@@ -846,9 +846,15 @@ class UIManager {
     // 주자 목록
     if (runnerList.length > 0) {
       const runnerHeader = document.createElement('div');
-      runnerHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin-bottom:8px;padding:0 4px;';
-      runnerHeader.textContent = `🏃‍♂️ 주자 (${runnerList.length}명)`;
+      runnerHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin-bottom:8px;padding:0 4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
+      runnerHeader.innerHTML = `
+        <span>🏃‍♂️ 주자 (${runnerList.length}명)</span>
+        <span class="toggle-icon" id="runnerToggle">▼</span>
+      `;
       this.runnersList.appendChild(runnerHeader);
+      
+      const runnerContainer = document.createElement('div');
+      runnerContainer.id = 'runnerContainer';
       
       runnerList.forEach(runner => {
         const card = document.createElement('div');
@@ -901,16 +907,36 @@ class UIManager {
           });
         }
         
-        this.runnersList.appendChild(card);
+        runnerContainer.appendChild(card);
+      });
+      
+      this.runnersList.appendChild(runnerContainer);
+      
+      // 주자 목록 토글 이벤트
+      runnerHeader.addEventListener('click', () => {
+        const icon = document.getElementById('runnerToggle');
+        if (runnerContainer.style.display === 'none') {
+          runnerContainer.style.display = 'block';
+          icon.classList.remove('collapsed');
+        } else {
+          runnerContainer.style.display = 'none';
+          icon.classList.add('collapsed');
+        }
       });
     }
     
     // 응원 목록
     if (supporterList.length > 0) {
       const supporterHeader = document.createElement('div');
-      supporterHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin:16px 0 8px 0;padding:0 4px;';
-      supporterHeader.textContent = `📣 응원 (${supporterList.length}명)`;
+      supporterHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin:16px 0 8px 0;padding:0 4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
+      supporterHeader.innerHTML = `
+        <span>📣 응원 (${supporterList.length}명)</span>
+        <span class="toggle-icon" id="supporterToggle">▼</span>
+      `;
       this.runnersList.appendChild(supporterHeader);
+      
+      const supporterContainer = document.createElement('div');
+      supporterContainer.id = 'supporterContainer';
       
       supporterList.forEach(supporter => {
         const card = document.createElement('div');
@@ -936,7 +962,21 @@ class UIManager {
           this.showImageViewer(img.dataset.fullImage);
         });
         
-        this.runnersList.appendChild(card);
+        supporterContainer.appendChild(card);
+      });
+      
+      this.runnersList.appendChild(supporterContainer);
+      
+      // 응원 목록 토글 이벤트
+      supporterHeader.addEventListener('click', () => {
+        const icon = document.getElementById('supporterToggle');
+        if (supporterContainer.style.display === 'none') {
+          supporterContainer.style.display = 'block';
+          icon.classList.remove('collapsed');
+        } else {
+          supporterContainer.style.display = 'none';
+          icon.classList.add('collapsed');
+        }
       });
     }
     
