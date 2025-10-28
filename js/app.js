@@ -2276,7 +2276,6 @@ class RunCheerApp {
     const records = (playerData.records || []).sort((a, b) => a.point.distance - b.point.distance);
     const netTime = this.cleanTime(playerData.result_nettime);
     const pace = this.cleanTime(playerData.pace_nettime);
-    const netPaceStr = netTime && pace ? `${netTime} (${pace})` : netTime || pace || '';
     
     let splitsHTML = records.map((r, i) => {
       let paceStr = '';
@@ -2290,8 +2289,9 @@ class RunCheerApp {
       return `<div>${r.point.name || ''} ${r.point.distance}km ${this.cleanTime(r.time_point)}${paceStr}</div>`;
     }).join('');
     
-    if (netPaceStr) {
-      splitsHTML += `<div style="margin-top:8px;font-weight:700;color:#4285f4">최종기록: ${netPaceStr}</div>`;
+    // 완주한 경우에만 최종기록 표시
+    if (netTime && pace) {
+      splitsHTML += `<div style="margin-top:8px;font-weight:700;color:#4285f4">최종기록: ${netTime} (${pace})</div>`;
     }
     
     return `<div class="splits">${splitsHTML}</div>`;
