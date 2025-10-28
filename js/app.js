@@ -2598,8 +2598,7 @@ class RunCheerApp {
         {name: '25K', distance: 25.00},
         {name: '30K', distance: 30.00},
         {name: '35K', distance: 35.00},
-        {name: '40K', distance: 40.00},
-        {name: '도착', distance: 42.195}
+        {name: '40K', distance: 40.00}
       ];
     } else if (eventId === 132) {
       // 2025 춘천마라톤
@@ -2615,8 +2614,7 @@ class RunCheerApp {
         {name: '25K', distance: 25.00},
         {name: '30K', distance: 30.00},
         {name: '35K', distance: 35.00},
-        {name: '40K', distance: 40.00},
-        {name: '도착', distance: 42.20}
+        {name: '40K', distance: 40.00}
       ];
     }
     
@@ -2680,6 +2678,21 @@ class RunCheerApp {
             this.checkpointMarkers.push(marker);
           }
         });
+        
+        // GPX 마지막 지점에 도착 마커 추가
+        if (path.length > 0) {
+          const finishPos = path[path.length - 1];
+          const finishMarker = new naver.maps.Marker({
+            position: finishPos,
+            map: map,
+            icon: {
+              content: `<div style="background:#ef4444;color:white;padding:6px 12px;border-radius:16px;font-size:13px;font-weight:bold;border:3px solid white;box-shadow:0 3px 6px rgba(0,0,0,0.4);">🏁 도착</div>`,
+              anchor: new naver.maps.Point(0, 30)
+            },
+            zIndex: 1000
+          });
+          this.checkpointMarkers.push(finishMarker);
+        }
         
         console.log(`GPX 코스 로드 완료: ${path.length} 포인트, ${checkpoints.length} 체크포인트`);
       }
