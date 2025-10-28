@@ -719,7 +719,8 @@
           </div>
 
           <div class="card">
-            <button id="privacyBtn" class="secondary">📋 개인정보 처리방침</button>
+            <button id="faqBtn" class="secondary">❓ 자주 묻는 질문 (Q&A)</button>
+            <button id="privacyBtn" class="secondary mt-2">📋 개인정보 처리방침</button>
             <button id="deleteAccountBtn" class="danger mt-2">🗑️ 회원 탈퇴</button>
             <button id="logoutBtn" class="secondary mt-2">🚪 로그아웃</button>
           </div>
@@ -826,6 +827,122 @@
       </div>
       
       <button id="confirmRegisterRunnerBtn" class="success mt-2">등록 완료</button>
+    </div>
+  </div>
+
+  <!-- FAQ 모달 -->
+  <div id="faqModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>자주 묻는 질문 (Q&A)</h2>
+        <button class="modal-close" onclick="closeModal('faqModal')">×</button>
+      </div>
+      <div style="font-size:13px;line-height:1.7;color:var(--fg);max-height:60vh;overflow-y:auto">
+        
+        <div style="margin-bottom:24px;">
+          <h3 style="color:var(--acc);margin-bottom:8px;">🏃‍♂️ 그룹 참가</h3>
+          
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 그룹 참가 버튼이 활성화되지 않아요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 다음 조건을 모두 충족해야 합니다:</p>
+            <ul style="font-size:12px;color:var(--muted);margin-top:4px;padding-left:20px;">
+              <li>참가코드 6자리 입력</li>
+              <li>역할 선택 (주자 또는 응원)</li>
+              <li><strong>주자인 경우:</strong> 배번 입력 + 레디샷 사진 첨부 필수</li>
+            </ul>
+          </div>
+
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 참가코드는 어디서 얻나요?</p>
+            <p style="font-size:12px;color:var(--muted);">A. 그룹장이 생성한 6자리 참가코드를 받아 입력하세요. 그룹장은 프로필 탭에서 코드를 확인하고 공유 버튼으로 전달할 수 있습니다.</p>
+          </div>
+
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 배번을 잘못 입력했어요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 현재는 그룹 탈퇴 후 다시 참가하는 방법만 가능합니다:</p>
+            <ol style="font-size:12px;color:var(--muted);margin-top:4px;padding-left:20px;">
+              <li>프로필 탭 → "그룹 탈퇴" 버튼 클릭</li>
+              <li>참가 탭 → 올바른 배번으로 다시 참가</li>
+            </ol>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <h3 style="color:var(--acc);margin-bottom:8px;">📸 레디샷 & 사진</h3>
+          
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 레디샷을 변경하고 싶어요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 응원 탭에서 본인 마커를 클릭하면 나타나는 정보창에서 "레디샷 변경" 버튼을 누르세요. <strong>본인 레디샷만 변경 가능합니다.</strong></p>
+          </div>
+
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 사진 첨부 후 취소하면 에러가 나요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 사진을 선택한 후 다시 파일 선택창에서 취소하면, 이전에 선택한 사진이 유지됩니다. "등록 완료"를 누르기 전에 사진을 확인하세요.</p>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <h3 style="color:var(--acc);margin-bottom:8px;">🎯 추적 시작</h3>
+          
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 추적 시작 버튼이 비활성화되어 있어요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 추적 시작은 <strong style="color:var(--err);">그룹 코드가 L5E9인 그룹만 가능</strong>합니다. (현재 테스트 기간)</p>
+          </div>
+
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 실시간 추적은 어떻게 되나요?</p>
+            <p style="font-size:12px;color:var(--muted);">A. 대회 공식 데이터를 3분(180초)마다 자동으로 갱신합니다. 마커는 15초마다 예상 위치로 부드럽게 이동합니다. GPS를 사용하지 않으므로 주자의 위치 정보를 수집하지 않습니다.</p>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <h3 style="color:var(--acc);margin-bottom:8px;">👥 그룹 관리</h3>
+          
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 그룹을 만들고 싶어요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 참가 탭 하단의 "새 그룹 만들기" 버튼을 클릭하세요. 대회를 선택하면 6자리 참가코드가 생성됩니다.</p>
+          </div>
+
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 그룹을 탈퇴하고 싶어요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 프로필 탭 → "그룹 탈퇴" 버튼을 클릭하세요. 탈퇴 시 업로드한 레디샷도 함께 삭제됩니다.</p>
+          </div>
+
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 여러 그룹에 참가할 수 있나요?</p>
+            <p style="font-size:12px;color:var(--muted);">A. 아니요, 한 번에 하나의 그룹에만 참가할 수 있습니다. 다른 그룹에 참가하려면 먼저 현재 그룹을 탈퇴해야 합니다.</p>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <h3 style="color:var(--acc);margin-bottom:8px;">🗺️ 지도 & 마커</h3>
+          
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 마커가 겹쳐서 클릭이 안 돼요</p>
+            <p style="font-size:12px;color:var(--muted);">A. 비슷한 위치의 주자가 여러 명일 때, 자동으로 부채꼴 모양으로 라벨이 펼쳐집니다. 라벨을 클릭하면 해당 주자의 정보를 볼 수 있습니다.</p>
+          </div>
+
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 정보창을 닫으려면?</p>
+            <p style="font-size:12px;color:var(--muted);">A. 마커나 지도를 한 번 더 클릭하면 정보창이 닫힙니다.</p>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <h3 style="color:var(--acc);margin-bottom:8px;">⚙️ 기타</h3>
+          
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;">
+            <p style="font-weight:700;margin-bottom:6px;">Q. 앱이 안 돌아가요 / 버그가 있어요</p>
+            <p style="font-size:12px;color:var(--muted);">A. GitHub Issues에 문의해주세요: <a href="https://github.com/sdk0213/livetrack/issues" target="_blank" style="color:var(--acc);">https://github.com/sdk0213/livetrack/issues</a></p>
+          </div>
+
+          <div style="background:rgba(245,158,11,0.1);padding:12px;border-radius:8px;border:1px solid rgba(245,158,11,0.3);">
+            <p style="font-weight:700;margin-bottom:6px;color:var(--warn);">⚠️ 베타 서비스 안내</p>
+            <p style="font-size:12px;color:var(--muted);">RunCheer는 현재 베타 서비스로 예고 없이 중단되거나 종료될 수 있습니다. 중요한 데이터는 별도로 백업해주세요.</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
