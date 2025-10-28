@@ -2154,7 +2154,7 @@ class RunCheerApp {
           path: [centerPos, labelPos],
           strokeColor: lineColor,
           strokeOpacity: 0.8,
-          strokeWeight: 2,
+          strokeWeight: 6,
           zIndex: 999
         });
         
