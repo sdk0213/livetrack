@@ -737,44 +737,23 @@ class UIManager {
   handleShare() {
     const url = 'https://livetrack-theta.vercel.app/';
     const text = 'RunCheer - 함께 응원하며 마라톤을 완주해요! 🏃‍♂️💨';
-    const shareText = encodeURIComponent(`${text}\n${url}`);
     
-    // 모바일에서 카카오톡 URL 스킴 사용
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      // 카카오톡 URL 스킴으로 공유
-      window.location.href = `kakaotalk://share?text=${shareText}`;
-      
-      // 카카오톡이 설치되지 않은 경우를 대비해 setTimeout으로 Web Share API fallback
-      setTimeout(() => {
-        if (navigator.share) {
-          navigator.share({
-            title: 'RunCheer',
-            text: text,
-            url: url
-          }).catch(() => {
-            this.fallbackShare(url);
-          });
-        } else {
+    // Web Share API 사용 (모바일에서 카카오톡 포함 앱 목록 표시)
+    if (navigator.share) {
+      navigator.share({
+        title: 'RunCheer',
+        text: text,
+        url: url
+      }).catch((error) => {
+        // 취소한 경우 무시
+        if (error.name !== 'AbortError') {
+          console.error('Share failed:', error);
           this.fallbackShare(url);
         }
-      }, 1000);
+      });
     } else {
-      // PC에서는 Web Share API 또는 클립보드 복사
-      if (navigator.share) {
-        navigator.share({
-          title: 'RunCheer',
-          text: text,
-          url: url
-        }).catch((error) => {
-          if (error.name !== 'AbortError') {
-            this.fallbackShare(url);
-          }
-        });
-      } else {
-        this.fallbackShare(url);
-      }
+      // Web Share API 미지원 시 클립보드 복사
+      this.fallbackShare(url);
     }
   }
 
