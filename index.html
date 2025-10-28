@@ -426,6 +426,28 @@
     }
     .dev-info .dev{color:var(--muted)}
     
+    /* Q&A 버튼 - 개발자 정보 아래 배치 */
+    .qna-info{
+      position:fixed;
+      top:46px;
+      right:16px;
+      text-align:right;
+      font-size:10px;
+      z-index:1000;
+      background:rgba(255,255,255,0.85);
+      padding:4px 8px;
+      border-radius:6px;
+      border:1px solid #e2e8f0;
+      box-shadow:0 1px 2px rgba(0,0,0,.08);
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .qna-info:hover{
+      background:rgba(255,255,255,1);
+      box-shadow:0 2px 4px rgba(0,0,0,.15);
+    }
+    .qna-info .dev{color:var(--muted)}
+    
     /* 이미지 뷰어 모달 */
     .image-viewer-modal{
       display:none;
@@ -541,7 +563,7 @@
   <div class="dev-info" onclick="window.open('https://www.instagram.com/bigkyoung_/', '_blank')">
     <div class="dev">개발자 성대경</div>
   </div>
-  <div class="dev-info" onclick="showModal('faqModal')">
+  <div id="qnaBtn" class="qna-info">
     <div class="dev">Q&A</div>
   </div>
 
@@ -657,40 +679,54 @@
 
           <!-- 주자 목록 -->
           <div class="card" id="runnersSection" class="hidden">
-            <h3>👥 우리 크루 멤버</h3>
+            <h3 style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleSection('runnersList')">
+              <span>👥 우리 크루 멤버</span>
+              <span id="runnersToggle">▼</span>
+            </h3>
             <div id="runnersList" class="runner-list"></div>
           </div>
 
           <!-- 지도 -->
           <div class="card" id="mapSection" class="hidden">
-            <h3>📍 실시간 주자 위치</h3>
-            <div style="color:var(--err);font-size:12px;margin-bottom:10px;font-weight:600">⚠️ 동작하지 않을 수 있습니다. 미동작 시 아래 테이블에서 마지막 위치를 직접 확인해주세요.</div>
-            <div style="color:#666;font-size:12px;margin-bottom:10px">
-              ℹ️ 주자가 아직 출발하지 않은 경우 맵에 표시되지 않습니다<br>
-              ℹ️ 주자의 예상 위치는 이전 구간의 페이스를 기준으로 산정됩니다<br>
-              ℹ️ 처음 출발시에는 6:30 페이스로 예측되어 산정됩니다<br>
-              ℹ️ 실제 데이터는 180초(3분)마다 갱신됩니다 (예상 위치는 15초마다 업데이트)
+            <h3 style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleSection('mapContent')">
+              <span>📍 실시간 주자 위치</span>
+              <span id="mapToggle">▼</span>
+            </h3>
+            <div id="mapContent">
+              <div style="color:var(--err);font-size:12px;margin-bottom:10px;font-weight:600">⚠️ 동작하지 않을 수 있습니다. 미동작 시 아래 테이블에서 마지막 위치를 직접 확인해주세요.</div>
+              <div style="color:#666;font-size:12px;margin-bottom:10px">
+                ℹ️ 주자가 아직 출발하지 않은 경우 맵에 표시되지 않습니다<br>
+                ℹ️ 주자의 예상 위치는 이전 구간의 페이스를 기준으로 산정됩니다<br>
+                ℹ️ 처음 출발시에는 6:30 페이스로 예측되어 산정됩니다<br>
+                ℹ️ 실제 데이터는 180초(3분)마다 갱신됩니다 (예상 위치는 15초마다 업데이트)
+              </div>
+              <div id="map"></div>
             </div>
-            <div id="map"></div>
           </div>
 
           <!-- 결과 테이블 -->
           <div class="card" id="resultsSection" class="hidden">
-            <div id="status" class="muted" style="font-size:12px"></div>
-            <div id="sortInfo" class="muted" style="font-size:12px;margin-top:8px;display:none">
-              <strong>정렬기준:</strong> 미완주자→완주자 / 가→나→다
+            <h3 style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleSection('resultsContent')">
+              <span>📊 주자 기록</span>
+              <span id="resultsToggle">▼</span>
+            </h3>
+            <div id="resultsContent">
+              <div id="status" class="muted" style="font-size:12px"></div>
+              <div id="sortInfo" class="muted" style="font-size:12px;margin-top:8px;display:none">
+                <strong>정렬기준:</strong> 미완주자→완주자 / 가→나→다
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>이름<br>(배번)<br>(그룹)</th>
+                    <th>상태</th>
+                    <th>달린<br>거리</th>
+                    <th>마지막<br>위치</th>
+                  </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+              </table>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>이름<br>(배번)<br>(그룹)</th>
-                  <th>상태</th>
-                  <th>달린<br>거리</th>
-                  <th>마지막<br>위치</th>
-                </tr>
-              </thead>
-              <tbody id="resultsBody"></tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -1045,14 +1081,26 @@
           <li>CASCADE 삭제로 관련 데이터 자동 삭제</li>
         </ul>
 
-        <h3>11. 문의</h3>
-        <p style="font-size:12px">GitHub Issues: <a href="https://github.com/sdk0213/livetrack/issues" target="_blank" style="color:var(--acc)">https://github.com/sdk0213/livetrack/issues</a></p>
-
         <p class="muted" style="margin-top:20px;font-size:11px;text-align:center">이 개인정보 처리방침은 2025년 10월 25일부터 적용됩니다.</p>
       </div>
     </div>
   </div>
 
+  <script>
+    // 섹션 접기/펼치기 함수
+    function toggleSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      const toggleIcon = document.getElementById(sectionId.replace('Content', 'Toggle').replace('List', 'Toggle'));
+      
+      if (section.style.display === 'none') {
+        section.style.display = 'block';
+        if (toggleIcon) toggleIcon.textContent = '▼';
+      } else {
+        section.style.display = 'none';
+        if (toggleIcon) toggleIcon.textContent = '▶';
+      }
+    }
+  </script>
   <script src="/js/app.js"></script>
 </body>
 </html>

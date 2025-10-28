@@ -618,6 +618,7 @@ class UIManager {
     this.logoutBtn = document.getElementById('logoutBtn');
     this.deleteAccountBtn = document.getElementById('deleteAccountBtn');
     this.faqBtn = document.getElementById('faqBtn');
+    this.qnaBtn = document.getElementById('qnaBtn');
     this.privacyBtn = document.getElementById('privacyBtn');
 
     // Containers
@@ -672,6 +673,7 @@ class UIManager {
     this.logoutBtn.addEventListener('click', () => this.app.handleLogout());
     this.deleteAccountBtn.addEventListener('click', () => this.app.handleDeleteAccount());
     this.faqBtn.addEventListener('click', () => this.showModal('faqModal'));
+    this.qnaBtn.addEventListener('click', () => this.showModal('faqModal'));
     this.privacyBtn.addEventListener('click', () => this.showModal('privacyModal'));
 
     // 탭 네비게이션
