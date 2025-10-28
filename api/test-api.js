@@ -181,10 +181,9 @@ export default async function handler(req, res) {
     const isFinished = distanceKm >= 42.195;
     const netTime = isFinished ? formatTime(cumulativeSeconds) : null;
     
-    // 페이스 계산 - 마지막 구간 페이스 표시
+    // 페이스 계산 - 마지막으로 통과한 포인트의 구간 페이스
     let pace = null;
     if (records.length > 1) {
-      // 마지막 구간의 페이스 계산
       const lastRecord = records[records.length - 1];
       const lastSectionTime = lastRecord.time_section;
       
