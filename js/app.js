@@ -1544,37 +1544,32 @@ class RunCheerApp {
         // 이미지 압축
         const compressedBlob = await Utils.compressImage(file);
         
-        // Supabase Storage에 업로드
+        // 그룹 정보 확인
         const group = this.groupManager.currentGroup;
         if (!group) {
           throw new Error('그룹 정보를 찾을 수 없습니다.');
         }
         
-        const fileName = `${group.code}_${bib}_${Date.now()}.jpg`;
-        const { data: uploadData, error: uploadError } = await this.supabaseClient.storage
-          .from('ready-shots')
-          .upload(fileName, compressedBlob, {
-            contentType: 'image/jpeg',
-            upsert: false
-          });
+        const user = this.authManager.getUser();
+        if (!user) {
+          throw new Error('로그인 정보를 찾을 수 없습니다.');
+        }
         
-        if (uploadError) throw uploadError;
+        // API를 통해 이미지 업로드 및 DB 업데이트
+        const result = await APIService.uploadImage(compressedBlob, group.code, user.id);
         
-        // Public URL 생성
-        const { data: urlData } = this.supabaseClient.storage
-          .from('ready-shots')
-          .getPublicUrl(fileName);
+        // 업로드된 이미지 URL로 photo_url 업데이트
+        const updateData = {
+          groupCode: group.code,
+          kakaoId: user.id,
+          bib: bib,
+          photoUrl: result.url
+        };
         
-        const photoUrl = urlData.publicUrl;
-        
-        // DB 업데이트
-        const { error: updateError } = await this.supabaseClient
-          .from('group_members')
-          .update({ photo_url: photoUrl })
-          .eq('group_code', group.code)
-          .eq('bib', bib);
-        
-        if (updateError) throw updateError;
+        await APIService.request('/groups/update-photo', {
+          method: 'POST',
+          body: JSON.stringify(updateData)
+        });
         
         Utils.showToast('레디샷이 변경되었습니다!', 'success');
         
