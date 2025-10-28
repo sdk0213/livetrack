@@ -618,6 +618,7 @@ class UIManager {
     this.logoutBtn = document.getElementById('logoutBtn');
     this.deleteAccountBtn = document.getElementById('deleteAccountBtn');
     this.privacyBtn = document.getElementById('privacyBtn');
+    this.shareBtn = document.getElementById('shareBtn');
 
     // Containers
     this.noGroupMessage = document.getElementById('noGroupMessage');
@@ -671,6 +672,7 @@ class UIManager {
     this.logoutBtn.addEventListener('click', () => this.app.handleLogout());
     this.deleteAccountBtn.addEventListener('click', () => this.app.handleDeleteAccount());
     this.privacyBtn.addEventListener('click', () => this.showModal('privacyModal'));
+    this.shareBtn.addEventListener('click', () => this.handleShare());
 
     // 탭 네비게이션
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -732,6 +734,39 @@ class UIManager {
 
   hideModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
+  }
+
+  handleShare() {
+    const url = 'https://livetrack-theta.vercel.app/';
+    const text = 'RunCheer - 함께 응원하며 마라톤을 완주해요! 🏃‍♂️💨';
+    
+    // Web Share API 지원 확인
+    if (navigator.share) {
+      navigator.share({
+        title: 'RunCheer',
+        text: text,
+        url: url
+      }).catch((error) => {
+        // 취소한 경우 무시
+        if (error.name !== 'AbortError') {
+          console.error('Share failed:', error);
+          this.fallbackShare(url);
+        }
+      });
+    } else {
+      // Web Share API 미지원 시 클립보드 복사
+      this.fallbackShare(url);
+    }
+  }
+
+  fallbackShare(url) {
+    // 클립보드에 복사
+    navigator.clipboard.writeText(url).then(() => {
+      Utils.showToast('링크가 클립보드에 복사되었습니다!', 'success');
+    }).catch(() => {
+      // 클립보드 복사 실패 시 텍스트로 표시
+      Utils.showToast(`링크: ${url}`, 'success');
+    });
   }
 
   updateGroupInfo(group) {
@@ -1990,21 +2025,10 @@ class RunCheerApp {
           centerPos.lng() + offsetLng
         );
         
-        // 선의 시작점과 끝점을 양쪽에서 약간 떨어뜨리기
-        const shortenRatio = 0.15; // 양쪽에서 15%씩 짧게
-        
-        const lineStartLat = centerPos.lat() + offsetLat * shortenRatio;
-        const lineStartLng = centerPos.lng() + offsetLng * shortenRatio;
-        const lineEndLat = centerPos.lat() + offsetLat * (1 - shortenRatio);
-        const lineEndLng = centerPos.lng() + offsetLng * (1 - shortenRatio);
-        
-        const lineStartPos = new naver.maps.LatLng(lineStartLat, lineStartLng);
-        const lineEndPos = new naver.maps.LatLng(lineEndLat, lineEndLng);
-        
-        // 3. 선 그리기 (양쪽에서 떨어진 짧은 선)
+        // 3. 선 그리기
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
-          path: [lineStartPos, lineEndPos],
+          path: [centerPos, labelPos],
           strokeColor: '#4285f4',
           strokeOpacity: 0.8,
           strokeWeight: 2,
