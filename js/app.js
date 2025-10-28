@@ -1997,8 +1997,8 @@ class RunCheerApp {
           strokeColor: '#4285f4',
           strokeOpacity: 0.8,
           strokeWeight: 2,
-          endIcon: naver.maps.PointingIcon.OPEN_ARROW, // 화살표 추가
-          endIconSize: 15,
+          startIcon: naver.maps.PointingIcon.OPEN_ARROW, // 시작점(중심점)에 화살표
+          startIconSize: 15,
           zIndex: 999
         });
         
@@ -2008,12 +2008,13 @@ class RunCheerApp {
         const playerData = marker.playerData;
         const bib = marker.bib;
         
+        // 레이블의 중앙이 labelPos에 오도록 transform 사용
         marker.labelMarker = new naver.maps.Marker({
           position: labelPos,
           map: this.currentMap,
           icon: {
-            content: `<div class="player-label" style="white-space:nowrap">${playerData.name}</div>`,
-            anchor: new naver.maps.Point(50, 50) // 레이블 중앙에서 선이 연결되도록
+            content: `<div class="player-label" style="white-space:nowrap;transform:translate(-50%, -50%)">${playerData.name}</div>`,
+            anchor: new naver.maps.Point(0, 0)
           },
           zIndex: 1001
         });
