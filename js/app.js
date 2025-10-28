@@ -2191,11 +2191,23 @@ class RunCheerApp {
           readyPhoto = `${readyPhoto}${separator}v=${this.trackingEventId}`;
         }
         
+        // 마지막 구간 페이스 계산 (스플릿과 동일한 방식)
+        let lastPace = '-';
+        const records = (playerData.records || []).sort((a, b) => a.point.distance - b.point.distance);
+        if (records.length > 1) {
+          const lastRec = records[records.length - 1];
+          const prevRec = records[records.length - 2];
+          const dist = lastRec.point.distance - prevRec.point.distance;
+          const prevSec = this.timeToSeconds(prevRec.time_point);
+          const sec = this.timeToSeconds(lastRec.time_point) - prevSec;
+          lastPace = this.calcPace(dist, sec); // 이미 M'SS" 형식으로 반환됨
+        }
+        
         const createInfoContent = () => `
           <div onclick="if(window.currentInfoWindow)window.currentInfoWindow.close()" style="padding:12px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3);min-width:150px;max-width:200px;cursor:pointer">
             <div style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px;text-align:center">${playerData.name}(${bib})</div>
             <div style="font-size:12px;color:#666;margin-bottom:4px;">마지막위치: ${estimated.name}</div>
-            <div style="font-size:12px;color:#666;margin-bottom:8px;">페이스: ${playerData.pace_nettime ? playerData.pace_nettime.split('.')[0] : '-'}</div>
+            <div style="font-size:12px;color:#666;margin-bottom:8px;">페이스: ${lastPace}</div>
             <div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">
               ${profilePhoto ? `
                 <img src="${profilePhoto}" alt="프로필" style="width:120px;height:120px;border-radius:8px;object-fit:cover;box-shadow:0 2px 4px rgba(0,0,0,0.2);" loading="lazy" onerror="this.style.display='none';" />
