@@ -3,6 +3,8 @@ export default async function handler(req, res) {
     // 예: /api/proxy?path=event/110/player/3725
     const u = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const path = u.searchParams.get('path');
+    const groupCode = u.searchParams.get('groupCode'); // 그룹 코드 추가
+    
     if (!path) return res.status(400).json({ error: "missing 'path' query (e.g., ?path=event/110/player/3725)" });
 
     // CORS preflight (필요시)
@@ -11,6 +13,18 @@ export default async function handler(req, res) {
       res.setHeader('Access-Control-Allow-Headers', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
       return res.status(204).end();
+    }
+
+    // 3174 그룹은 테스트 API 호출
+    if (groupCode === '3174') {
+      const testApiUrl = `${u.protocol}//${req.headers.host}/api/test-api?path=${encodeURIComponent(path)}`;
+      const r = await fetch(testApiUrl, { headers: { Accept: 'application/json' } });
+      const body = await r.text();
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(r.status).send(body);
     }
 
     const upstream = `https://myresult.co.kr/api/${path}${u.searchParams.get('q') || ''}`;

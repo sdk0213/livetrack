@@ -1840,6 +1840,7 @@ class RunCheerApp {
       // 주자 배번 목록 저장 (DB 필드명은 bib)
       this.trackingBibs = runners.map(r => r.bib).filter(b => b); // undefined 제거
       this.trackingEventId = group.event_id;
+      this.trackingGroupCode = group.code; // 그룹 코드 저장
       
       console.log('Tracking bibs:', this.trackingBibs);
       console.log('Cached runners:', Object.keys(this.cachedRunners).length);
@@ -1941,7 +1942,8 @@ class RunCheerApp {
     try {
       // 🚀 배치 API로 한 번에 조회 (Function 호출 1회로 감소!)
       const bibsParam = activeRunners.join(',');
-      const response = await fetch(`/api/proxy-batch?bibs=${encodeURIComponent(bibsParam)}&eventId=${this.trackingEventId}`);
+      const groupCodeParam = this.trackingGroupCode ? `&groupCode=${encodeURIComponent(this.trackingGroupCode)}` : '';
+      const response = await fetch(`/api/proxy-batch?bibs=${encodeURIComponent(bibsParam)}&eventId=${this.trackingEventId}${groupCodeParam}`);
       
       if (!response.ok) {
         throw new Error(`Batch API failed: ${response.status}`);
@@ -1982,7 +1984,8 @@ class RunCheerApp {
       // 배치 API 실패 시 기존 방식으로 폴백
       for (const bib of activeRunners) {
         try {
-          const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}`);
+          const groupCodeParam = this.trackingGroupCode ? `&groupCode=${encodeURIComponent(this.trackingGroupCode)}` : '';
+          const response = await fetch(`/api/proxy?path=${encodeURIComponent(`event/${this.trackingEventId}/player/${bib}`)}${groupCodeParam}`);
           if (response.ok) {
             const playerData = await response.json();
             

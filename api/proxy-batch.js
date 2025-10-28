@@ -6,6 +6,7 @@ export default async function handler(req, res) {
     const u = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const bibsParam = u.searchParams.get('bibs');
     const eventId = u.searchParams.get('eventId');
+    const groupCode = u.searchParams.get('groupCode'); // 그룹 코드 추가
     
     if (!bibsParam || !eventId) {
       return res.status(400).json({ 
@@ -22,6 +23,40 @@ export default async function handler(req, res) {
     }
 
     const bibs = bibsParam.split(',').map(b => b.trim()).filter(b => b);
+    
+    // 3174 그룹은 테스트 API 호출
+    if (groupCode === '3174') {
+      const fetchPromises = bibs.map(async (bib) => {
+        try {
+          const testApiUrl = `${u.protocol}//${req.headers.host}/api/test-api?path=event/${eventId}/player/${bib}`;
+          const r = await fetch(testApiUrl, { 
+            headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(5000)
+          });
+          
+          if (!r.ok) {
+            return { bib, error: `HTTP ${r.status}`, data: null };
+          }
+          
+          const data = await r.json();
+          return { bib, error: null, data };
+        } catch (error) {
+          return { bib, error: error.message, data: null };
+        }
+      });
+
+      const results = await Promise.all(fetchPromises);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      return res.status(200).json({
+        eventId,
+        count: results.length,
+        results
+      });
+    }
     
     // 병렬로 모든 주자 조회
     const fetchPromises = bibs.map(async (bib) => {
