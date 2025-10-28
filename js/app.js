@@ -2001,15 +2001,26 @@ class RunCheerApp {
           zIndex: 999
         });
         
-        // 레이블 쪽에 작은 원점 추가 (화살표 대신)
+        // 중심점(현재 위치) 쪽에 화살표 표시 - 점에서 마커로 향하도록
+        const arrowAngle = Math.atan2(
+          labelPos.lat() - centerPos.lat(),
+          labelPos.lng() - centerPos.lng()
+        ) * 180 / Math.PI;
+        
         marker.arrowMarker = new naver.maps.Marker({
-          position: labelPos,
+          position: centerPos,
           map: this.currentMap,
           icon: {
-            content: `<div style="width:8px;height:8px;background:#4285f4;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
-            anchor: new naver.maps.Point(6, 6)
+            content: `<div style="position:relative;">
+              <div style="position:absolute;left:50%;top:50%;width:0;height:0;
+                border-left:6px solid transparent;
+                border-right:6px solid transparent;
+                border-bottom:10px solid #4285f4;
+                transform:translate(-50%, -50%) rotate(${arrowAngle + 90}deg);"></div>
+            </div>`,
+            anchor: new naver.maps.Point(0, 0)
           },
-          zIndex: 1002 // 레이블보다 위에 표시
+          zIndex: 1003 // 모든 것보다 위에
         });
         
         // 4. 레이블 마커 생성
