@@ -1980,21 +1980,31 @@ class RunCheerApp {
         
         // 미터 단위로 오프셋 계산 (줌 레벨과 무관하게 고정 거리)
         const LABEL_DISTANCE_METERS = 0.05; // 50m를 km로 변환
+        const LINE_END_DISTANCE_METERS = 0.038; // 38m - 점에 간신히 닿도록 (화살표 공간 확보)
         const R = 6371; // 지구 반경 (km)
         
         // 위도/경도로 오프셋 계산
         const offsetLat = (LABEL_DISTANCE_METERS / R) * (180 / Math.PI) * Math.sin(angleRad);
         const offsetLng = (LABEL_DISTANCE_METERS / R) * (180 / Math.PI) * Math.cos(angleRad) / Math.cos(centerPos.lat() * Math.PI / 180);
         
+        // 선의 끝점 계산 (점에 간신히 닿도록)
+        const lineEndLat = (LINE_END_DISTANCE_METERS / R) * (180 / Math.PI) * Math.sin(angleRad);
+        const lineEndLng = (LINE_END_DISTANCE_METERS / R) * (180 / Math.PI) * Math.cos(angleRad) / Math.cos(centerPos.lat() * Math.PI / 180);
+        
         const labelPos = new naver.maps.LatLng(
           centerPos.lat() + offsetLat,
           centerPos.lng() + offsetLng
         );
         
-        // 3. 선 그리기
+        const lineEndPos = new naver.maps.LatLng(
+          centerPos.lat() + lineEndLat,
+          centerPos.lng() + lineEndLng
+        );
+        
+        // 3. 선 그리기 (점에 간신히 닿도록)
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
-          path: [centerPos, labelPos],
+          path: [lineEndPos, labelPos], // 짧은 선으로 변경
           strokeColor: '#4285f4',
           strokeOpacity: 0.8,
           strokeWeight: 2,
@@ -2013,9 +2023,9 @@ class RunCheerApp {
           icon: {
             content: `<div style="position:relative;">
               <div style="position:absolute;left:50%;top:50%;width:0;height:0;
-                border-left:6px solid transparent;
-                border-right:6px solid transparent;
-                border-bottom:10px solid #4285f4;
+                border-left:10px solid transparent;
+                border-right:10px solid transparent;
+                border-bottom:16px solid #4285f4;
                 transform:translate(-50%, -50%) rotate(${arrowAngle + 90}deg);"></div>
             </div>`,
             anchor: new naver.maps.Point(0, 0)
