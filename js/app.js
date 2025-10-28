@@ -1949,7 +1949,6 @@ class RunCheerApp {
         if (marker.dotMarker) marker.dotMarker.setMap(null);
         if (marker.labelMarker) marker.labelMarker.setMap(null);
         if (marker.line) marker.line.setMap(null);
-        if (marker.arrowMarker) marker.arrowMarker.setMap(null); // 화살표 마커도 제거
         
         // 1. 중심점에 작은 점 마커 생성
         if (index === 0) { // 첫 번째만 점 마커 생성
@@ -1991,39 +1990,25 @@ class RunCheerApp {
           centerPos.lng() + offsetLng
         );
         
-        // 3. 선 그리기
+        // 선의 시작점과 끝점을 양쪽에서 약간 떨어뜨리기
+        const shortenRatio = 0.15; // 양쪽에서 15%씩 짧게
+        
+        const lineStartLat = centerPos.lat() + offsetLat * shortenRatio;
+        const lineStartLng = centerPos.lng() + offsetLng * shortenRatio;
+        const lineEndLat = centerPos.lat() + offsetLat * (1 - shortenRatio);
+        const lineEndLng = centerPos.lng() + offsetLng * (1 - shortenRatio);
+        
+        const lineStartPos = new naver.maps.LatLng(lineStartLat, lineStartLng);
+        const lineEndPos = new naver.maps.LatLng(lineEndLat, lineEndLng);
+        
+        // 3. 선 그리기 (양쪽에서 떨어진 짧은 선)
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
-          path: [centerPos, labelPos],
+          path: [lineStartPos, lineEndPos],
           strokeColor: '#4285f4',
           strokeOpacity: 0.8,
           strokeWeight: 2,
           zIndex: 999
-        });
-        
-        // 화살표를 선의 중간 지점에 배치
-        const arrowAngle = Math.atan2(
-          labelPos.lat() - centerPos.lat(),
-          labelPos.lng() - centerPos.lng()
-        ) * 180 / Math.PI;
-        
-        // 중간 지점 계산
-        const midLat = (centerPos.lat() + labelPos.lat()) / 2;
-        const midLng = (centerPos.lng() + labelPos.lng()) / 2;
-        const midPos = new naver.maps.LatLng(midLat, midLng);
-        
-        marker.arrowMarker = new naver.maps.Marker({
-          position: midPos,
-          map: this.currentMap,
-          icon: {
-            content: `<div style="width:0;height:0;
-              border-left:8px solid transparent;
-              border-right:8px solid transparent;
-              border-bottom:14px solid #4285f4;
-              transform:rotate(${arrowAngle + 90}deg);"></div>`,
-            anchor: new naver.maps.Point(8, 7)
-          },
-          zIndex: 1001
         });
         
         // 4. 레이블 마커 생성
