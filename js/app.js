@@ -1798,8 +1798,8 @@ class RunCheerApp {
       return;
     }
 
-    // L5E9 그룹이 아닌 경우 대회 시작 여부 확인
-    if (group.code !== 'L5E9') {
+    // L5E9 또는 3174(테스트) 그룹이 아닌 경우 대회 시작 여부 확인
+    if (group.code !== 'L5E9' && group.code !== '3174') {
       alert('아직 대회가 시작되지 않았습니다.');
       return;
     }
