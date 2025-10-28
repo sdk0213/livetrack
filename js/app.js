@@ -1990,13 +1990,15 @@ class RunCheerApp {
           centerPos.lng() + offsetLng
         );
         
-        // 3. 선 그리기
+        // 3. 선 그리기 (화살표 포함)
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
           path: [centerPos, labelPos],
           strokeColor: '#4285f4',
           strokeOpacity: 0.8,
           strokeWeight: 2,
+          endIcon: naver.maps.PointingIcon.OPEN_ARROW, // 화살표 추가
+          endIconSize: 15,
           zIndex: 999
         });
         
@@ -2011,7 +2013,7 @@ class RunCheerApp {
           map: this.currentMap,
           icon: {
             content: `<div class="player-label" style="white-space:nowrap">${playerData.name}</div>`,
-            anchor: new naver.maps.Point(50, 15) // 중앙 정렬
+            anchor: new naver.maps.Point(50, 50) // 레이블 중앙에서 선이 연결되도록
           },
           zIndex: 1001
         });
