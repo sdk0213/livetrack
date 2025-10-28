@@ -734,9 +734,14 @@ class UIManager {
     document.getElementById(modalId).classList.remove('active');
   }
 
-  handleShare() {
+  handleShare(groupCode = null) {
     const url = 'https://livetrack-theta.vercel.app/';
-    const text = 'RunCheer - 함께 응원하며 마라톤을 완주해요! 🏃‍♂️💨';
+    let text = 'RunCheer - 함께 응원하며 마라톤을 완주해요! 🏃‍♂️💨';
+    
+    // 그룹 코드가 있으면 텍스트에 추가
+    if (groupCode) {
+      text += `\n\n참가코드: ${groupCode}`;
+    }
     
     // Web Share API 사용 (모바일에서 카카오톡 포함 앱 목록 표시)
     if (navigator.share) {
@@ -802,7 +807,7 @@ class UIManager {
       setTimeout(() => {
         const shareBtn = document.getElementById('shareGroupBtn');
         if (shareBtn) {
-          shareBtn.addEventListener('click', () => this.handleShare());
+          shareBtn.addEventListener('click', () => this.handleShare(group.code));
         }
       }, 0);
       
@@ -990,7 +995,7 @@ class UIManager {
       setTimeout(() => {
         const shareBtn = document.getElementById('shareGroupBtnProfile');
         if (shareBtn) {
-          shareBtn.addEventListener('click', () => this.handleShare());
+          shareBtn.addEventListener('click', () => this.handleShare(group.code));
         }
       }, 0);
       
