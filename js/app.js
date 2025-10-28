@@ -2001,26 +2001,29 @@ class RunCheerApp {
           zIndex: 999
         });
         
-        // 중심점(현재 위치) 쪽에 화살표 표시 - 점 위에 겹쳐서
+        // 화살표를 선의 중간 지점에 배치
         const arrowAngle = Math.atan2(
           labelPos.lat() - centerPos.lat(),
           labelPos.lng() - centerPos.lng()
         ) * 180 / Math.PI;
         
+        // 중간 지점 계산
+        const midLat = (centerPos.lat() + labelPos.lat()) / 2;
+        const midLng = (centerPos.lng() + labelPos.lng()) / 2;
+        const midPos = new naver.maps.LatLng(midLat, midLng);
+        
         marker.arrowMarker = new naver.maps.Marker({
-          position: centerPos,
+          position: midPos,
           map: this.currentMap,
           icon: {
-            content: `<div style="width:24px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;">
-              <div style="width:0;height:0;
-                border-left:8px solid transparent;
-                border-right:8px solid transparent;
-                border-bottom:14px solid #fff;
-                transform:rotate(${arrowAngle + 90}deg);"></div>
-            </div>`,
-            anchor: new naver.maps.Point(12, 12)
+            content: `<div style="width:0;height:0;
+              border-left:8px solid transparent;
+              border-right:8px solid transparent;
+              border-bottom:14px solid #4285f4;
+              transform:rotate(${arrowAngle + 90}deg);"></div>`,
+            anchor: new naver.maps.Point(8, 7)
           },
-          zIndex: 1001 // 점(1000)보다 위에
+          zIndex: 1001
         });
         
         // 4. 레이블 마커 생성
