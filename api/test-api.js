@@ -29,33 +29,33 @@ export default async function handler(req, res) {
     
     // 주자별 설정
     const runners = {
-      '2634': { name: '장건희', team_name: 'B', pace: 292 }, // 3:25
-      '2912': { name: '김이수', team_name: 'B', pace: 254 }, // 2:59
-      '3097': { name: '유재원', team_name: 'B', pace: 269 }, // 3:09
-      '3148': { name: '이재경', team_name: 'B', pace: 297 }, // 3:29
-      '9430': { name: '박종현', team_name: 'D', pace: 254 }, // 2:59
-      '13292': { name: '문영채', team_name: 'E', pace: 300 }, // 완주
-      '1080': { name: '성대경', team_name: 'A', pace: 248 }, // 2:54
-      '16322': { name: '도시연', team_name: 'F', pace: 398 }, // 4:40
-      '2296': { name: '박용준', team_name: 'B', pace: 383 }, // 4:30
-      '14618': { name: '최병찬', team_name: 'F', pace: 426 }, // 5:00
-      '10384': { name: '이희수', team_name: '', pace: 383 }, // 4:30
-      '14614': { name: '최동철', team_name: 'F', pace: 426 }, // 5:00
-      '14906': { name: '박유영', team_name: 'F', pace: 339 }, // 3:59
-      '3212': { name: '전우진', team_name: 'B', pace: 298 }, // 3:30
-      '10352': { name: '어승혜', team_name: 'D', pace: 383 }, // 4:30
-      '5969': { name: '이득우', team_name: 'C', pace: 341 }, // 4:00
-      '13373': { name: '황민효', team_name: 'E', pace: 383 }, // 4:30
-      '15493': { name: '강한철', team_name: 'F', pace: 370 }, // 4:20
-      '7153': { name: '최인아', team_name: 'C', pace: 426 }, // 5:00
-      '13306': { name: '송주엽', team_name: 'E', pace: 469 }, // 5:30
-      '13366': { name: '허수민', team_name: 'E', pace: 362 },  // 4:15
-      '8904': { name: '민경훈', team_name: 'D', pace: 400 },  // 4:15
-      '13324': { name: '이소정', team_name: 'E', pace: 402 },  // 4:15
-      '15092': { name: '이은석', team_name: 'F', pace: 383 },  // 4:30
-      '13354': { name: '정찬선', team_name: 'E', pace: 426 },  // 5:00
-      '2147': { name: '김웅기', team_name: 'B', pace: 298 },   // 3:30
-      '7319': { name: '김나예', team_name: 'C', pace: 339 }    // 3:59
+      '2634': { name: '테스트A', team_name: 'B', pace: 292 }, // 3:25
+      '2912': { name: '테스트B', team_name: 'B', pace: 254 }, // 2:59
+      '3097': { name: '테스트C', team_name: 'B', pace: 269 }, // 3:09
+      '3148': { name: '테스트D', team_name: 'B', pace: 297 }, // 3:29
+      '9430': { name: '테스트E', team_name: 'D', pace: 254 }, // 2:59
+      '13292': { name: '테스트F', team_name: 'E', pace: 300 }, // 완주
+      '1080': { name: '테스트G', team_name: 'A', pace: 248 }, // 2:54
+      '16322': { name: '테스트H', team_name: 'F', pace: 398 }, // 4:40
+      '2296': { name: '테스트I', team_name: 'B', pace: 383 }, // 4:30
+      '14618': { name: '테스트J', team_name: 'F', pace: 426 }, // 5:00
+      '10384': { name: '테스트K', team_name: '', pace: 383 }, // 4:30
+      '14614': { name: '테스트L', team_name: 'F', pace: 426 }, // 5:00
+      '14906': { name: '테스트M', team_name: 'F', pace: 339 }, // 3:59
+      '3212': { name: '테스트N', team_name: 'B', pace: 298 }, // 3:30
+      '10352': { name: '테스트O', team_name: 'D', pace: 383 }, // 4:30
+      '5969': { name: '테스트P', team_name: 'C', pace: 341 }, // 4:00
+      '13373': { name: '테스트Q', team_name: 'E', pace: 383 }, // 4:30
+      '15493': { name: '테스트R', team_name: 'F', pace: 370 }, // 4:20
+      '7153': { name: '테스트S', team_name: 'C', pace: 426 }, // 5:00
+      '13306': { name: '테스트T', team_name: 'E', pace: 469 }, // 5:30
+      '13366': { name: '테스트U', team_name: 'E', pace: 362 },  // 4:15
+      '8904': { name: '테스트V', team_name: 'D', pace: 400 },  // 4:15
+      '13324': { name: '테스트W', team_name: 'E', pace: 402 },  // 4:15
+      '15092': { name: '테스트X', team_name: 'F', pace: 383 },  // 4:30
+      '13354': { name: '테스트Y', team_name: 'E', pace: 426 },  // 5:00
+      '2147': { name: '테스트Z', team_name: 'B', pace: 298 },   // 3:30
+      '7319': { name: '테스트1', team_name: 'C', pace: 339 }    // 3:59
     };
     
     const runner = runners[bib] || runners['1080'];
