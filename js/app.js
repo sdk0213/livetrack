@@ -2102,11 +2102,15 @@ class RunCheerApp {
         
         // 1. 중심점에 작은 점 마커 생성
         if (index === 0) { // 첫 번째만 점 마커 생성
+          // 완주 여부 확인
+          const isFinished = marker.estimated && marker.estimated.status === '완주';
+          const markerColor = isFinished ? '#ef4444' : '#4285f4'; // 완주: 빨강, 진행중: 파랑
+          
           marker.dotMarker = new naver.maps.Marker({
             position: centerPos,
             map: this.currentMap,
             icon: {
-              content: `<div style="width:24px;height:24px;background:#4285f4;border:4px solid #fff;border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.5);"></div>`,
+              content: `<div style="width:24px;height:24px;background:${markerColor};border:4px solid #fff;border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.5);"></div>`,
               anchor: new naver.maps.Point(14, 14)
             },
             zIndex: 1000
