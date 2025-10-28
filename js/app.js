@@ -1551,7 +1551,7 @@ class RunCheerApp {
         }
         
         const fileName = `${group.code}_${bib}_${Date.now()}.jpg`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { data: uploadData, error: uploadError } = await this.supabaseClient.storage
           .from('ready-shots')
           .upload(fileName, compressedBlob, {
             contentType: 'image/jpeg',
@@ -1561,14 +1561,14 @@ class RunCheerApp {
         if (uploadError) throw uploadError;
         
         // Public URL 생성
-        const { data: urlData } = supabase.storage
+        const { data: urlData } = this.supabaseClient.storage
           .from('ready-shots')
           .getPublicUrl(fileName);
         
         const photoUrl = urlData.publicUrl;
         
         // DB 업데이트
-        const { error: updateError } = await supabase
+        const { error: updateError } = await this.supabaseClient
           .from('group_members')
           .update({ photo_url: photoUrl })
           .eq('group_code', group.code)
