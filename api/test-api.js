@@ -20,10 +20,10 @@ export default async function handler(req, res) {
     const bib = bibMatch ? bibMatch[1] : '1080';
 
     // 현재 시간 (한국 시간으로 변환)
-    const now = new Date('2025-10-28T13:30:00+09:00'); // 테스트용 고정 시간
-    const eventDate = '2025-11-02'; // JTBC 마라톤 날짜
-    const startTime = new Date(eventDate + 'T07:30:00+09:00'); // 한국 시간 07:30
-    
+    const now = new Date();
+    const eventDate = '2025-10-28'; // JTBC 마라톤 날짜
+    const startTime = new Date(eventDate + 'T13:30:00+09:00'); // 한국 시간 13:30
+
     // 현재 시간과 출발 시간의 차이 계산 (실시간)
     const elapsedSeconds = Math.max(0, (now - startTime) / 1000);
     
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
       point_cd: 'P0',
       lap: 1,
       player_num: bib,
-      created_at: new Date(eventDate + 'T07:30:00+09:00').toISOString(),
+      created_at: new Date(eventDate + 'T13:30:00+09:00').toISOString(),
       updated_at: null,
       time_section: null,
       time_sum: "0:00:00",
@@ -110,7 +110,7 @@ export default async function handler(req, res) {
         course_cd: 'Full',
         point_cd: 'P0',
         lap: 1,
-          created_at: new Date(eventDate + 'T07:30:00+09:00').toISOString(),
+          created_at: new Date(eventDate + 'T13:30:00+09:00').toISOString(),
         updated_at: null,
         name: '출발',
         distance: "0.00",
