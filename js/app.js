@@ -2686,8 +2686,9 @@ class RunCheerApp {
             position: finishPos,
             map: map,
             icon: {
-              content: `<div style="background:#ef4444;color:white;padding:6px 12px;border-radius:16px;font-size:13px;font-weight:bold;border:3px solid white;box-shadow:0 3px 6px rgba(0,0,0,0.4);">🏁 도착</div>`,
-              anchor: new naver.maps.Point(0, 30)
+              url: 'finish.png',
+              size: new naver.maps.Size(32, 32),
+              anchor: new naver.maps.Point(16, 32)
             },
             zIndex: 1000
           });
