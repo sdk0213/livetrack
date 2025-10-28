@@ -1949,6 +1949,7 @@ class RunCheerApp {
         if (marker.dotMarker) marker.dotMarker.setMap(null);
         if (marker.labelMarker) marker.labelMarker.setMap(null);
         if (marker.line) marker.line.setMap(null);
+        if (marker.arrowMarker) marker.arrowMarker.setMap(null); // 화살표 마커도 제거
         
         // 1. 중심점에 작은 점 마커 생성
         if (index === 0) { // 첫 번째만 점 마커 생성
@@ -1991,16 +1992,29 @@ class RunCheerApp {
         );
         
         // 3. 선 그리기 (화살표 포함)
-        // 선의 방향을 반대로 하여 화살표가 중심을 향하도록
         marker.line = new naver.maps.Polyline({
           map: this.currentMap,
-          path: [labelPos, centerPos], // 순서 반대로
+          path: [centerPos, labelPos],
           strokeColor: '#4285f4',
           strokeOpacity: 0.8,
           strokeWeight: 2,
-          endIcon: naver.maps.PointingIcon.OPEN_ARROW, // 끝(중심점)에 화살표
-          endIconSize: 15,
           zIndex: 999
+        });
+        
+        // 화살표 마커 추가 (레이블 쪽 끝에)
+        const arrowAngle = Math.atan2(
+          labelPos.lat() - centerPos.lat(),
+          labelPos.lng() - centerPos.lng()
+        ) * 180 / Math.PI;
+        
+        marker.arrowMarker = new naver.maps.Marker({
+          position: labelPos,
+          map: this.currentMap,
+          icon: {
+            content: `<div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:12px solid #4285f4;transform:translate(-50%, -50%) rotate(${arrowAngle + 90}deg);"></div>`,
+            anchor: new naver.maps.Point(0, 0)
+          },
+          zIndex: 998
         });
         
         // 4. 레이블 마커 생성
