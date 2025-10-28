@@ -618,7 +618,6 @@ class UIManager {
     this.logoutBtn = document.getElementById('logoutBtn');
     this.deleteAccountBtn = document.getElementById('deleteAccountBtn');
     this.privacyBtn = document.getElementById('privacyBtn');
-    this.shareBtn = document.getElementById('shareBtn');
 
     // Containers
     this.noGroupMessage = document.getElementById('noGroupMessage');
@@ -672,7 +671,6 @@ class UIManager {
     this.logoutBtn.addEventListener('click', () => this.app.handleLogout());
     this.deleteAccountBtn.addEventListener('click', () => this.app.handleDeleteAccount());
     this.privacyBtn.addEventListener('click', () => this.showModal('privacyModal'));
-    this.shareBtn.addEventListener('click', () => this.handleShare());
 
     // 탭 네비게이션
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -777,7 +775,14 @@ class UIManager {
       
       document.getElementById('groupName').textContent = group.name;
       document.getElementById('groupCode').innerHTML = `
-        <div style="font-size:24px;font-weight:700;color:#3b82f6;font-family:monospace;letter-spacing:2px;margin:8px 0;">${group.code}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+          <div style="font-size:24px;font-weight:700;color:#3b82f6;font-family:monospace;letter-spacing:2px;">
+            ${group.code}
+          </div>
+          <button id="shareGroupBtn" class="btn-small secondary" style="padding:4px 12px;font-size:11px;">
+            📤 공유
+          </button>
+        </div>
         <div style="font-size:11px;color:#94a3b8;margin-top:4px;">이 코드를 주자들에게 공유해주세요</div>
       `;
       
@@ -792,6 +797,14 @@ class UIManager {
       }
       
       document.getElementById('groupEvent').innerHTML = eventInfoHTML;
+      
+      // 공유 버튼 이벤트 리스너 추가
+      setTimeout(() => {
+        const shareBtn = document.getElementById('shareGroupBtn');
+        if (shareBtn) {
+          shareBtn.addEventListener('click', () => this.handleShare());
+        }
+      }, 0);
       
       // 지도와 결과 섹션 표시
       this.mapSection.classList.remove('hidden');
@@ -956,8 +969,15 @@ class UIManager {
             <div class="group-name">${group.name}${leaderBadge}</div>
           </div>
           <div style="text-align:center;margin:12px 0;">
-            <div style="font-size:28px;font-weight:700;color:#3b82f6;font-family:monospace;letter-spacing:3px;">${group.code}</div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:6px;">이 코드를 주자들에게 공유해주세요</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">
+              <div style="font-size:28px;font-weight:700;color:#3b82f6;font-family:monospace;letter-spacing:3px;">
+                ${group.code}
+              </div>
+              <button id="shareGroupBtnProfile" class="btn-small secondary" style="padding:4px 12px;font-size:11px;">
+                📤 공유
+              </button>
+            </div>
+            <div style="font-size:11px;color:#94a3b8;">이 코드를 주자들에게 공유해주세요</div>
           </div>
           <div class="muted" style="font-size:12px;text-align:center;">
             ${this.getEventName(group.event_id)}
@@ -965,6 +985,14 @@ class UIManager {
           </div>
         </div>
       `;
+      
+      // 공유 버튼 이벤트 리스너 추가
+      setTimeout(() => {
+        const shareBtn = document.getElementById('shareGroupBtnProfile');
+        if (shareBtn) {
+          shareBtn.addEventListener('click', () => this.handleShare());
+        }
+      }, 0);
       
       // 그룹장이면 "그룹 삭제" 버튼, 멤버면 "그룹 탈퇴" 버튼
       this.leaveGroupBtn.textContent = isLeader ? '그룹 삭제' : '그룹 탈퇴';
