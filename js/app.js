@@ -853,12 +853,18 @@ class UIManager {
     // 주자 목록
     if (runnerList.length > 0) {
       const runnerHeader = document.createElement('div');
-      runnerHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin-bottom:8px;padding:0 4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
+      runnerHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin-bottom:4px;padding:0 4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
       runnerHeader.innerHTML = `
-        <span>🏃‍♂️ 주자 (${runnerList.length}명) <span style="font-size:10px;color:#94a3b8;font-weight:400;">※ 10km 주자는 지원하지 않습니다, 주자는 스마트폰이 필요하지 않습니다</span></span>
+        <span>🏃‍♂️ 주자 (${runnerList.length}명)</span>
         <span class="toggle-icon" id="runnerToggle">▼</span>
       `;
       this.runnersList.appendChild(runnerHeader);
+      
+      // 안내 문구 추가
+      const runnerNotice = document.createElement('div');
+      runnerNotice.style.cssText = 'font-size:10px;color:#94a3b8;margin-bottom:8px;padding:0 4px;';
+      runnerNotice.textContent = '※ 10km 주자는 지원하지 않습니다, 주자는 스마트폰이 필요하지 않습니다';
+      this.runnersList.appendChild(runnerNotice);
       
       const runnerContainer = document.createElement('div');
       runnerContainer.id = 'runnerContainer';
