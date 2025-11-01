@@ -855,7 +855,7 @@ class UIManager {
       const runnerHeader = document.createElement('div');
       runnerHeader.style.cssText = 'font-weight:700;font-size:13px;color:#1e293b;margin-bottom:8px;padding:0 4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
       runnerHeader.innerHTML = `
-        <span>🏃‍♂️ 주자 (${runnerList.length}명)</span>
+        <span>🏃‍♂️ 주자 (${runnerList.length}명) <span style="font-size:10px;color:#94a3b8;font-weight:400;">※ 10km 주자는 지원하지 않습니다</span></span>
         <span class="toggle-icon" id="runnerToggle">▼</span>
       `;
       this.runnersList.appendChild(runnerHeader);
