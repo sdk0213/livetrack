@@ -646,10 +646,10 @@ class UIManager {
         console.log('DB 사용자:', dbUser);
         console.log('========================================================');
         
-        // 그룹 개수 확인 (300개 제한)
+        // 그룹 개수 확인 (330개 제한)
         const groupCount = await APIService.getGroupCount();
-        if (groupCount >= 300) {
-          Utils.showToast('그룹 생성 한도(300개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
+        if (groupCount >= 330) {
+          Utils.showToast('그룹 생성 한도(330개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
           return;
         }
         
