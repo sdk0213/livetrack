@@ -1798,10 +1798,16 @@ class RunCheerApp {
       return;
     }
 
-    // L5E9 또는 3174(테스트) 그룹이 아닌 경우 대회 시작 여부 확인
+    // L5E9 또는 3174 그룹은 언제든 추적 가능 (테스트 그룹)
     if (group.code !== 'L5E9' && group.code !== '3174') {
-      alert('아직 대회가 시작되지 않았습니다.');
-      return;
+      // 2025년 11월 2일 오전 6시 이전에는 추적 불가
+      const now = new Date();
+      const raceStartDate = new Date('2025-11-02T06:00:00+09:00');
+      
+      if (now < raceStartDate) {
+        alert('그룹 추적 시작은 JTBC 마라톤 당일 오전 6시부터 가능합니다.');
+        return;
+      }
     }
 
     console.log('Starting tracking for group:', group);
