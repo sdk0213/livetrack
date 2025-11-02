@@ -28,39 +28,57 @@ export default async function handler(req, res) {
   try {
     console.log('Starting to delete all blobs...');
     
-    // 모든 Blob 목록 조회
-    const { blobs } = await list();
+    let totalDeleted = 0;
+    let totalFailed = 0;
+    const allErrors = [];
+    let hasMore = true;
+    let cursor = undefined;
     
-    console.log(`Found ${blobs.length} blobs to delete`);
+    // 페이지네이션으로 모든 Blob 삭제 (1000개씩)
+    while (hasMore) {
+      // 1000개씩 Blob 목록 조회
+      const response = await list({ cursor, limit: 1000 });
+      const { blobs } = response;
+      
+      console.log(`Found ${blobs.length} blobs in this batch`);
+      
+      if (blobs.length === 0) {
+        break;
+      }
+
+      // 현재 배치의 Blob 삭제
+      for (const blob of blobs) {
+        try {
+          await del(blob.url);
+          totalDeleted++;
+          console.log(`Deleted (${totalDeleted}): ${blob.url}`);
+        } catch (error) {
+          console.error(`Failed to delete ${blob.url}:`, error);
+          allErrors.push({ url: blob.url, error: error.message });
+          totalFailed++;
+        }
+      }
+      
+      // 다음 페이지가 있는지 확인
+      hasMore = response.hasMore;
+      cursor = response.cursor;
+      
+      console.log(`Batch completed. Total deleted: ${totalDeleted}, Failed: ${totalFailed}, Has more: ${hasMore}`);
+    }
     
-    if (blobs.length === 0) {
+    if (totalDeleted === 0 && totalFailed === 0) {
       return res.status(200).json({ 
         message: 'No blobs to delete',
         deleted: 0
       });
     }
 
-    // 모든 Blob 삭제
-    let deletedCount = 0;
-    const errors = [];
-
-    for (const blob of blobs) {
-      try {
-        await del(blob.url);
-        deletedCount++;
-        console.log(`Deleted: ${blob.url}`);
-      } catch (error) {
-        console.error(`Failed to delete ${blob.url}:`, error);
-        errors.push({ url: blob.url, error: error.message });
-      }
-    }
-
     return res.status(200).json({
       message: 'Blob deletion completed',
-      total: blobs.length,
-      deleted: deletedCount,
-      failed: errors.length,
-      errors: errors
+      total: totalDeleted + totalFailed,
+      deleted: totalDeleted,
+      failed: totalFailed,
+      errors: allErrors
     });
 
   } catch (error) {
