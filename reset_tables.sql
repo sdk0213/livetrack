@@ -1,11 +1,8 @@
 -- groups 테이블과 group_members 테이블 초기화 쿼리
 -- 주의: 이 쿼리를 실행하면 모든 그룹 및 그룹 멤버 데이터가 삭제됩니다.
 
--- 1. group_members 테이블 초기화 (외래 키 제약 조건 때문에 먼저 삭제)
-TRUNCATE TABLE group_members;
-
--- 2. groups 테이블 초기화
-TRUNCATE TABLE groups;
+-- PostgreSQL: CASCADE 옵션을 사용하여 외래 키 제약 조건을 무시하고 초기화
+TRUNCATE TABLE groups, group_members CASCADE;
 
 -- 또는 DELETE 사용 시 (자동 증가 값을 유지하려면)
 -- DELETE FROM group_members;

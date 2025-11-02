@@ -2870,6 +2870,9 @@ function handleRoleChange() {
 // 경고 팝업 관리
 // ============================================
 window.showWarningPopup = function() {
+  // 공지사항 팝업을 완전히 비활성화
+  return;
+  
   const warningModal = document.getElementById('warningModal');
   const dismissed = localStorage.getItem('warningDismissedUntil');
   
