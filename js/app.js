@@ -637,24 +637,11 @@ class UIManager {
     // 그룹
     this.createGroupBtn.addEventListener('click', async () => {
       try {
-        // 관리자 권한 확인 (카카오 ID: 4510043030만)
-        const user = this.app.authManager.getUser();
-        const dbUser = await APIService.getUser(user.id);
-        
-        console.log('==================== 그룹 생성 권한 체크 ====================');
-        console.log('현재 사용자 (authManager):', user);
-        console.log('DB 사용자:', dbUser);
-        console.log('========================================================');
-        
-        // 그룹 개수 확인 (330개 제한)
-        const groupCount = await APIService.getGroupCount();
-        if (groupCount >= 330) {
-          Utils.showToast('그룹 생성 한도(330개)에 도달했습니다. 더 이상 그룹을 생성할 수 없습니다.', 'error');
-          return;
-        }
-        
-        // 모든 사용자 그룹 생성 가능
-        this.showModal('createGroupModal');
+        // 그룹 생성 완전 차단
+        Utils.showToast('그룹 생성이 마감되었습니다.', 'error');
+        // 버튼 숨기기
+        this.createGroupBtn.style.display = 'none';
+        return;
       } catch (error) {
         console.error('권한 체크 오류:', error);
         Utils.showToast('권한 확인 중 오류가 발생했습니다.', 'error');
@@ -1331,6 +1318,12 @@ class RunCheerApp {
       const displayEl = document.getElementById('groupCountDisplay');
       if (displayEl) {
         displayEl.textContent = count;
+      }
+      
+      // 그룹 생성 버튼 숨기기
+      const createGroupBtn = document.getElementById('createGroupBtn');
+      if (createGroupBtn) {
+        createGroupBtn.style.display = 'none';
       }
     } catch (error) {
       console.error('Failed to load group count:', error);
